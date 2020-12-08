@@ -1,6 +1,7 @@
 import { v4 } from 'uuid'
 import { QuerySelector } from './queryTypes'
 import { getComparatorsForValue } from './utils/comparators'
+import { first } from './utils/first'
 import { invariant } from './utils/invariant'
 
 type BaseTypes = string | number | boolean
@@ -185,16 +186,16 @@ function createModelApi<ModelName extends string>(
         __type: modelName,
         __nodeId: v4(),
       }
-      const referencedProps = []
+      const relationalProperties = []
 
       const newModel: EntityInstance<any, any> = Object.assign(
         {},
-        evolve(props, (getter, key) => {
+        evolve(props, (value, key) => {
           const initialValue = initialValues[key]
 
           if (initialValue) {
             if (initialValue.__nodeId) {
-              referencedProps.push({
+              relationalProperties.push({
                 modelName: key,
                 node: initialValue,
               })
@@ -205,18 +206,25 @@ function createModelApi<ModelName extends string>(
           }
 
           // Resolve `oneOf`/`manyOf` as the factory model value.
-          if (['oneOf'].includes(getter.__type)) {
-            return createRelation(modelName, getter.modelName, db)
+          if (['oneOf'].includes(value.__type)) {
+            /**
+             * @todo What should be returned in this case?
+             * A getter that throws an exception?
+             * This would imply that the relation was created in a model,
+             * but not assigned when created an entity.
+             */
+            return createRelation(modelName, value.modelName, db)
           }
 
-          return getter()
+          return value()
         }),
         internalProps
       )
 
-      // Attach relational entities, if present.
-      if (referencedProps.length > 0) {
-        const referenceProperties = referencedProps.reduce(
+      if (relationalProperties.length > 0) {
+        // Create an Object getter function for each relational property
+        // to look it up in the current database by the node ID.
+        const definedObjectProperties = relationalProperties.reduce(
           (acc, { modelName, node }) => {
             acc[modelName] = {
               get() {
@@ -236,7 +244,7 @@ function createModelApi<ModelName extends string>(
                   db
                 )
 
-                return refResults.length > 0 ? refResults[0] : null
+                return first(refResults)
               },
             }
             return acc
@@ -244,7 +252,7 @@ function createModelApi<ModelName extends string>(
           {}
         )
 
-        Object.defineProperties(newModel, referenceProperties)
+        Object.defineProperties(newModel, definedObjectProperties)
       }
 
       db[modelName].push(newModel)
@@ -256,7 +264,7 @@ function createModelApi<ModelName extends string>(
     },
     findOne(query) {
       const results = executeQuery(modelName, query, db)
-      return results?.length > 0 ? results[0] : null
+      return first(results)
     },
     findMany(query) {
       return executeQuery(modelName, query, db)
