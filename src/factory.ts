@@ -34,7 +34,7 @@ type FactoryAPI<T extends Record<string, any>> = {
   [K in keyof T]: ModelAPI<T, K>
 }
 
-interface EntityInternalProps<ModelName extends KeyType> {
+interface InternalEntityProperties<ModelName extends KeyType> {
   readonly __type: ModelName
   readonly __nodeId: string
 }
@@ -42,7 +42,7 @@ interface EntityInternalProps<ModelName extends KeyType> {
 type EntityInstance<
   T extends Record<string, any>,
   K extends keyof T
-> = EntityInternalProps<K> & Value<T[K], T>
+> = InternalEntityProperties<K> & Value<T[K], T>
 
 interface ModelAPI<T extends Record<string, any>, K extends keyof T> {
   /**
@@ -167,96 +167,125 @@ function executeQuery(
   return records.filter(compileQuery(query))
 }
 
-function createRelation(
+interface RelationalNode extends InternalEntityProperties<any> {
+  modelName: string
+}
+
+function defineRelationalProperties(
+  obj: Record<string, any>,
+  relations: Record<string, RelationalNode>,
+  db: Database<any>
+): void {
+  const properties = Object.entries(relations).reduce(
+    (acc, [property, relation]) => {
+      acc[property] = {
+        get() {
+          /**
+           * @todo Depending on `oneOf`/`manyOf` relation type
+           * allow or forbid an array of values.
+           */
+          const refResults = executeQuery(
+            relation.modelName,
+            {
+              which: {
+                __nodeId: {
+                  equals: relation.__nodeId,
+                },
+              },
+            },
+            db
+          )
+
+          return first(refResults)
+        },
+      }
+
+      return acc
+    },
+    {}
+  )
+
+  Object.defineProperties(obj, properties)
+}
+
+function evaluateModelDeclaration(
   modelName: string,
-  relatedModelName: string,
+  declaration: Record<string, any>,
+  initialValues?: Record<string, any>
+): {
+  properties: Record<string, any>
+  relations: Record<string, RelationalNode>
+} {
+  return Object.entries(declaration).reduce(
+    (acc, [key, valueOrRelationRef]) => {
+      const initialValue = initialValues[key]
+
+      if (initialValue) {
+        if (initialValue.__nodeId) {
+          const relation: RelationalNode = initialValue
+          acc.relations[key] = {
+            modelName: key,
+            __type: relation.__type,
+            __nodeId: relation.__nodeId,
+          }
+
+          return acc
+        }
+
+        /**
+         * @todo Handle `oneOf` invocation as the value of the model
+         * property declaration.
+         */
+        if (['oneOf'].includes(initialValue.__type)) {
+          return acc
+        }
+
+        acc.properties[key] = initialValue
+        return acc
+      }
+
+      acc.properties[key] = valueOrRelationRef()
+      return acc
+    },
+    {
+      properties: {},
+      relations: {},
+    }
+  )
+}
+
+function createModel<ModelName extends string>(
+  modelName: ModelName,
+  properties: Record<string, any>,
+  relations: Record<string, any>,
   db: Database<any>
 ) {
-  console.log('referencing relation', relatedModelName, 'from', modelName, db)
+  const internalProperties: InternalEntityProperties<ModelName> = {
+    __type: modelName,
+    __nodeId: v4(),
+  }
+  const model = Object.assign({}, properties, internalProperties)
+  defineRelationalProperties(model, relations, db)
+
+  return model
 }
 
 function createModelApi<ModelName extends string>(
   modelName: ModelName,
-  props: Record<string, any> /** @todo */,
+  declaration: Record<string, any> /** @todo */,
   db: Database<any>
 ): ModelAPI<any, any> {
   return {
     create(initialValues = {}) {
-      const internalProps: EntityInternalProps<ModelName> = {
-        __type: modelName,
-        __nodeId: v4(),
-      }
-      const relationalProperties = []
-
-      const newModel: EntityInstance<any, any> = Object.assign(
-        {},
-        evolve(props, (value, key) => {
-          const initialValue = initialValues[key]
-
-          if (initialValue) {
-            if (initialValue.__nodeId) {
-              relationalProperties.push({
-                modelName: key,
-                node: initialValue,
-              })
-              return null
-            }
-
-            return initialValue
-          }
-
-          // Resolve `oneOf`/`manyOf` as the factory model value.
-          if (['oneOf'].includes(value.__type)) {
-            /**
-             * @todo What should be returned in this case?
-             * A getter that throws an exception?
-             * This would imply that the relation was created in a model,
-             * but not assigned when created an entity.
-             */
-            return createRelation(modelName, value.modelName, db)
-          }
-
-          return value()
-        }),
-        internalProps
+      const { properties, relations } = evaluateModelDeclaration(
+        modelName,
+        declaration,
+        initialValues
       )
+      const model = createModel(modelName, properties, relations, db)
 
-      if (relationalProperties.length > 0) {
-        // Create an Object getter function for each relational property
-        // to look it up in the current database by the node ID.
-        const definedObjectProperties = relationalProperties.reduce(
-          (acc, { modelName, node }) => {
-            acc[modelName] = {
-              get() {
-                /**
-                 * @todo Depending on `oneOf`/`manyOf` relation type
-                 * allow or forbid an array of values.
-                 */
-                const refResults = executeQuery(
-                  modelName,
-                  {
-                    which: {
-                      __nodeId: {
-                        equals: node.__nodeId,
-                      },
-                    },
-                  },
-                  db
-                )
-
-                return first(refResults)
-              },
-            }
-            return acc
-          },
-          {}
-        )
-
-        Object.defineProperties(newModel, definedObjectProperties)
-      }
-
-      db[modelName].push(newModel)
-      return newModel
+      db[modelName].push(model)
+      return model
     },
     many: () => null,
     count() {
