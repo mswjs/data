@@ -106,6 +106,24 @@ db.user.findMany({
 })
 ```
 
+#### `update`
+
+```js
+db.user.update({
+  // Query for the entity to modify.
+  which: {
+    id: {
+      equals: 'abc-123',
+    },
+  },
+  // Provide partial next data to be
+  // merged with the existing properties.
+  data: {
+    firstName: 'John',
+  },
+})
+```
+
 #### `delete`
 
 Deletes the entity that satisfies the given query.
