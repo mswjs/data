@@ -1,12 +1,9 @@
 import { random } from 'faker'
 import { factory, manyOf } from '../../src/factory'
-import { identity } from '../../src/utils/identity'
 
 test('supports one-to-many relation', () => {
-  const userId = random.uuid()
   const db = factory({
     user: {
-      id: identity(userId),
       posts: manyOf('post'),
     },
     post: {
