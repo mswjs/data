@@ -1,31 +1,8 @@
 import { random, name } from 'faker'
-import { factory, oneOf } from '../src/factory'
-import { identity } from '../src/utils/identity'
+import { factory, oneOf } from '../../src/factory'
+import { identity } from '../../src/utils/identity'
 
-test('supports one-to-one relation', () => {
-  const db = factory({
-    country: {
-      name: random.words,
-    },
-    capital: {
-      name: random.word,
-      country: oneOf('country'),
-    },
-  })
-
-  const usa = db.country.create({
-    name: 'United States of America',
-  })
-
-  const washington = db.capital.create({
-    name: 'Washington',
-    country: usa,
-  })
-
-  expect(washington.country).toHaveProperty('name', 'United States of America')
-})
-
-test('supports querying against a relational property', () => {
+test('supports querying against a many-to-one relation', () => {
   const userId = random.uuid()
   const db = factory({
     user: {
