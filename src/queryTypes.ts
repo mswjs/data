@@ -6,9 +6,7 @@ export interface QuerySelector<EntityType extends Record<string, any>> {
   }
 }
 
-export type GetQueryFor<
-  T extends string | number | any[] | OneOf<any>
-> = T extends string
+export type GetQueryFor<T extends string | number | any[]> = T extends string
   ? StringQuery
   : T extends number
   ? NumberQuery

@@ -1,5 +1,5 @@
 import { v4 } from 'uuid'
-import { debug, log } from 'debug'
+import { debug } from 'debug'
 import { QuerySelector } from './queryTypes'
 import { getComparatorsForValue } from './utils/comparators'
 import { first } from './utils/first'
@@ -7,13 +7,17 @@ import { invariant } from './utils/invariant'
 
 type BaseTypes = string | number | boolean
 export type KeyType = string | number | symbol
+enum RelationKind {
+  OneOf = 'oneOf',
+  ManyOf = 'manyOf',
+}
 
 export type OneOf<T extends KeyType> = {
-  __type: 'oneOf'
+  __type: RelationKind.OneOf
   modelName: T
 }
 type ManyOf<T extends KeyType> = {
-  __type: 'manyOf'
+  __type: RelationKind.ManyOf
   modelName: T
 }
 
@@ -124,16 +128,6 @@ export function factory<
   }, {})
 }
 
-function evolve<P extends Record<KeyType, any>>(
-  props: P,
-  by: (value: any, key: string) => any
-) {
-  return Object.entries(props).reduce((acc, [key, value]) => {
-    acc[key] = by(value, key)
-    return acc
-  }, {})
-}
-
 /**
  * Compile a query expression into a function that accepts an actual entity
  * and returns a query execution result (whether the entity satisfies the query).
@@ -198,12 +192,14 @@ function executeQuery(
   return result
 }
 
-interface RelationalNode extends InternalEntityProperties<any> {
+interface RelationalNode {
+  kind: RelationKind
   modelName: string
+  nodes: Array<InternalEntityProperties<any>>
 }
 
 function defineRelationalProperties(
-  obj: Record<string, any>,
+  entity: Record<string, any>,
   relations: Record<string, RelationalNode>,
   db: Database<any>
 ): void {
@@ -215,25 +211,27 @@ function defineRelationalProperties(
         get() {
           log(`get "${property}"`, relation)
 
-          /**
-           * @todo Depending on `oneOf`/`manyOf` relation type
-           * allow or forbid an array of values.
-           */
-          const refResults = executeQuery(
-            relation.__type,
-            {
-              which: {
-                __nodeId: {
-                  equals: relation.__nodeId,
+          const refResults = relation.nodes.reduce((acc, node) => {
+            return acc.concat(
+              executeQuery(
+                node.__type,
+                {
+                  which: {
+                    __nodeId: {
+                      equals: node.__nodeId,
+                    },
+                  },
                 },
-              },
-            },
-            db
-          )
+                db
+              )
+            )
+          }, [])
 
-          log(`resolved "${property}" to`, refResults)
+          log(`resolved "${relation.kind}" "${property}" to`, refResults)
 
-          return first(refResults)
+          return relation.kind === RelationKind.OneOf
+            ? first(refResults)
+            : refResults
         },
       }
 
@@ -242,46 +240,101 @@ function defineRelationalProperties(
     {}
   )
 
-  Object.defineProperties(obj, properties)
+  Object.defineProperties(entity, properties)
 }
 
 function evaluateModelDeclaration(
   modelName: string,
-  declaration: Record<string, any>,
-  initialValues?: Record<string, any>
-): {
-  properties: Record<string, any>
-  relations: Record<string, RelationalNode>
-} {
-  return Object.entries(declaration).reduce(
-    (acc, [key, valueOrRelationRef]) => {
-      const initialValue = initialValues[key]
+  declaration: Record<string, (() => BaseTypes) | OneOf<any> | ManyOf<any>>,
+  initialValues?: Record<
+    string,
+    BaseTypes | EntityInstance<any, any> | undefined
+  >
+) {
+  const log = debug('evaluateModelDeclaration')
+  log(`create a "${modelName}" entity`, declaration, initialValues)
 
-      if (initialValue) {
-        if (initialValue.__nodeId) {
-          const relation: RelationalNode = initialValue
+  return Object.entries(declaration).reduce<{
+    properties: Record<string, any>
+    relations: Record<string, RelationalNode>
+  }>(
+    (acc, [key, valueGetter]) => {
+      const exactValue = initialValues?.[key]
+      log(`initial value for key "${modelName}.${key}"`, exactValue)
+
+      if (
+        typeof exactValue === 'string' ||
+        typeof exactValue === 'number' ||
+        typeof exactValue === 'boolean'
+      ) {
+        log(
+          `"${modelName}.${key}" has a plain initial value, setting to`,
+          exactValue
+        )
+
+        acc.properties[key] = exactValue
+        return acc
+      }
+
+      if (exactValue) {
+        if (Array.isArray(exactValue)) {
+          /**
+           * @todo How to deal with an Array value if only certain members of that Array
+           * are relational references?
+           */
           acc.relations[key] = {
+            kind: RelationKind.ManyOf,
             modelName: key,
-            __type: relation.__type,
-            __nodeId: relation.__nodeId,
+            nodes: exactValue,
           }
 
           return acc
         }
 
-        /**
-         * @todo Handle `oneOf` invocation as the value of the model
-         * property declaration.
-         */
-        if (['oneOf'].includes(initialValue.__type)) {
+        if ('__nodeId' in exactValue) {
+          const relation = exactValue
+
+          log(
+            `initial value for "${modelName}.${key}" references "${relation.__type}" with id "${relation.__nodeId}"`
+          )
+
+          /**
+           * @todo This must be set ONCE.
+           * If the relation if `ManyOf`, this should equal to an array.
+           */
+          acc.relations[key] = {
+            kind: RelationKind.OneOf,
+            modelName: key,
+            nodes: [
+              {
+                __type: relation.__type,
+                __nodeId: relation.__nodeId,
+              },
+            ],
+          }
+
           return acc
         }
 
-        acc.properties[key] = initialValue
+        // A plain exact initial value is provided (not a relational property).
+        acc[key] = exactValue
         return acc
       }
 
-      acc.properties[key] = valueOrRelationRef()
+      if ('__type' in valueGetter) {
+        throw new Error(
+          `Failed to set "${modelName}.${key}" as its a relational property with no value.`
+        )
+      }
+
+      log(
+        `"${modelName}.${key}" has no initial value, seeding with`,
+        valueGetter
+      )
+
+      // When initial value is not provided, use the value getter function
+      // specified in the model declaration.
+      acc.properties[key] = valueGetter()
       return acc
     },
     {
@@ -358,9 +411,14 @@ function createModelApi<ModelName extends string>(
 
 export function oneOf<T extends string>(modelName: T): OneOf<T> {
   return {
-    __type: 'oneOf',
+    __type: RelationKind.OneOf,
     modelName,
   }
 }
 
-declare function manyOf<T extends string>(name: T): ManyOf<T>
+export function manyOf<T extends string>(modelName: T): ManyOf<T> {
+  return {
+    __type: RelationKind.ManyOf,
+    modelName,
+  }
+}
