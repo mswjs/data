@@ -77,6 +77,44 @@ test('finds many entities by query', () => {
   expect(popularUsers[1]).toHaveProperty('firstName', 'Harry')
 })
 
+test('updates an entity by query', () => {
+  const userId = random.uuid()
+  const db = factory({
+    user: {
+      id: identity(userId),
+      firstName: name.firstName,
+    },
+  })
+  db.user.create({
+    firstName: 'Joe',
+  })
+
+  // Should return the updated entity.
+  const nextUser = db.user.update({
+    which: {
+      id: {
+        equals: userId,
+      },
+    },
+    data: {
+      firstName: 'John',
+    },
+  })
+
+  expect(nextUser).toHaveProperty('firstName', 'John')
+
+  // Should persist the update in the database.
+  const foundUser = db.user.findOne({
+    which: {
+      id: {
+        equals: userId,
+      },
+    },
+  })
+
+  expect(foundUser).toHaveProperty('firstName', 'John')
+})
+
 test('deletes an entity by query', () => {
   const db = factory({
     user: {
