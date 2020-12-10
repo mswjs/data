@@ -1,5 +1,6 @@
 import { v4 } from 'uuid'
 import { debug } from 'debug'
+import { mergeDeepRight } from 'ramda'
 import { QuerySelector } from './queryTypes'
 import { getComparatorsForValue } from './utils/comparators'
 import { first } from './utils/first'
@@ -388,7 +389,23 @@ function createModelApi<ModelName extends string>(
     findMany(query) {
       return executeQuery(modelName, query, db)
     },
-    update: () => null,
+    update(query) {
+      let nextEntity: any
+      const executeQuery = compileQuery(query)
+      const prevRecords = db[modelName]
+
+      for (let i = 0; i < prevRecords.length; i++) {
+        const entity = prevRecords[i]
+
+        if (executeQuery(entity)) {
+          nextEntity = mergeDeepRight(entity, query.data)
+          db[modelName].splice(i, -1, nextEntity)
+          break
+        }
+      }
+
+      return nextEntity
+    },
     delete(query) {
       let deletedEntity: any
       const executeQuery = compileQuery(query)
