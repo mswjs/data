@@ -1,5 +1,5 @@
 {
-  "name": "data-model",
+  "name": "@mswjs/data",
   "version": "0.0.0",
   "main": "index.js",
   "author": "Artem Zakharchenko",
