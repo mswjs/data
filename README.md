@@ -68,6 +68,58 @@ setupWorker(
 
 ## Recipes
 
+### Model methods
+
+#### `create`
+
+Creates an entity of the model.
+
+```js
+db.user.create()
+```
+
+#### `findOne`
+
+Returns the first entity that satisfies the given query.
+
+```js
+db.user.findOne({
+  which: {
+    id: {
+      equals: 'abc-123',
+    },
+  },
+})
+```
+
+#### `findMany`
+
+Returns all the entities that satisfy the given query.
+
+```js
+db.user.findMany({
+  which: {
+    followersCount: {
+      gte: 1000,
+    },
+  },
+})
+```
+
+#### `delete`
+
+Deletes the entity that satisfies the given query.
+
+```js
+db.user.delete({
+  which: {
+    followersCount: {
+      equals: 0,
+    },
+  },
+})
+```
+
 ### Querying data
 
 This library supports querying of the seeded data similar to how one would query an SQL database. The data is queried based on its properties. A query you construct depends on the value type you are querying.
@@ -112,6 +164,34 @@ const popularPosts = db.post.findMany({
       equals: false,
     },
   },
+})
+```
+
+### Models relation
+
+#### One-to-one
+
+```js
+import { factory, oneOf } from '@mswjs/data'
+
+const db = factory({
+  user: {
+    id: String
+  },
+  post: {
+    it: String
+    title: String
+    // The `post` model has the `author` property
+    // that points to the `user` entity.
+    author: oneOf('user')
+  }
+})
+
+const user = db.user.create()
+db.post.create({
+  title: 'My journey',
+  // Set the existing `user` as the author of this post.
+  author: user,
 })
 ```
 
