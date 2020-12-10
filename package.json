@@ -1,12 +1,17 @@
 {
   "name": "data-model",
-  "version": "1.0.0",
+  "version": "0.0.0",
   "main": "index.js",
   "author": "Artem Zakharchenko",
   "license": "MIT",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "build": "tsc"
   },
+  "files": [
+    "lib",
+    "README.md"
+  ],
   "devDependencies": {
     "@types/faker": "^5.1.2",
     "@types/jest": "^26.0.14",
