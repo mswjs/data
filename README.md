@@ -65,3 +65,19 @@ setupWorker(
   })
 )
 ```
+
+## Recipes
+
+### Usage with `faker`
+
+```js
+import { random, name } from 'faker'
+import { factory } from '@mswjs/data'
+
+factory({
+  user: {
+    id: random.uuid,
+    firstName: name.firstName,
+  },
+})
+```
