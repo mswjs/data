@@ -1,13 +1,14 @@
 import { v4 } from 'uuid'
+import { debug, log } from 'debug'
 import { QuerySelector } from './queryTypes'
 import { getComparatorsForValue } from './utils/comparators'
 import { first } from './utils/first'
 import { invariant } from './utils/invariant'
 
 type BaseTypes = string | number | boolean
-type KeyType = string | number | symbol
+export type KeyType = string | number | symbol
 
-type OneOf<T extends KeyType> = {
+export type OneOf<T extends KeyType> = {
   __type: 'oneOf'
   modelName: T
 }
@@ -30,8 +31,8 @@ type Limit<T extends Record<string, any>> = {
   }
 }
 
-type FactoryAPI<T extends Record<string, any>> = {
-  [K in keyof T]: ModelAPI<T, K>
+type FactoryAPI<Dictionary extends Record<string, any>> = {
+  [K in keyof Dictionary]: ModelAPI<Dictionary, K>
 }
 
 interface InternalEntityProperties<ModelName extends KeyType> {
@@ -44,15 +45,20 @@ type EntityInstance<
   K extends keyof T
 > = InternalEntityProperties<K> & Value<T[K], T>
 
-interface ModelAPI<T extends Record<string, any>, K extends keyof T> {
+interface ModelAPI<
+  Dictionary extends Record<string, any>,
+  K extends keyof Dictionary
+> {
   /**
    * Create a single entity for the model.
    */
-  create(initialValues?: Partial<Value<T[K], T>>): EntityInstance<T, K>
+  create(
+    initialValues?: Partial<Value<Dictionary[K], Dictionary>>
+  ): EntityInstance<Dictionary, K>
   /**
    * Create multiple entities for the model.
    */
-  many(count?: number): Value<T[K], T>[]
+  many(count?: number): Value<Dictionary[K], Dictionary>[]
   /**
    * Return the total number of entities.
    */
@@ -60,24 +66,32 @@ interface ModelAPI<T extends Record<string, any>, K extends keyof T> {
   /**
    * Find a single entity.
    */
-  findOne(query: QuerySelector<Value<T[K], T>>): Value<T[K], T>
+  findOne(
+    query: QuerySelector<Value<Dictionary[K], Dictionary>>
+  ): Value<Dictionary[K], Dictionary>
   /**
    * Find multiple entities.
    */
-  findMany(query: QuerySelector<Value<T[K], T>>): Value<T[K], T>[]
+  findMany(
+    query: QuerySelector<Value<Dictionary[K], Dictionary>>
+  ): Value<Dictionary[K], Dictionary>[]
   /**
    * Update a single entity with the next data.
    */
   update(
-    query: QuerySelector<Value<T[K], T>> & { data: Partial<Value<T[K], T>> }
-  ): Value<T[K], T>
+    query: QuerySelector<Value<Dictionary[K], Dictionary>> & {
+      data: Partial<Value<Dictionary[K], Dictionary>>
+    }
+  ): Value<Dictionary[K], Dictionary>
   /**
    * Delete a single entity.
    */
-  delete(query: QuerySelector<Value<T[K], T>>): Value<T[K], T>
+  delete(
+    query: QuerySelector<Value<Dictionary[K], Dictionary>>
+  ): Value<Dictionary[K], Dictionary>
 }
 
-type Value<
+export type Value<
   T extends Record<string, any>,
   Parent extends Record<string, any>
 > = {
@@ -125,15 +139,27 @@ function evolve<P extends Record<KeyType, any>>(
  * and returns a query execution result (whether the entity satisfies the query).
  */
 function compileQuery(query: QuerySelector<any>) {
+  const log = debug('compileQuery')
+  log(JSON.stringify(query))
+
   return (entity: any) => {
     return Object.entries(query.which)
       .map<boolean>(([propName, queryChunk]) => {
         const actualValue = entity[propName]
         const comparatorSet = getComparatorsForValue(actualValue)
+
+        log({ queryChunk, actualValue })
+
         return Object.entries(queryChunk).reduce<boolean>(
           (acc, [comparatorName, expectedValue]) => {
             if (!acc) {
               return acc
+            }
+
+            // When the actual value is a resolved relational property reference,
+            // execute the current query chunk on it.
+            if (actualValue.__type) {
+              return compileQuery({ which: queryChunk })(actualValue)
             }
 
             const comparatorFn = comparatorSet[comparatorName]
@@ -157,6 +183,8 @@ function executeQuery(
   query: QuerySelector<any>,
   db: Database<any>
 ) {
+  const log = debug('executeQuery')
+  log(`${JSON.stringify(query)} on "${modelName}"`)
   const records = db[modelName]
 
   invariant(
@@ -164,7 +192,10 @@ function executeQuery(
     `Failed to execute query on the "${modelName}" model: unknown database model.`
   )
 
-  return records.filter(compileQuery(query))
+  const result = records.filter(compileQuery(query))
+  log(`resolved query "${JSON.stringify(query)}" on "${modelName}" to`, result)
+
+  return result
 }
 
 interface RelationalNode extends InternalEntityProperties<any> {
@@ -176,16 +207,20 @@ function defineRelationalProperties(
   relations: Record<string, RelationalNode>,
   db: Database<any>
 ): void {
+  const log = debug('relationalProperty')
+
   const properties = Object.entries(relations).reduce(
     (acc, [property, relation]) => {
       acc[property] = {
         get() {
+          log(`get "${property}"`, relation)
+
           /**
            * @todo Depending on `oneOf`/`manyOf` relation type
            * allow or forbid an array of values.
            */
           const refResults = executeQuery(
-            relation.modelName,
+            relation.__type,
             {
               which: {
                 __nodeId: {
@@ -195,6 +230,8 @@ function defineRelationalProperties(
             },
             db
           )
+
+          log(`resolved "${property}" to`, refResults)
 
           return first(refResults)
         },
