@@ -68,6 +68,53 @@ setupWorker(
 
 ## Recipes
 
+### Querying data
+
+This library supports querying of the seeded data similar to how one would query an SQL database. The data is queried based on its properties. A query you construct depends on the value type you are querying.
+
+#### String queries
+
+- `equals`
+- `notEquals`
+- `contains`
+- `notContains`
+
+#### Number queries
+
+- `equals`
+- `notEquals`
+- `gt`
+- `gte`
+- `lt`
+- `lte`
+- `between`
+- `notBetween`
+
+#### Query example
+
+```js
+const db = factory({
+  post: {
+    id: String,
+    likes: Number,
+    isDraft: Boolean,
+  },
+})
+
+// Returns the list of `post` entities
+// that satisfy the given query.
+const popularPosts = db.post.findMany({
+  which: {
+    likes: {
+      gte: 1000,
+    },
+    isDraft: {
+      equals: false,
+    },
+  },
+})
+```
+
 ### Usage with `faker`
 
 ```js
