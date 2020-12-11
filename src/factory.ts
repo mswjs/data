@@ -13,6 +13,7 @@ import { invariant } from './utils/invariant'
 import { updateEntity } from './model/updateEntity'
 import { OperationError, OperationErrorType } from './errors/OperationError'
 import { Database } from './db/Database'
+import { generateHandlers } from './model/generateHandlers'
 
 /**
  * Create a database with the given models.
@@ -225,6 +226,9 @@ function createModelApi<
       })
 
       return records
+    },
+    toHandlers(baseUri) {
+      return generateHandlers(modelName, modelPrimaryKey, api, baseUri)
     },
   }
 
