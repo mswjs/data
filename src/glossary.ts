@@ -1,4 +1,5 @@
 import { BulkQueryOptions, QuerySelector } from './query/queryTypes'
+import { RequestHandler } from 'msw'
 
 export type PrimaryKeyType = string
 export type BaseTypes = string | number | boolean | Date
@@ -154,6 +155,10 @@ export interface ModelAPI<
   deleteMany(
     query: QuerySelector<Value<Dictionary[ModelName], Dictionary>>,
   ): EntityInstance<Dictionary, ModelName>[]
+  /**
+   * Generate handlers from entity
+   */
+  toHandlers(baseUri?: string): RequestHandler<any, any, any, any, any>[]
 }
 
 export type UpdateManyValue<
