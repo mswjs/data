@@ -143,9 +143,47 @@ test('deletes an entity by query', () => {
   const deletedUserSearchResult = db.user.findOne({
     which: {
       id: {
-        equals: deletedUser.id,
+        equals: 'abc-123',
       },
     },
   })
   expect(deletedUserSearchResult).toBeNull()
+})
+
+test('deletes multiple entities by query', () => {
+  const db = factory({
+    user: {
+      id: random.uuid,
+      firstName: name.firstName,
+      postsCount: random.number,
+    },
+  })
+  db.user.create({
+    firstName:'John'
+  })
+  db.user.create({
+    firstName:'John',
+  })
+  db.user.create()
+
+  const deletedUsers = db.user.deleteMany({
+    which: {
+      firstName: {
+        equals: 'John',
+      },
+    },
+  })
+
+  const usersCount = db.user.count()
+  expect(usersCount).toBe(1)
+
+  expect(deletedUsers.length).toBe(2)
+  const deletedUsersSearchResult = db.user.findOne({
+    which: {
+      firstName: {
+        equals: 'John',
+      },
+    },
+  })
+  expect(deletedUsersSearchResult).toBeNull()
 })

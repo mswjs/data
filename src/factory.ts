@@ -88,7 +88,7 @@ function createModelApi<ModelName extends string>(
       for (let index = 0; index < prevRecords.length; index++) {
         const entity = prevRecords[index]
 
-        if (!executeQuery(entity)) {
+        if (executeQuery(entity)) {
           deletedEntity = entity
           db[modelName].splice(index, 1)
           break
@@ -97,6 +97,23 @@ function createModelApi<ModelName extends string>(
 
       return deletedEntity
     },
+    deleteMany(query) {
+      let deletedEntities: any[] = []
+      const executeQuery = compileQuery(query)
+      const prevRecords = db[modelName]
+      const newRecords = prevRecords.reduce((acc, entity) => {
+        if(executeQuery(entity)){
+          deletedEntities.push(entity)
+        } else{
+          acc.push(entity)
+        }
+        return acc
+      }, [])
+     
+      db[modelName] = newRecords
+
+      return deletedEntities
+    }
   }
 }
 

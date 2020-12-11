@@ -91,6 +91,12 @@ export interface ModelAPI<
   delete(
     query: QuerySelector<Value<Dictionary[K], Dictionary>>
   ): Value<Dictionary[K], Dictionary>
+  /**
+   * Delete multiple entities.
+   */
+  deleteMany(
+    query: QuerySelector<Value<Dictionary[K], Dictionary>>
+  ): Value<Dictionary[K], Dictionary>[]
 }
 
 export type Value<
