@@ -1,6 +1,6 @@
 import { QuerySelector } from './query/queryTypes'
 
-export type BaseTypes = string | number | boolean
+export type BaseTypes = string | number | boolean | Date
 export type KeyType = string | number | symbol
 
 export enum RelationKind {

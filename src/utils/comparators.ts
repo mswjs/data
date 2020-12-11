@@ -1,6 +1,9 @@
-import { NumberQuery, StringQuery } from '../query/queryTypes'
+import { compareAsc as compareDates } from 'date-fns'
+import { DateQuery, NumberQuery, StringQuery } from '../query/queryTypes'
 
-type QueryToComparator<QueryType extends StringQuery | NumberQuery> = {
+type QueryToComparator<
+  QueryType extends StringQuery | NumberQuery | DateQuery
+> = {
   [K in keyof QueryType]: (
     expected: QueryType[K],
     actual: QueryType[K],
@@ -43,12 +46,45 @@ export const numberComparators: QueryToComparator<NumberQuery> = {
   },
 }
 
+export const dateComparators: QueryToComparator<DateQuery> = {
+  equals(expected, actual) {
+    return compareDates(expected, actual) === 0
+  },
+  notEquals(expected, actual) {
+    return compareDates(expected, actual) !== 0
+  },
+  gt(expected, actual) {
+    return compareDates(actual, expected) === 1
+  },
+  gte(expected, actual) {
+    return [0, 1].includes(compareDates(actual, expected))
+  },
+  lt(expected, actual) {
+    return compareDates(actual, expected) === -1
+  },
+  lte(expected, actual) {
+    return [-1, 0].includes(compareDates(actual, expected))
+  },
+}
+
 export function getComparatorsForValue(
   value: string | number,
-): QueryToComparator<StringQuery | NumberQuery> {
-  if (typeof value === 'string') {
-    return stringComparators
-  }
+): QueryToComparator<StringQuery | NumberQuery | DateQuery> {
+  switch (value.constructor.name) {
+    case 'String':
+      return stringComparators
 
-  return numberComparators
+    case 'Number':
+      return numberComparators
+
+    case 'Date':
+      return dateComparators
+
+    default:
+      throw new Error(
+        `Failed to find a comparator for the value "${JSON.stringify(
+          value,
+        )}" of type "${value.constructor.name}".`,
+      )
+  }
 }
