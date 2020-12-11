@@ -1,4 +1,8 @@
-# Data
+<p align="center">
+  <img src="logo.svg" alt="Data library logo" width="124" />
+</p>
+
+<h1 align="center">Data</h1>
 
 Data modeling and relation library for testing JavaScript applications.
 
