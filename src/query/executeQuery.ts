@@ -13,14 +13,14 @@ const log = debug('executeQuery')
 export function executeQuery(
   modelName: string,
   query: QuerySelector<any>,
-  db: Database<any>
+  db: Database<any>,
 ) {
   log(`${JSON.stringify(query)} on "${modelName}"`)
   const records = db[modelName]
 
   invariant(
     records.length === 0,
-    `Failed to execute query on the "${modelName}" model: unknown database model.`
+    `Failed to execute query on the "${modelName}" model: unknown database model.`,
   )
 
   const result = records.filter(compileQuery(query))

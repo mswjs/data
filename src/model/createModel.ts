@@ -6,7 +6,7 @@ export function createModel<ModelName extends string>(
   modelName: ModelName,
   properties: Record<string, any>,
   relations: Record<string, any>,
-  db: Database<any>
+  db: Database<any>,
 ) {
   const internalProperties: InternalEntityProperties<ModelName> = {
     __type: modelName,

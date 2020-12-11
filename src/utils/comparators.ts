@@ -3,7 +3,7 @@ import { NumberQuery, StringQuery } from '../queryTypes'
 type QueryToComparator<QueryType extends StringQuery | NumberQuery> = {
   [K in keyof QueryType]: (
     expected: QueryType[K],
-    actual: QueryType[K]
+    actual: QueryType[K],
   ) => boolean
 }
 
@@ -44,7 +44,7 @@ export const numberComparators: QueryToComparator<NumberQuery> = {
 }
 
 export function getComparatorsForValue(
-  value: string | number
+  value: string | number,
 ): QueryToComparator<StringQuery | NumberQuery> {
   if (typeof value === 'string') {
     return stringComparators

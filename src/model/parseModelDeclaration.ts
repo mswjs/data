@@ -16,7 +16,7 @@ export function parseModelDeclaration(
   initialValues?: Record<
     string,
     BaseTypes | EntityInstance<any, any> | undefined
-  >
+  >,
 ) {
   log(`create a "${modelName}" entity`, declaration, initialValues)
 
@@ -35,7 +35,7 @@ export function parseModelDeclaration(
       ) {
         log(
           `"${modelName}.${key}" has a plain initial value, setting to`,
-          exactValue
+          exactValue,
         )
 
         acc.properties[key] = exactValue
@@ -61,7 +61,7 @@ export function parseModelDeclaration(
           const relation = exactValue
 
           log(
-            `initial value for "${modelName}.${key}" references "${relation.__type}" with id "${relation.__nodeId}"`
+            `initial value for "${modelName}.${key}" references "${relation.__type}" with id "${relation.__nodeId}"`,
           )
 
           acc.relations[key] = {
@@ -85,13 +85,13 @@ export function parseModelDeclaration(
 
       if ('__type' in valueGetter) {
         throw new Error(
-          `Failed to set "${modelName}.${key}" as its a relational property with no value.`
+          `Failed to set "${modelName}.${key}" as its a relational property with no value.`,
         )
       }
 
       log(
         `"${modelName}.${key}" has no initial value, seeding with`,
-        valueGetter
+        valueGetter,
       )
 
       // When initial value is not provided, use the value getter function
@@ -102,6 +102,6 @@ export function parseModelDeclaration(
     {
       properties: {},
       relations: {},
-    }
+    },
   )
 }
