@@ -1,4 +1,4 @@
-import { QuerySelector } from './queryTypes'
+import { QuerySelector } from './query/queryTypes'
 
 export type BaseTypes = string | number | boolean
 export type KeyType = string | number | symbol
@@ -59,7 +59,7 @@ export interface ModelAPI<
    * Create a single entity for the model.
    */
   create(
-    initialValues?: Partial<Value<Dictionary[K], Dictionary>>
+    initialValues?: Partial<Value<Dictionary[K], Dictionary>>,
   ): EntityInstance<Dictionary, K>
   /**
    * Return the total number of entities.
@@ -69,13 +69,13 @@ export interface ModelAPI<
    * Find a single entity.
    */
   findOne(
-    query: QuerySelector<Value<Dictionary[K], Dictionary>>
+    query: QuerySelector<Value<Dictionary[K], Dictionary>>,
   ): Value<Dictionary[K], Dictionary>
   /**
    * Find multiple entities.
    */
   findMany(
-    query: QuerySelector<Value<Dictionary[K], Dictionary>>
+    query: QuerySelector<Value<Dictionary[K], Dictionary>>,
   ): Value<Dictionary[K], Dictionary>[]
   /**
    * Update a single entity with the next data.
@@ -83,19 +83,19 @@ export interface ModelAPI<
   update(
     query: QuerySelector<Value<Dictionary[K], Dictionary>> & {
       data: Partial<Value<Dictionary[K], Dictionary>>
-    }
+    },
   ): Value<Dictionary[K], Dictionary>
   /**
    * Delete a single entity.
    */
   delete(
-    query: QuerySelector<Value<Dictionary[K], Dictionary>>
+    query: QuerySelector<Value<Dictionary[K], Dictionary>>,
   ): Value<Dictionary[K], Dictionary>
   /**
    * Delete multiple entities.
    */
   deleteMany(
-    query: QuerySelector<Value<Dictionary[K], Dictionary>>
+    query: QuerySelector<Value<Dictionary[K], Dictionary>>,
   ): Value<Dictionary[K], Dictionary>[]
 }
 
