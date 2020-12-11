@@ -98,21 +98,20 @@ function createModelApi<ModelName extends string>(
       return deletedEntity
     },
     deleteMany(query) {
-      let deletedEntities: any[] = []
       const executeQuery = compileQuery(query)
       const prevRecords = db[modelName]
-      const newRecords = prevRecords.reduce((acc, entity) => {
+      const {deletedRecords, newRecords} = prevRecords.reduce((acc, entity) => {
         if(executeQuery(entity)){
-          deletedEntities.push(entity)
+          acc.deletedRecords.push(entity)
         } else{
-          acc.push(entity)
+          acc.newRecords.push(entity)
         }
         return acc
-      }, [])
+      }, {deletedRecords:[], newRecords:[]})
      
       db[modelName] = newRecords
 
-      return deletedEntities
+      return deletedRecords
     }
   }
 }
