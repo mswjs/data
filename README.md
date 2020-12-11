@@ -160,6 +160,8 @@ This library supports querying of the seeded data similar to how one would query
 - `notEquals`
 - `contains`
 - `notContains`
+- `in`
+- `notIn`
 
 #### Number queries
 
