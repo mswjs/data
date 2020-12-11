@@ -52,7 +52,6 @@ function createModelApi<ModelName extends string>(
       db[modelName].push(model)
       return model
     },
-    many: () => null,
     count() {
       return db[modelName].length
     },
