@@ -16,13 +16,13 @@ export const stringComparators: QueryToComparator<StringQuery> = {
     return expected === actual
   },
   notEquals(expected, actual) {
-    return expected !== actual
+    return !this.equals(expected, actual)
   },
   contains(expected, actual) {
     return actual.includes(expected)
   },
   notContains(expected, actual) {
-    return !actual.includes(expected)
+    return !this.contains(expected, actual)
   },
 }
 
