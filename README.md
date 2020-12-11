@@ -75,7 +75,7 @@ setupWorker(
 Creates an entity of the model.
 
 ```js
-db.user.create()
+const user = db.user.create()
 ```
 
 #### `findOne`
@@ -83,7 +83,7 @@ db.user.create()
 Returns the first entity that satisfies the given query.
 
 ```js
-db.user.findOne({
+const user = db.user.findOne({
   which: {
     id: {
       equals: 'abc-123',
@@ -97,7 +97,7 @@ db.user.findOne({
 Returns all the entities that satisfy the given query.
 
 ```js
-db.user.findMany({
+const users = db.user.findMany({
   which: {
     followersCount: {
       gte: 1000,
@@ -109,7 +109,7 @@ db.user.findMany({
 #### `update`
 
 ```js
-db.user.update({
+const updatedUser = db.user.update({
   // Query for the entity to modify.
   which: {
     id: {
@@ -129,7 +129,7 @@ db.user.update({
 Deletes the entity that satisfies the given query.
 
 ```js
-db.user.delete({
+const deletedUser = db.user.delete({
   which: {
     followersCount: {
       equals: 0,
@@ -141,7 +141,7 @@ db.user.delete({
 #### `deleteMany`
 
 ```js
-db.user.deleteMany({
+const deletedUsers = db.user.deleteMany({
   which: {
     followersCount: {
       lt: 10,
