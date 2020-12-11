@@ -1,4 +1,4 @@
-import { Value } from './glossary'
+import { Value } from '../glossary'
 
 export interface QuerySelector<EntityType extends Record<string, any>> {
   which: {

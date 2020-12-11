@@ -1,7 +1,7 @@
 import { debug } from 'debug'
 import { Database } from '../glossary'
 import { compileQuery } from './compileQuery'
-import { QuerySelector } from '../queryTypes'
+import { QuerySelector } from './queryTypes'
 import { invariant } from '../utils/invariant'
 
 const log = debug('executeQuery')

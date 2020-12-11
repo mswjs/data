@@ -1,5 +1,5 @@
 import { debug } from 'debug'
-import { QuerySelector } from '../queryTypes'
+import { QuerySelector } from './queryTypes'
 import { getComparatorsForValue } from '../utils/comparators'
 
 const log = debug('compileQuery')

@@ -1,4 +1,4 @@
-import { NumberQuery, StringQuery } from '../queryTypes'
+import { NumberQuery, StringQuery } from '../query/queryTypes'
 
 type QueryToComparator<QueryType extends StringQuery | NumberQuery> = {
   [K in keyof QueryType]: (
