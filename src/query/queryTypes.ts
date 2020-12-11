@@ -27,6 +27,8 @@ export interface StringQuery {
   notEquals: string
   contains: string
   notContains: string
+  in: string[]
+  notIn: string[]
 }
 
 export interface NumberQuery {

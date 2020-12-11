@@ -21,3 +21,18 @@ test('notContains', () => {
   expect(stringComparators.notContains('nope', 'foo')).toBe(true)
   expect(stringComparators.notContains('foo', 'footer')).toBe(false)
 })
+
+test('in', () => {
+  expect(stringComparators.in(['a', 'foo'], 'a')).toBe(true)
+  expect(stringComparators.in(['a', 'foo'], 'foo')).toBe(true)
+  expect(stringComparators.in(['a', 'foo'], 'antler')).toBe(false)
+  expect(stringComparators.in(['a', 'foo'], 'footer')).toBe(false)
+})
+
+test('notIn', () => {
+  expect(stringComparators.notIn(['a', 'foo'], 'bar')).toBe(true)
+  expect(stringComparators.notIn(['a', 'foo'], 'footer')).toBe(true)
+  expect(stringComparators.notIn(['a', 'foo'], 'antler')).toBe(true)
+  expect(stringComparators.notIn(['a', 'foo'], 'a')).toBe(false)
+  expect(stringComparators.notIn(['a', 'foo'], 'foo')).toBe(false)
+})

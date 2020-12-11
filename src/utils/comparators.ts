@@ -24,6 +24,12 @@ export const stringComparators: QueryToComparator<StringQuery> = {
   notContains(expected, actual) {
     return !this.contains(expected, actual)
   },
+  in(expected, actual) {
+    return expected.includes(actual)
+  },
+  notIn(expected, actual) {
+    return !this.in(expected, actual)
+  },
 }
 
 export const numberComparators: QueryToComparator<NumberQuery> = {
