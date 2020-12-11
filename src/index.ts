@@ -27,7 +27,7 @@ export function factory<
       acc[modelName] = []
       return acc
     },
-    {}
+    {},
   )
 
   return Object.entries(dict).reduce<any>((acc, [modelName, props]) => {
@@ -39,14 +39,14 @@ export function factory<
 function createModelApi<ModelName extends string>(
   modelName: ModelName,
   declaration: Record<string, (() => BaseTypes) | OneOf<any> | ManyOf<any>>,
-  db: Database<any>
+  db: Database<any>,
 ): ModelAPI<any, any> {
   return {
     create(initialValues = {}) {
       const { properties, relations } = parseModelDeclaration(
         modelName,
         declaration,
-        initialValues
+        initialValues,
       )
       const model = createModel(modelName, properties, relations, db)
 
@@ -62,6 +62,9 @@ function createModelApi<ModelName extends string>(
     },
     findMany(query) {
       return executeQuery(modelName, query, db)
+    },
+    getAll() {
+      return Object.values(db[modelName])
     },
     update(query) {
       let nextEntity: any
@@ -100,19 +103,22 @@ function createModelApi<ModelName extends string>(
     deleteMany(query) {
       const executeQuery = compileQuery(query)
       const prevRecords = db[modelName]
-      const {deletedRecords, newRecords} = prevRecords.reduce((acc, entity) => {
-        if(executeQuery(entity)){
-          acc.deletedRecords.push(entity)
-        } else{
-          acc.newRecords.push(entity)
-        }
-        return acc
-      }, {deletedRecords:[], newRecords:[]})
-     
+      const { deletedRecords, newRecords } = prevRecords.reduce(
+        (acc, entity) => {
+          if (executeQuery(entity)) {
+            acc.deletedRecords.push(entity)
+          } else {
+            acc.newRecords.push(entity)
+          }
+          return acc
+        },
+        { deletedRecords: [], newRecords: [] },
+      )
+
       db[modelName] = newRecords
 
       return deletedRecords
-    }
+    },
   }
 }
 

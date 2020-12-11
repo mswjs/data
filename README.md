@@ -106,6 +106,14 @@ const users = db.user.findMany({
 })
 ```
 
+#### `getAll`
+
+Returns all the entities of the given model.
+
+```js
+const allUsers = db.user.getAll()
+```
+
 #### `update`
 
 ```js

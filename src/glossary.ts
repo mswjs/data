@@ -78,6 +78,10 @@ export interface ModelAPI<
     query: QuerySelector<Value<Dictionary[K], Dictionary>>,
   ): Value<Dictionary[K], Dictionary>[]
   /**
+   * Return all entities of the current model.
+   */
+  getAll(): Value<Dictionary[K], Dictionary>[]
+  /**
    * Update a single entity with the next data.
    */
   update(
