@@ -62,7 +62,7 @@ setupWorker(
     }
 
     return res(ctx.json(user))
-  })
+  }),
 )
 ```
 
@@ -133,6 +133,18 @@ db.user.delete({
   which: {
     followersCount: {
       equals: 0,
+    },
+  },
+})
+```
+
+#### `deleteMany`
+
+```js
+db.user.delete({
+  which: {
+    followersCount: {
+      lt: 10,
     },
   },
 })
