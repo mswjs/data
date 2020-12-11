@@ -141,7 +141,7 @@ db.user.delete({
 #### `deleteMany`
 
 ```js
-db.user.delete({
+db.user.deleteMany({
   which: {
     followersCount: {
       lt: 10,
