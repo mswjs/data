@@ -1,5 +1,5 @@
 import { random, name } from 'faker'
-import { factory } from '../src/factory'
+import { factory } from '../src'
 import { identity } from '../src/utils/identity'
 
 test('creates a single entity', () => {
@@ -159,10 +159,10 @@ test('deletes multiple entities by query', () => {
     },
   })
   db.user.create({
-    firstName:'John'
+    firstName: 'John',
   })
   db.user.create({
-    firstName:'John',
+    firstName: 'John',
   })
   db.user.create()
 

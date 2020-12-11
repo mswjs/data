@@ -1,5 +1,5 @@
 import { random } from 'faker'
-import { factory, manyOf } from '../../src/factory'
+import { factory, manyOf } from '../../src'
 
 test('supports one-to-many relation', () => {
   const db = factory({

@@ -1,4 +1,4 @@
-import { factory } from '../../src/factory'
+import { factory } from '../../src'
 
 test('queries entities that equal a date', () => {
   const db = factory({

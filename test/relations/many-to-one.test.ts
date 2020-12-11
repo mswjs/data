@@ -1,5 +1,5 @@
 import { random, name } from 'faker'
-import { factory, oneOf } from '../../src/factory'
+import { factory, oneOf } from '../../src'
 import { identity } from '../../src/utils/identity'
 
 test('supports querying against a many-to-one relation', () => {
