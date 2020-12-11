@@ -1,12 +1,13 @@
 import { compareAsc as compareDates } from 'date-fns'
 import { DateQuery, NumberQuery, StringQuery } from '../query/queryTypes'
+import { numberInRange } from './numberInRange'
 
 type QueryToComparator<
   QueryType extends StringQuery | NumberQuery | DateQuery
 > = {
   [K in keyof QueryType]: (
     expected: QueryType[K],
-    actual: QueryType[K],
+    actual: QueryType[K] extends Array<infer T> ? T : QueryType[K],
   ) => boolean
 }
 
@@ -30,7 +31,13 @@ export const numberComparators: QueryToComparator<NumberQuery> = {
     return actual === expected
   },
   notEquals(expected, actual) {
-    return actual !== expected
+    return !this.equals(expected, actual)
+  },
+  between(expected, actual) {
+    return numberInRange(expected[0], expected[1], actual)
+  },
+  notBetween(expected, actual) {
+    return !this.between(expected, actual)
   },
   gt(expected, actual) {
     return actual > expected

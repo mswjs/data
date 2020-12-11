@@ -12,6 +12,20 @@ test('notEquals', () => {
   expect(numberComparators.notEquals(1, 1)).toBe(false)
 })
 
+test('between', () => {
+  expect(numberComparators.between([5, 10], 7)).toBe(true)
+  expect(numberComparators.between([5, 10], 5)).toBe(true)
+  expect(numberComparators.between([5, 10], 7)).toBe(true)
+  expect(numberComparators.between([5, 10], 24)).toBe(false)
+})
+
+test('notBetween', () => {
+  expect(numberComparators.notBetween([5, 10], 4)).toBe(true)
+  expect(numberComparators.notBetween([5, 10], 11)).toBe(true)
+  expect(numberComparators.notBetween([5, 10], 5)).toBe(false)
+  expect(numberComparators.notBetween([5, 10], 10)).toBe(false)
+})
+
 test('gt', () => {
   expect(numberComparators.gt(2, 5)).toBe(true)
   expect(numberComparators.gt(9, 20)).toBe(true)

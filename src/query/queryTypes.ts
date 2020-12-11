@@ -32,6 +32,8 @@ export interface StringQuery {
 export interface NumberQuery {
   equals: number
   notEquals: number
+  between: [number, number]
+  notBetween: [number, number]
   gt: number
   gte: number
   lt: number
