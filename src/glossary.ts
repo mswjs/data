@@ -62,10 +62,6 @@ export interface ModelAPI<
     initialValues?: Partial<Value<Dictionary[K], Dictionary>>
   ): EntityInstance<Dictionary, K>
   /**
-   * Create multiple entities for the model.
-   */
-  many(count?: number): Value<Dictionary[K], Dictionary>[]
-  /**
    * Return the total number of entities.
    */
   count(): number
