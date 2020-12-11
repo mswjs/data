@@ -8,6 +8,7 @@ import {
   OneOf,
   ManyOf,
   ModelAPI,
+  BaseTypes,
 } from './glossary'
 import { first } from './utils/first'
 import { executeQuery } from './query/executeQuery'
@@ -37,7 +38,7 @@ export function factory<
 
 function createModelApi<ModelName extends string>(
   modelName: ModelName,
-  declaration: Record<string, any> /** @todo */,
+  declaration: Record<string, (() => BaseTypes) | OneOf<any> | ManyOf<any>>,
   db: Database<any>
 ): ModelAPI<any, any> {
   return {
@@ -67,12 +68,12 @@ function createModelApi<ModelName extends string>(
       const executeQuery = compileQuery(query)
       const prevRecords = db[modelName]
 
-      for (let i = 0; i < prevRecords.length; i++) {
-        const entity = prevRecords[i]
+      for (let index = 0; index < prevRecords.length; index++) {
+        const entity = prevRecords[index]
 
         if (executeQuery(entity)) {
           nextEntity = mergeDeepRight(entity, query.data)
-          db[modelName].splice(i, -1, nextEntity)
+          db[modelName].splice(index, -1, nextEntity)
           break
         }
       }
@@ -84,12 +85,12 @@ function createModelApi<ModelName extends string>(
       const executeQuery = compileQuery(query)
       const prevRecords = db[modelName]
 
-      for (let i = 0; i < prevRecords.length; i++) {
-        const entity = prevRecords[i]
+      for (let index = 0; index < prevRecords.length; index++) {
+        const entity = prevRecords[index]
 
         if (!executeQuery(entity)) {
           deletedEntity = entity
-          db[modelName].splice(i, 1)
+          db[modelName].splice(index, 1)
           break
         }
       }

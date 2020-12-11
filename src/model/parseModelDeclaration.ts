@@ -45,8 +45,8 @@ export function parseModelDeclaration(
       if (exactValue) {
         if (Array.isArray(exactValue)) {
           /**
-           * @todo How to deal with an Array value if only certain members of that Array
-           * are relational references?
+           * @fixme Differentiate between array of references,
+           * array of exact values, and a mixed array of two.
            */
           acc.relations[key] = {
             kind: RelationKind.ManyOf,
@@ -64,10 +64,6 @@ export function parseModelDeclaration(
             `initial value for "${modelName}.${key}" references "${relation.__type}" with id "${relation.__nodeId}"`
           )
 
-          /**
-           * @todo This must be set ONCE.
-           * If the relation if `ManyOf`, this should equal to an array.
-           */
           acc.relations[key] = {
             kind: RelationKind.OneOf,
             modelName: key,
