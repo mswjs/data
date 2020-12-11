@@ -31,7 +31,8 @@ export function parseModelDeclaration(
       if (
         typeof exactValue === 'string' ||
         typeof exactValue === 'number' ||
-        typeof exactValue === 'boolean'
+        typeof exactValue === 'boolean' ||
+        exactValue?.constructor.name === 'Date'
       ) {
         log(
           `"${modelName}.${key}" has a plain initial value, setting to`,

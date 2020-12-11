@@ -10,6 +10,8 @@ export type GetQueryFor<T extends string | number | any[]> = T extends string
   ? StringQuery
   : T extends number
   ? NumberQuery
+  : T extends Date
+  ? DateQuery
   : T extends Array<infer U>
   ? QuerySelector<U>['which']
   : /**
@@ -34,4 +36,13 @@ export interface NumberQuery {
   gte: number
   lt: number
   lte: number
+}
+
+export interface DateQuery {
+  equals: Date
+  notEquals: Date
+  gt: Date
+  gte: Date
+  lt: Date
+  lte: Date
 }

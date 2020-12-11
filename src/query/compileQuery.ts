@@ -15,9 +15,8 @@ export function compileQuery(query: QuerySelector<any>) {
     return Object.entries(query.which)
       .map<boolean>(([propName, queryChunk]) => {
         const actualValue = entity[propName]
-        const comparatorSet = getComparatorsForValue(actualValue)
-
-        log({ queryChunk, actualValue })
+        log('executing query chunk', queryChunk, entity)
+        log(`actual value for "${propName}"`, actualValue)
 
         return Object.entries(queryChunk).reduce<boolean>(
           (acc, [comparatorName, expectedValue]) => {
@@ -30,6 +29,9 @@ export function compileQuery(query: QuerySelector<any>) {
             if (actualValue.__type) {
               return compileQuery({ which: queryChunk })(actualValue)
             }
+
+            const comparatorSet = getComparatorsForValue(actualValue)
+            log('comparators', comparatorSet)
 
             const comparatorFn = comparatorSet[comparatorName]
             const hasMatch = comparatorFn(expectedValue, actualValue)
