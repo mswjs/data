@@ -1,7 +1,13 @@
 import { QuerySelector } from './query/queryTypes'
 
+export type PrimaryKeyTypes = string | number
 export type BaseTypes = string | number | boolean | Date
 export type KeyType = string | number | symbol
+
+export type PrimaryKey = {
+  primaryKey: true
+  defaultValue: () => PrimaryKeyTypes
+}
 
 export enum RelationKind {
   OneOf = 'oneOf',
@@ -41,6 +47,7 @@ export type Limit<T extends Record<string, any>> = {
   [RK in keyof T]: {
     [SK in keyof T[RK]]: T[RK][SK] extends
       | (() => BaseTypes)
+      | PrimaryKey
       | OneOf<keyof T>
       | ManyOf<keyof T>
       ? T[RK][SK]
@@ -50,6 +57,11 @@ export type Limit<T extends Record<string, any>> = {
         }
   }
 }
+
+export type ModelDeclaration = Record<
+  string,
+  (() => BaseTypes) | OneOf<any> | ManyOf<any> | PrimaryKey
+>
 
 export interface ModelAPI<
   Dictionary extends Record<string, any>,
@@ -114,4 +126,4 @@ export type Value<
     : ReturnType<T[K]>
 }
 
-export type Database<EntityType> = Record<KeyType, EntityType[]>
+export type Database<EntityType> = Record<KeyType, Map<KeyType, EntityType>>

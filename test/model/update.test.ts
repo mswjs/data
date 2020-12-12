@@ -1,20 +1,23 @@
 import { random, name } from 'faker'
 import { factory } from '../../src'
 import { identity } from '../../src/utils/identity'
+import { primaryKey } from '../../src/utils/primaryKey'
 
 test('updates a unique entity that matches the query', () => {
   const userId = random.uuid()
   const db = factory({
     user: {
-      id: identity(userId),
+      id: primaryKey(identity(userId)),
       firstName: name.findName,
     },
   })
   db.user.create({
-    id: userId,
+    id: random.uuid(),
     firstName: 'Joseph',
   })
-  db.user.create()
+  db.user.create({
+    firstName: 'Joseph',
+  })
 
   const updatedUser = db.user.update({
     which: {
@@ -41,6 +44,7 @@ test('updates a unique entity that matches the query', () => {
 test('updates the first entity when multiple entities match the query', () => {
   const db = factory({
     user: {
+      id: primaryKey(random.uuid),
       firstName: name.findName,
       followersCount: random.number,
     },
@@ -78,7 +82,7 @@ test('updates the first entity when multiple entities match the query', () => {
 test('does nothing when no entity matches the query', () => {
   const db = factory({
     user: {
-      id: random.uuid,
+      id: primaryKey(random.uuid),
     },
   })
 
@@ -96,4 +100,32 @@ test('does nothing when no entity matches the query', () => {
     },
   })
   expect(updatedUser).toBeUndefined()
+})
+
+test('throw an error if trying to update an entity using a primary key already present', () => {
+  const db = factory({
+    user: {
+      id: primaryKey(random.uuid),
+    },
+  })
+
+  db.user.create({
+    id: '1234',
+  })
+  db.user.create({
+    id: '5678',
+  })
+
+  expect(() =>
+    db.user.update({
+      which: {
+        id: {
+          equals: '1234',
+        },
+      },
+      data: {
+        id: '5678',
+      },
+    }),
+  ).toThrowError('There is already an entity with the key 5678')
 })

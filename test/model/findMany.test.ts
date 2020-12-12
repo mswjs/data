@@ -1,10 +1,11 @@
 import { random } from 'faker'
 import { factory } from '../../src'
+import { primaryKey } from '../../src/utils/primaryKey'
 
 test('returns the first entity among multiple matching entities', () => {
   const db = factory({
     user: {
-      id: random.uuid,
+      id: primaryKey(random.uuid),
       followersCount: Number,
     },
   })
@@ -28,7 +29,7 @@ test('returns the first entity among multiple matching entities', () => {
 test('returns an empty array when not found matching entities', () => {
   const db = factory({
     user: {
-      id: random.uuid,
+      id: primaryKey(random.uuid),
       followersCount: Number,
     },
   })

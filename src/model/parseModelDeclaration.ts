@@ -2,17 +2,16 @@ import { debug } from 'debug'
 import {
   BaseTypes,
   EntityInstance,
-  ManyOf,
-  OneOf,
   RelationalNode,
   RelationKind,
+  ModelDeclaration,
 } from '../glossary'
 
 const log = debug('parseModelDeclaration')
 
 export function parseModelDeclaration(
   modelName: string,
-  declaration: Record<string, (() => BaseTypes) | OneOf<any> | ManyOf<any>>,
+  declaration: ModelDeclaration,
   initialValues?: Record<
     string,
     BaseTypes | EntityInstance<any, any> | undefined
@@ -81,6 +80,11 @@ export function parseModelDeclaration(
 
         // A plain exact initial value is provided (not a relational property).
         acc[key] = exactValue
+        return acc
+      }
+
+      if ('primaryKey' in valueGetter) {
+        acc.properties[key] = valueGetter.defaultValue()
         return acc
       }
 

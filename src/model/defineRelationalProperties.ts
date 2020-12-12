@@ -20,6 +20,7 @@ export function defineRelationalProperties(
             return acc.concat(
               executeQuery(
                 node.__type,
+                '', //we are not filtering by primaryKey
                 {
                   which: {
                     __nodeId: {

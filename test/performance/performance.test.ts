@@ -1,11 +1,12 @@
 import { random, name } from 'faker'
 import { factory } from '../../src'
 import { measurePerformance, repeat } from '../testUtils'
+import { primaryKey } from '../../src/utils/primaryKey'
 
 test('creates a 1000 records in under 100ms', async () => {
   const db = factory({
     user: {
-      id: random.uuid,
+      id: primaryKey(random.uuid),
       firstName: name.firstName,
       lastName: name.lastName,
       age: random.number,
@@ -23,7 +24,7 @@ test('creates a 1000 records in under 100ms', async () => {
 test('queries through a 1000 records in under 100ms', async () => {
   const db = factory({
     user: {
-      id: random.uuid,
+      id: primaryKey(random.uuid),
       firstName: name.firstName,
       lastName: name.lastName,
       age: random.number,
@@ -48,7 +49,7 @@ test('queries through a 1000 records in under 100ms', async () => {
 test('updates a single record under 100ms', async () => {
   const db = factory({
     user: {
-      id: random.uuid,
+      id: primaryKey(random.uuid),
       firstName: name.firstName,
       lastName: name.lastName,
       age: random.number,
@@ -76,7 +77,7 @@ test('updates a single record under 100ms', async () => {
 test('deletes a single record in under 100ms', async () => {
   const db = factory({
     user: {
-      id: random.uuid,
+      id: primaryKey(random.uuid),
       firstName: name.firstName,
       lastName: name.lastName,
       age: random.number,
@@ -102,7 +103,7 @@ test('deletes a single record in under 100ms', async () => {
 test('deletes multiple records in under 100ms', async () => {
   const db = factory({
     user: {
-      id: random.uuid,
+      id: primaryKey(random.uuid),
       firstName: name.firstName,
       lastName: name.lastName,
       age: random.number,
@@ -122,4 +123,40 @@ test('deletes multiple records in under 100ms', async () => {
   })
 
   expect(deleteManyPerformance.duration).toBeLessThanOrEqual(100)
+})
+
+test('filter using a primaryKey with in range should be faster than an iterative filter', async () => {
+  const db = factory({
+    user: {
+      id: primaryKey(random.uuid),
+      firstName: name.firstName,
+      lastName: name.lastName,
+      age: random.number,
+      role: random.word,
+    },
+  })
+  repeat(db.user.create, 100000)
+
+  const findManyPerfomance = await measurePerformance('findMany', () => {
+    db.user.findMany({
+      which: {
+        id: {
+          in: [5, 100, 1000, 5000, 20000],
+        },
+      },
+    })
+  })
+
+  const oldFindManyPerfomance = await measurePerformance(
+    'iterativeFindMany',
+    () => {
+      const entities = db.user.getAll()
+
+      entities.filter((entity) => entity.id in [5, 100, 1000, 5000, 20000])
+    },
+  )
+
+  expect(oldFindManyPerfomance.duration).toBeGreaterThan(
+    findManyPerfomance.duration,
+  )
 })

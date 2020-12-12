@@ -1,8 +1,11 @@
+import { random } from 'faker'
 import { factory } from '../../src'
+import { primaryKey } from '../../src/utils/primaryKey'
 
 const setup = () => {
   const db = factory({
     recipe: {
+      id: primaryKey(random.uuid),
       title: String,
       category: String,
     },

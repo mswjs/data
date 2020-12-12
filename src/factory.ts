@@ -1,15 +1,15 @@
 import { mergeDeepRight } from 'ramda'
+import { v4 } from 'uuid'
 import {
   FactoryAPI,
   Value,
   Limit,
   Database,
-  OneOf,
-  ManyOf,
   ModelAPI,
-  BaseTypes,
+  ModelDeclaration,
 } from './glossary'
 import { first } from './utils/first'
+import { primaryKey } from './utils/primaryKey'
 import { executeQuery } from './query/executeQuery'
 import { compileQuery } from './query/compileQuery'
 import { parseModelDeclaration } from './model/parseModelDeclaration'
@@ -21,9 +21,9 @@ import { createModel } from './model/createModel'
 export function factory<
   T extends Record<string, Record<string, any>> & Limit<T>
 >(dict: T): FactoryAPI<T> {
-  const db: Database<Value<T, T>> = Object.keys(dict).reduce(
+  const db = Object.keys(dict).reduce<Database<Value<T, T>>>(
     (acc, modelName) => {
-      acc[modelName] = []
+      acc[modelName] = new Map()
       return acc
     },
     {},
@@ -35,86 +35,115 @@ export function factory<
   }, {})
 }
 
+function getPrimaryKey(
+  modelName: string,
+  modelDeclaration: ModelDeclaration,
+): string {
+  const primaryKey = Object.entries(modelDeclaration).reduce<string>(
+    (primaryKey, [key, value]) => {
+      if ('primaryKey' in value && value.primaryKey) {
+        if (primaryKey) {
+          throw new Error(
+            `You cannot specify more than one key for model "${modelName}"`,
+          )
+        }
+
+        return key
+      }
+
+      return primaryKey
+    },
+    null,
+  )
+
+  if (!primaryKey) {
+    throw new Error(
+      `The model "${modelName}" doesn't have a primary key. You can add it using the util function \`primaryKey\`
+
+import { factory, primaryKey } from '@mswjs/data'
+
+const db = factory({
+  user: {
+    id: primaryKey(random.uuid),
+  },
+})`,
+    )
+  }
+
+  return primaryKey
+}
+
 function createModelApi<ModelName extends string>(
   modelName: ModelName,
-  declaration: Record<string, (() => BaseTypes) | OneOf<any> | ManyOf<any>>,
+  modelDeclaration: ModelDeclaration,
   db: Database<any>,
 ): ModelAPI<any, any> {
+  const key = getPrimaryKey(modelName, modelDeclaration)
+  if (!(key in modelDeclaration)) {
+    modelDeclaration[key] = primaryKey(v4)
+  }
   return {
     create(initialValues = {}) {
       const { properties, relations } = parseModelDeclaration(
         modelName,
-        declaration,
+        modelDeclaration,
         initialValues,
       )
       const model = createModel(modelName, properties, relations, db)
 
-      db[modelName].push(model)
+      if (db[modelName].has(model[key])) {
+        throw new Error(
+          `Failed to create a "${modelName}" entity with the primary key "${key}": an entity with such key already exists.`,
+        )
+      }
+
+      db[modelName].set(model[key], model)
       return model
     },
     count() {
-      return db[modelName].length
+      return db[modelName].size
     },
     findFirst(query) {
-      const results = executeQuery(modelName, query, db)
+      const results = executeQuery(modelName, key, query, db)
       return first(results)
     },
     findMany(query) {
-      return executeQuery(modelName, query, db)
+      return executeQuery(modelName, key, query, db)
     },
     getAll() {
-      return Object.values(db[modelName])
+      return Array.from(db[modelName].values())
     },
     update(query) {
-      let nextEntity: any
-      const executeQuery = compileQuery(query)
-      const prevRecords = db[modelName]
+      const entities = executeQuery(modelName, key, query, db, 1)
 
-      for (let index = 0; index < prevRecords.length; index++) {
-        const entity = prevRecords[index]
-
-        if (executeQuery(entity)) {
-          nextEntity = mergeDeepRight(entity, query.data)
-          db[modelName].splice(index, -1, nextEntity)
-          break
+      if (entities.length) {
+        const entity = entities[0]
+        const nextEntity = mergeDeepRight(entity, query.data)
+        if (nextEntity[key] !== entity[key]) {
+          if (nextEntity[key] && db[modelName].has(nextEntity[key])) {
+            throw new Error(
+              `There is already an entity with the key ${nextEntity[key]}.`,
+            )
+          }
+          db[modelName].delete(entity[key])
         }
-      }
+        db[modelName].set(nextEntity[key], nextEntity)
 
-      return nextEntity
+        return nextEntity
+      }
     },
     delete(query) {
-      let deletedEntity: any
-      const executeQuery = compileQuery(query)
-      const prevRecords = db[modelName]
+      const entities = executeQuery(modelName, key, query, db, 1)
+      if (entities.length) {
+        const deletedRecord = entities[0]
+        db[modelName].delete(deletedRecord[key])
 
-      for (let index = 0; index < prevRecords.length; index++) {
-        const entity = prevRecords[index]
-
-        if (executeQuery(entity)) {
-          deletedEntity = entity
-          db[modelName].splice(index, 1)
-          break
-        }
+        return deletedRecord
       }
-
-      return deletedEntity
     },
     deleteMany(query) {
-      const executeQuery = compileQuery(query)
-      const prevRecords = db[modelName]
-      const { deletedRecords, newRecords } = prevRecords.reduce(
-        (acc, entity) => {
-          if (executeQuery(entity)) {
-            acc.deletedRecords.push(entity)
-          } else {
-            acc.newRecords.push(entity)
-          }
-          return acc
-        },
-        { deletedRecords: [], newRecords: [] },
-      )
-
-      db[modelName] = newRecords
+      const deletedRecords = executeQuery(modelName, key, query, db)
+      deletedRecords.forEach((record) => db[modelName].delete(record[key]))
 
       return deletedRecords
     },
