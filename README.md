@@ -186,6 +186,11 @@ This library supports querying of the seeded data similar to how one would query
 - `between`
 - `notBetween`
 
+#### Boolean queries
+
+- `equals`
+- `notEquals`
+
 #### Query example
 
 ```js
