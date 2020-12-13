@@ -8,6 +8,8 @@ Data modeling and relation library for testing JavaScript applications.
 
 ## Motivation
 
+When testing API interactions you often need to mock the data. Instead of keeping a hard-coded set of fixtures, this library provides you with an intuitive interface to model your data, create relations between different models, and query them alike to an actual database. A must-have for a data-driven API mocking.
+
 ## Getting started
 
 ### Install
@@ -32,6 +34,8 @@ export const db = factory({
 ```
 
 ### Integrate with mocks
+
+Although this library can be used standalone, it's specifically fine-tuned to integrate with [Mock Service Worker](https://github.com/mswjs/msw) to compose an unrivaled API mocking experience for both testing and development of your JavaScript applications.
 
 ```js
 // src/mocks/browser.js
