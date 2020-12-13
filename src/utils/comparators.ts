@@ -1,9 +1,14 @@
 import { compareAsc as compareDates } from 'date-fns'
-import { DateQuery, NumberQuery, StringQuery } from '../query/queryTypes'
+import {
+  DateQuery,
+  NumberQuery,
+  StringQuery,
+  BooleanQuery,
+} from '../query/queryTypes'
 import { numberInRange } from './numberInRange'
 
 type QueryToComparator<
-  QueryType extends StringQuery | NumberQuery | DateQuery
+  QueryType extends StringQuery | NumberQuery | BooleanQuery | DateQuery
 > = {
   [K in keyof QueryType]: (
     expected: QueryType[K],
@@ -59,6 +64,15 @@ export const numberComparators: QueryToComparator<NumberQuery> = {
   },
 }
 
+export const booleanComparators: QueryToComparator<BooleanQuery> = {
+  equals(expected, actual) {
+    return actual === expected
+  },
+  notEquals(expected, actual) {
+    return expected !== actual
+  },
+}
+
 export const dateComparators: QueryToComparator<DateQuery> = {
   equals(expected, actual) {
     return compareDates(expected, actual) === 0
@@ -82,13 +96,16 @@ export const dateComparators: QueryToComparator<DateQuery> = {
 
 export function getComparatorsForValue(
   value: string | number,
-): QueryToComparator<StringQuery | NumberQuery | DateQuery> {
+): QueryToComparator<StringQuery | NumberQuery | BooleanQuery | DateQuery> {
   switch (value.constructor.name) {
     case 'String':
       return stringComparators
 
     case 'Number':
       return numberComparators
+
+    case 'Boolean':
+      return booleanComparators
 
     case 'Date':
       return dateComparators
