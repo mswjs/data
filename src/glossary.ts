@@ -66,9 +66,9 @@ export interface ModelAPI<
    */
   count(): number
   /**
-   * Find a single entity.
+   * Find a first entity matching the query.
    */
-  findOne(
+  findFirst(
     query: QuerySelector<Value<Dictionary[K], Dictionary>>,
   ): Value<Dictionary[K], Dictionary>
   /**

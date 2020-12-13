@@ -24,7 +24,7 @@ test('queries entity which property equals a string', () => {
     role: 'editor',
   })
 
-  const firstEditor = db.user.findOne({
+  const firstEditor = db.user.findFirst({
     which: {
       role: {
         equals: 'editor',
@@ -61,7 +61,7 @@ test('queries entities which property contains a string', () => {
     title: 'Pizza Mozzarrela',
   })
 
-  const firstPizza = db.recipe.findOne({
+  const firstPizza = db.recipe.findFirst({
     which: {
       title: {
         contains: 'Pizza',

@@ -53,7 +53,7 @@ setupWorker(
 
   // Retrieve a single user from the database by ID.
   rest.get('/user/:userId', (req, res, ctx) => {
-    const user = db.user.findOne({
+    const user = db.user.findFirst({
       which: {
         id: {
           equals: req.params.userId,
@@ -82,12 +82,12 @@ Creates an entity of the model.
 const user = db.user.create()
 ```
 
-#### `findOne`
+#### `findFirst`
 
 Returns the first entity that satisfies the given query.
 
 ```js
-const user = db.user.findOne({
+const user = db.user.findFirst({
   which: {
     id: {
       equals: 'abc-123',

@@ -12,7 +12,7 @@ test('returns the only matching entity', () => {
 
   db.user.create()
 
-  const user = db.user.findOne({
+  const user = db.user.findFirst({
     which: {
       id: {
         equals: userId,
@@ -34,7 +34,7 @@ test('returns the first entity among multiple matching entities', () => {
   db.user.create({ followersCount: 12 })
   db.user.create({ followersCount: 15 })
 
-  const user = db.user.findOne({
+  const user = db.user.findFirst({
     which: {
       followersCount: {
         gt: 10,
@@ -52,7 +52,7 @@ test('returns null when found no matching entities', () => {
   })
   db.user.create()
 
-  const user = db.user.findOne({
+  const user = db.user.findFirst({
     which: {
       id: {
         equals: 'abc-123',

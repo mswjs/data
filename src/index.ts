@@ -56,7 +56,7 @@ function createModelApi<ModelName extends string>(
     count() {
       return db[modelName].length
     },
-    findOne(query) {
+    findFirst(query) {
       const results = executeQuery(modelName, query, db)
       return first(results)
     },

@@ -25,7 +25,7 @@ test('queries entities based on a boolean value', () => {
     published: true,
   })
 
-  const firstPublished = db.book.findOne({
+  const firstPublished = db.book.findFirst({
     which: {
       published: {
         equals: true,
