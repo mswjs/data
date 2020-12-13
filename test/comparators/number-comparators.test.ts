@@ -1,4 +1,4 @@
-import { numberComparators } from '../../src/utils/comparators'
+import { numberComparators } from '../../src/comparators/number'
 
 test('equals', () => {
   expect(numberComparators.equals(1, 1)).toBe(true)

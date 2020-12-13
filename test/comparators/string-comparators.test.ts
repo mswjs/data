@@ -1,4 +1,4 @@
-import { stringComparators } from '../../src/utils/comparators'
+import { stringComparators } from '../../src/comparators/string'
 
 test('equals', () => {
   expect(stringComparators.equals('foo', 'foo')).toBe(true)

@@ -6,6 +6,15 @@ export interface QuerySelector<EntityType extends Record<string, any>> {
   }
 }
 
+export type QueryToComparator<
+  QueryType extends StringQuery | NumberQuery | BooleanQuery | DateQuery
+> = {
+  [K in keyof QueryType]: (
+    expected: QueryType[K],
+    actual: QueryType[K] extends Array<infer T> ? T : QueryType[K],
+  ) => boolean
+}
+
 export type GetQueryFor<
   T extends string | number | boolean | any[]
 > = T extends string

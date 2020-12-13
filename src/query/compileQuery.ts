@@ -1,6 +1,6 @@
 import { debug } from 'debug'
 import { QuerySelector } from './queryTypes'
-import { getComparatorsForValue } from '../utils/comparators'
+import { getComparatorsForValue } from './getComparatorsForValue'
 
 const log = debug('compileQuery')
 
