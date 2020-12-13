@@ -1,4 +1,4 @@
-import { booleanComparators } from '../../src/utils/comparators'
+import { booleanComparators } from '../../src/comparators/boolean'
 
 test('equals', () => {
   expect(booleanComparators.equals(true, true)).toBe(true)

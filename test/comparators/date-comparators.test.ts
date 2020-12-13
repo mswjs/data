@@ -1,4 +1,4 @@
-import { dateComparators } from '../../src/utils/comparators'
+import { dateComparators } from '../../src/comparators/date'
 
 test('equals', () => {
   expect(
