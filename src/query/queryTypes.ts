@@ -6,10 +6,14 @@ export interface QuerySelector<EntityType extends Record<string, any>> {
   }
 }
 
-export type GetQueryFor<T extends string | number | any[]> = T extends string
+export type GetQueryFor<
+  T extends string | number | boolean | any[]
+> = T extends string
   ? StringQuery
   : T extends number
   ? NumberQuery
+  : T extends Boolean
+  ? BooleanQuery
   : T extends Date
   ? DateQuery
   : T extends Array<infer U>
@@ -40,6 +44,11 @@ export interface NumberQuery {
   gte: number
   lt: number
   lte: number
+}
+
+export interface BooleanQuery {
+  equals: boolean
+  notEquals: boolean
 }
 
 export interface DateQuery {
