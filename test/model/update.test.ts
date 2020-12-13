@@ -28,7 +28,7 @@ test('updates a unique entity that matches the query', () => {
   })
   expect(updatedUser).toHaveProperty('firstName', 'John')
 
-  const userResult = db.user.findOne({
+  const userResult = db.user.findFirst({
     which: {
       id: {
         equals: userId,
@@ -65,7 +65,7 @@ test('updates the first entity when multiple entities match the query', () => {
   })
   expect(updatedUser).toHaveProperty('firstName', 'Kate')
 
-  const kate = db.user.findOne({
+  const kate = db.user.findFirst({
     which: {
       firstName: {
         equals: 'Kate',

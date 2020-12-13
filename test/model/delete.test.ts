@@ -50,7 +50,7 @@ test('deletes the first entity that matches the query', () => {
   })
   expect(deletedUser).toHaveProperty('firstName', 'Kate')
 
-  const deletedUserSearch = db.user.findOne({
+  const deletedUserSearch = db.user.findFirst({
     which: {
       firstName: {
         equals: 'Kate',

@@ -20,7 +20,7 @@ test('queries entities which property equals to a number', () => {
     age: 41,
   })
 
-  const firstAdult = db.user.findOne({
+  const firstAdult = db.user.findFirst({
     which: {
       age: {
         gte: 18,
@@ -61,7 +61,7 @@ test('queries entities which property is within a number range', () => {
     stockQuantity: 20,
   })
 
-  const firstWithBulkStock = db.item.findOne({
+  const firstWithBulkStock = db.item.findFirst({
     which: {
       stockQuantity: {
         between: [5, 50],
