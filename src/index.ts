@@ -4,7 +4,6 @@ import {
   Value,
   Limit,
   Database,
-  RelationKind,
   OneOf,
   ManyOf,
   ModelAPI,
@@ -15,6 +14,9 @@ import { executeQuery } from './query/executeQuery'
 import { compileQuery } from './query/compileQuery'
 import { parseModelDeclaration } from './model/parseModelDeclaration'
 import { createModel } from './model/createModel'
+
+export { oneOf } from './relations/oneOf'
+export { manyOf } from './relations/manyOf'
 
 /**
  * Create a database models factory.
@@ -119,19 +121,5 @@ function createModelApi<ModelName extends string>(
 
       return deletedRecords
     },
-  }
-}
-
-export function oneOf<T extends string>(modelName: T): OneOf<T> {
-  return {
-    __type: RelationKind.OneOf,
-    modelName,
-  }
-}
-
-export function manyOf<T extends string>(modelName: T): ManyOf<T> {
-  return {
-    __type: RelationKind.ManyOf,
-    modelName,
   }
 }
