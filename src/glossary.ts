@@ -114,13 +114,11 @@ export interface ModelAPI<
 export type UpdateManyValue<
   T extends Record<string, any>,
   Parent extends Record<string, any>
-> = {
-  [K in keyof T]: T[K] extends OneOf<any>
-    ? Value<Parent[T[K]['modelName']], Parent>
-    : T[K] extends ManyOf<any>
-    ? Value<Parent[T[K]['modelName']], Parent>[]
-    : ReturnType<T[K]> | ((currentValue: ReturnType<T[K]>) => ReturnType<T[K]>)
-}
+> =
+  | Value<T, Parent>
+  | {
+      [K in keyof T]: (currentValue: ReturnType<T[K]>) => ReturnType<T[K]>
+    }
 
 export type Value<
   T extends Record<string, any>,

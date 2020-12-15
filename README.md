@@ -147,7 +147,7 @@ const updatedUser = db.user.updateMany({
   // Query for the entity to modify.
   which: {
     id: {
-      equals: 'abc-123',
+      in: ['abc-123', 'def-456'],
     },
   },
   // Provide partial next data to be
