@@ -5,18 +5,18 @@ export const stringComparators: QueryToComparator<StringQuery> = {
     return expected === actual
   },
   notEquals(expected, actual) {
-    return !this.equals(expected, actual)
+    return !stringComparators.equals(expected, actual)
   },
   contains(expected, actual) {
     return actual.includes(expected)
   },
   notContains(expected, actual) {
-    return !this.contains(expected, actual)
+    return !stringComparators.contains(expected, actual)
   },
   in(expected, actual) {
     return expected.includes(actual)
   },
   notIn(expected, actual) {
-    return !this.in(expected, actual)
+    return !stringComparators.in(expected, actual)
   },
 }
