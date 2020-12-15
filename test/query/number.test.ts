@@ -1,6 +1,6 @@
 import { factory } from '../../src'
 
-test('queries entities which property equals to a number', () => {
+const setup = () => {
   const db = factory({
     user: {
       firstName: String,
@@ -19,6 +19,12 @@ test('queries entities which property equals to a number', () => {
     firstName: 'Kate',
     age: 41,
   })
+
+  return db
+}
+
+test('queries entities which property equals to a number', () => {
+  const db = setup()
 
   const firstAdult = db.user.findFirst({
     which: {
@@ -41,43 +47,116 @@ test('queries entities which property equals to a number', () => {
   expect(adultsNames).toEqual(['Alice', 'Kate'])
 })
 
+test('queries entities which property is not equals to a number', () => {
+  const db = setup()
+
+  const users = db.user.findMany({
+    which: {
+      age: {
+        notEquals: 24,
+      },
+    },
+  })
+  expect(users).toHaveLength(2)
+  const names = users.map((user) => user.firstName)
+  expect(names).toEqual(['John', 'Kate'])
+})
+
 test('queries entities which property is within a number range', () => {
-  const db = factory({
-    item: {
-      title: String,
-      stockQuantity: Number,
-    },
-  })
-  db.item.create({
-    title: 'Star Wars Lego',
-    stockQuantity: 5,
-  })
-  db.item.create({
-    title: 'Avengers Hat',
-    stockQuantity: 1,
-  })
-  db.item.create({
-    title: 'Rick & Morty T-Shirt',
-    stockQuantity: 20,
-  })
+  const db = setup()
 
-  const firstWithBulkStock = db.item.findFirst({
+  const john = db.user.findFirst({
     which: {
-      stockQuantity: {
-        between: [5, 50],
+      age: {
+        between: [16, 34],
       },
     },
   })
-  expect(firstWithBulkStock).toHaveProperty('title', 'Star Wars Lego')
+  expect(john).toHaveProperty('firstName', 'John')
 
-  const allWithBulkStock = db.item.findMany({
+  const usersInAge = db.user.findMany({
     which: {
-      stockQuantity: {
-        between: [5, 50],
+      age: {
+        between: [16, 34],
       },
     },
   })
-  expect(allWithBulkStock).toHaveLength(2)
-  const titles = allWithBulkStock.map((item) => item.title)
-  expect(titles).toEqual(['Star Wars Lego', 'Rick & Morty T-Shirt'])
+  expect(usersInAge).toHaveLength(2)
+  const names = usersInAge.map((user) => user.firstName)
+  expect(names).toEqual(['John', 'Alice'])
+})
+
+test('queries entities which property is not within a number range', () => {
+  const db = setup()
+
+  const users = db.user.findMany({
+    which: {
+      age: {
+        notBetween: [16, 34],
+      },
+    },
+  })
+  expect(users).toHaveLength(1)
+  const names = users.map((user) => user.firstName)
+  expect(names).toEqual(['Kate'])
+})
+
+test('queries entities that are older than a number', () => {
+  const db = setup()
+
+  const users = db.user.findMany({
+    which: {
+      age: {
+        gt: 23,
+      },
+    },
+  })
+  expect(users).toHaveLength(2)
+  const names = users.map((user) => user.firstName)
+  expect(names).toEqual(['Alice', 'Kate'])
+})
+
+test('queries entities that are older or equal a number', () => {
+  const db = setup()
+
+  const users = db.user.findMany({
+    which: {
+      age: {
+        gte: 24,
+      },
+    },
+  })
+  expect(users).toHaveLength(2)
+  const names = users.map((user) => user.firstName)
+  expect(names).toEqual(['Alice', 'Kate'])
+})
+
+test('queries entities that are younger then a number', () => {
+  const db = setup()
+
+  const users = db.user.findMany({
+    which: {
+      age: {
+        lt: 24,
+      },
+    },
+  })
+  expect(users).toHaveLength(1)
+  const names = users.map((user) => user.firstName)
+  expect(names).toEqual(['John'])
+})
+
+test('queries entities that are younger or equal a number', () => {
+  const db = setup()
+
+  const users = db.user.findMany({
+    which: {
+      age: {
+        lte: 24,
+      },
+    },
+  })
+  expect(users).toHaveLength(2)
+  const names = users.map((user) => user.firstName)
+  expect(names).toEqual(['John', 'Alice'])
 })
