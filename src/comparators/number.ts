@@ -6,13 +6,13 @@ export const numberComparators: QueryToComparator<NumberQuery> = {
     return actual === expected
   },
   notEquals(expected, actual) {
-    return !this.equals(expected, actual)
+    return !numberComparators.equals(expected, actual)
   },
   between(expected, actual) {
     return numberInRange(expected[0], expected[1], actual)
   },
   notBetween(expected, actual) {
-    return !this.between(expected, actual)
+    return !numberComparators.between(expected, actual)
   },
   gt(expected, actual) {
     return actual > expected
