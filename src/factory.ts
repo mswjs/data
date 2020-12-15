@@ -90,16 +90,17 @@ function createModelApi<ModelName extends string>(
       const { updatedEntities, entities } = prevRecords.reduce(
         (acc, entity) => {
           if (executeQuery(entity)) {
-            const evaluatedData = Object.entries(query.data).reduce<
-              typeof entity
-            >((acc, [property, propertyValue]) => {
-              if (typeof propertyValue === 'function') {
-                acc[property] = propertyValue(entity[property])
-              } else {
-                acc[property] = propertyValue
-              }
-              return acc
-            }, {})
+            const evaluatedData = Object.entries(query.data).reduce(
+              (acc, [property, propertyValue]) => {
+                const nextValue =
+                  typeof propertyValue === 'function'
+                    ? propertyValue(entity[property])
+                    : propertyValue
+                acc[property] = nextValue
+                return acc
+              },
+              {},
+            )
             nextEntity = mergeDeepRight(entity, evaluatedData)
             acc.updatedEntities.push(nextEntity)
             acc.entities.push(nextEntity)
