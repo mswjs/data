@@ -82,6 +82,40 @@ function createModelApi<ModelName extends string>(
 
       return nextEntity
     },
+    updateMany(query) {
+      let nextEntity: any
+      const executeQuery = compileQuery(query)
+      const prevRecords = db[modelName]
+
+      const { updatedEntities, entities } = prevRecords.reduce(
+        (acc, entity) => {
+          if (executeQuery(entity)) {
+            const evaluatedData = Object.entries(query.data).reduce<
+              typeof entity
+            >((acc, [property, propertyValue]) => {
+              if (typeof propertyValue === 'function') {
+                acc[property] = propertyValue(entity[property])
+              } else {
+                acc[property] = propertyValue
+              }
+              return acc
+            }, {})
+            nextEntity = mergeDeepRight(entity, evaluatedData)
+            acc.updatedEntities.push(nextEntity)
+            acc.entities.push(nextEntity)
+          } else {
+            acc.entities.push(entity)
+          }
+
+          return acc
+        },
+        { updatedEntities: [], entities: [] },
+      )
+
+      db[modelName] = entities
+
+      return updatedEntities
+    },
     delete(query) {
       let deletedEntity: any
       const executeQuery = compileQuery(query)

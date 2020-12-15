@@ -140,6 +140,24 @@ const updatedUser = db.user.update({
 })
 ```
 
+#### `updateMany`
+
+```js
+const updatedUser = db.user.updateMany({
+  // Query for the entity to modify.
+  which: {
+    id: {
+      equals: 'abc-123',
+    },
+  },
+  // Provide partial next data to be
+  // merged with the existing properties.
+  data: {
+    firstName: (firstName) => firstName.toUpperCase(),
+  },
+})
+```
+
 #### `delete`
 
 Deletes the entity that satisfies the given query.

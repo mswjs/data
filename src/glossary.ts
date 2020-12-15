@@ -90,6 +90,14 @@ export interface ModelAPI<
     },
   ): Value<Dictionary[K], Dictionary>
   /**
+   * Update many entities with the next data.
+   */
+  updateMany(
+    query: QuerySelector<Value<Dictionary[K], Dictionary>> & {
+      data: Partial<UpdateManyValue<Dictionary[K], Dictionary>>
+    },
+  ): Value<Dictionary[K], Dictionary>[]
+  /**
    * Delete a single entity.
    */
   delete(
@@ -101,6 +109,17 @@ export interface ModelAPI<
   deleteMany(
     query: QuerySelector<Value<Dictionary[K], Dictionary>>,
   ): Value<Dictionary[K], Dictionary>[]
+}
+
+export type UpdateManyValue<
+  T extends Record<string, any>,
+  Parent extends Record<string, any>
+> = {
+  [K in keyof T]: T[K] extends OneOf<any>
+    ? Value<Parent[T[K]['modelName']], Parent>
+    : T[K] extends ManyOf<any>
+    ? Value<Parent[T[K]['modelName']], Parent>[]
+    : ReturnType<T[K]> | ((currentValue: ReturnType<T[K]>) => ReturnType<T[K]>)
 }
 
 export type Value<
