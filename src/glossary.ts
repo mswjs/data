@@ -39,7 +39,7 @@ export type EntityInstance<
 > = InternalEntityProperties<ModelName> &
   Value<Dictionary[ModelName], Dictionary>
 
-export type ModelDictionary<T> = Record<string, Record<string, any>> & Limit<T>
+export type ModelDictionary = Limit<Record<string, Record<string, any>>>
 
 export type Limit<T extends Record<string, any>> = {
   [RK in keyof T]: {
@@ -56,7 +56,7 @@ export type Limit<T extends Record<string, any>> = {
 }
 
 export interface ModelAPI<
-  Dictionary extends Record<string, any>,
+  Dictionary extends ModelDictionary,
   ModelName extends keyof Dictionary
 > {
   /**

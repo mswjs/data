@@ -20,7 +20,7 @@ import { createModel } from './model/createModel'
 /**
  * Create a database models factory.
  */
-export function factory<Dictionary extends ModelDictionary<Dictionary>>(
+export function factory<Dictionary extends ModelDictionary>(
   dict: Dictionary,
 ): FactoryAPI<Dictionary> {
   const db: Database<EntityInstance<any, any>> = Object.keys(dict).reduce(
@@ -42,7 +42,7 @@ export function factory<Dictionary extends ModelDictionary<Dictionary>>(
 }
 
 function createModelApi<
-  Dictionary extends ModelDictionary<Dictionary>,
+  Dictionary extends ModelDictionary,
   ModelName extends string
 >(
   modelName: ModelName,
