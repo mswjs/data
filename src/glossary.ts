@@ -129,9 +129,9 @@ export type Value<
   Parent extends Record<string, any>
 > = {
   [K in keyof T]: T[K] extends OneOf<any>
-    ? EntityInstance<Parent[T[K]['modelName']], T[K]['modelName']>
+    ? EntityInstance<Parent, T[K]['modelName']>
     : T[K] extends ManyOf<any>
-    ? EntityInstance<Parent[T[K]['modelName']], T[K]['modelName']>[]
+    ? EntityInstance<Parent, T[K]['modelName']>[]
     : ReturnType<T[K]>
 }
 
