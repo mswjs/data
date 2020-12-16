@@ -1,28 +1,29 @@
 import { debug } from 'debug'
 import {
   BaseTypes,
-  EntityInstance,
   ManyOf,
   OneOf,
   RelationalNode,
   RelationKind,
+  ModelDictionary,
+  Value,
 } from '../glossary'
 
 const log = debug('parseModelDeclaration')
 
-export function parseModelDeclaration(
-  modelName: string,
+export function parseModelDeclaration<
+  Dictionary extends ModelDictionary<Dictionary>,
+  ModelName extends string
+>(
+  modelName: ModelName,
   declaration: Record<string, (() => BaseTypes) | OneOf<any> | ManyOf<any>>,
-  initialValues?: Record<
-    string,
-    BaseTypes | EntityInstance<any, any> | undefined
-  >,
+  initialValues?: Partial<Value<Dictionary[ModelName], Dictionary>>,
 ) {
   log(`create a "${modelName}" entity`, declaration, initialValues)
 
   return Object.entries(declaration).reduce<{
-    properties: Record<string, any>
-    relations: Record<string, RelationalNode>
+    properties: Value<any, any>
+    relations: Record<string, RelationalNode<ModelName>>
   }>(
     (acc, [key, valueGetter]) => {
       const exactValue = initialValues?.[key]
@@ -52,7 +53,10 @@ export function parseModelDeclaration(
           acc.relations[key] = {
             kind: RelationKind.ManyOf,
             modelName: key,
-            nodes: exactValue,
+            nodes: exactValue.map((relation) => ({
+              __type: relation.__type,
+              __nodeId: relation.__nodeId,
+            })),
           }
 
           return acc

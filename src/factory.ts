@@ -8,6 +8,8 @@ import {
   ManyOf,
   ModelAPI,
   BaseTypes,
+  EntityInstance,
+  ModelDictionary,
 } from './glossary'
 import { first } from './utils/first'
 import { executeQuery } from './query/executeQuery'
@@ -18,10 +20,10 @@ import { createModel } from './model/createModel'
 /**
  * Create a database models factory.
  */
-export function factory<
-  T extends Record<string, Record<string, any>> & Limit<T>
->(dict: T): FactoryAPI<T> {
-  const db: Database<Value<T, T>> = Object.keys(dict).reduce(
+export function factory<Dictionary extends ModelDictionary<Dictionary>>(
+  dict: Dictionary,
+): FactoryAPI<Dictionary> {
+  const db: Database<EntityInstance<any, any>> = Object.keys(dict).reduce(
     (acc, modelName) => {
       acc[modelName] = []
       return acc
@@ -30,24 +32,35 @@ export function factory<
   )
 
   return Object.entries(dict).reduce<any>((acc, [modelName, props]) => {
-    acc[modelName] = createModelApi(modelName, props, db)
+    acc[modelName] = createModelApi<Dictionary, typeof modelName>(
+      modelName,
+      props,
+      db,
+    )
     return acc
   }, {})
 }
 
-function createModelApi<ModelName extends string>(
+function createModelApi<
+  Dictionary extends ModelDictionary<Dictionary>,
+  ModelName extends string
+>(
   modelName: ModelName,
   declaration: Record<string, (() => BaseTypes) | OneOf<any> | ManyOf<any>>,
-  db: Database<any>,
-): ModelAPI<any, any> {
+  db: Database<EntityInstance<Dictionary, ModelName>>,
+): ModelAPI<Dictionary, ModelName> {
   return {
     create(initialValues = {}) {
-      const { properties, relations } = parseModelDeclaration(
+      const { properties, relations } = parseModelDeclaration<
+        Dictionary,
+        ModelName
+      >(modelName, declaration, initialValues)
+      const model = createModel<Dictionary, ModelName>(
         modelName,
-        declaration,
-        initialValues,
+        properties,
+        relations,
+        db,
       )
-      const model = createModel(modelName, properties, relations, db)
 
       db[modelName].push(model)
       return model
@@ -66,15 +79,15 @@ function createModelApi<ModelName extends string>(
       return Object.values(db[modelName])
     },
     update(query) {
-      let nextEntity: any
       const executeQuery = compileQuery(query)
       const prevRecords = db[modelName]
+      let nextEntity: EntityInstance<Dictionary, ModelName>
 
       for (let index = 0; index < prevRecords.length; index++) {
         const entity = prevRecords[index]
 
         if (executeQuery(entity)) {
-          nextEntity = mergeDeepRight(entity, query.data)
+          nextEntity = mergeDeepRight(entity, query.data) as any
           db[modelName].splice(index, -1, nextEntity)
           break
         }
@@ -118,7 +131,7 @@ function createModelApi<ModelName extends string>(
       return updatedEntities
     },
     delete(query) {
-      let deletedEntity: any
+      let deletedEntity: EntityInstance<Dictionary, ModelName>
       const executeQuery = compileQuery(query)
       const prevRecords = db[modelName]
 
@@ -137,7 +150,10 @@ function createModelApi<ModelName extends string>(
     deleteMany(query) {
       const executeQuery = compileQuery(query)
       const prevRecords = db[modelName]
-      const { deletedRecords, newRecords } = prevRecords.reduce(
+      const { deletedRecords, newRecords } = prevRecords.reduce<{
+        deletedRecords: EntityInstance<Dictionary, ModelName>[]
+        newRecords: EntityInstance<Dictionary, ModelName>[]
+      }>(
         (acc, entity) => {
           if (executeQuery(entity)) {
             acc.deletedRecords.push(entity)
