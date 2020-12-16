@@ -12,7 +12,7 @@ import {
 const log = debug('parseModelDeclaration')
 
 export function parseModelDeclaration<
-  Dictionary extends ModelDictionary<Dictionary>,
+  Dictionary extends ModelDictionary,
   ModelName extends string
 >(
   modelName: ModelName,

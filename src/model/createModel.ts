@@ -12,7 +12,7 @@ import { defineRelationalProperties } from './defineRelationalProperties'
 const log = debug('createModel')
 
 export function createModel<
-  Dictionary extends ModelDictionary<Dictionary>,
+  Dictionary extends ModelDictionary,
   ModelName extends string
 >(
   modelName: ModelName,
