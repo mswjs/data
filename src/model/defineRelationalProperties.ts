@@ -7,7 +7,7 @@ const log = debug('relationalProperty')
 
 export function defineRelationalProperties(
   entity: Record<string, any>,
-  relations: Record<string, RelationalNode>,
+  relations: Record<string, RelationalNode<any>>,
   db: Database<any>,
 ): void {
   const properties = Object.entries(relations).reduce(
