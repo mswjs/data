@@ -1,15 +1,24 @@
 import { v4 } from 'uuid'
 import { debug } from 'debug'
-import { Database, InternalEntityProperties } from '../glossary'
+import {
+  Database,
+  InternalEntityProperties,
+  ModelDictionary,
+  EntityInstance,
+  Value,
+} from '../glossary'
 import { defineRelationalProperties } from './defineRelationalProperties'
 
 const log = debug('createModel')
 
-export function createModel<ModelName extends string>(
+export function createModel<
+  Dictionary extends ModelDictionary<Dictionary>,
+  ModelName extends string
+>(
   modelName: ModelName,
-  properties: Record<string, any>,
+  properties: Value<Dictionary[ModelName], Dictionary>,
   relations: Record<string, any>,
-  db: Database<any>,
+  db: Database<EntityInstance<Dictionary, ModelName>>,
 ) {
   log('creating model', modelName, properties, relations)
 

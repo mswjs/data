@@ -8,16 +8,17 @@ export enum RelationKind {
   ManyOf = 'manyOf',
 }
 
-export interface RelationalNode {
+export interface RelationalNode<ModelName extends string> {
   kind: RelationKind
   modelName: string
-  nodes: Array<InternalEntityProperties<any>>
+  nodes: Array<InternalEntityProperties<ModelName>>
 }
 
 export type OneOf<T extends KeyType> = {
   __type: RelationKind.OneOf
   modelName: T
 }
+
 export type ManyOf<T extends KeyType> = {
   __type: RelationKind.ManyOf
   modelName: T
@@ -33,9 +34,12 @@ export interface InternalEntityProperties<ModelName extends KeyType> {
 }
 
 export type EntityInstance<
-  T extends Record<string, any>,
-  K extends keyof T
-> = InternalEntityProperties<K> & Value<T[K], T>
+  Dictionary extends Record<string, any>,
+  ModelName extends keyof Dictionary
+> = InternalEntityProperties<ModelName> &
+  Value<Dictionary[ModelName], Dictionary>
+
+export type ModelDictionary<T> = Record<string, Record<string, any>> & Limit<T>
 
 export type Limit<T extends Record<string, any>> = {
   [RK in keyof T]: {
@@ -53,14 +57,14 @@ export type Limit<T extends Record<string, any>> = {
 
 export interface ModelAPI<
   Dictionary extends Record<string, any>,
-  K extends keyof Dictionary
+  ModelName extends keyof Dictionary
 > {
   /**
    * Create a single entity for the model.
    */
   create(
-    initialValues?: Partial<Value<Dictionary[K], Dictionary>>,
-  ): EntityInstance<Dictionary, K>
+    initialValues?: Partial<Value<Dictionary[ModelName], Dictionary>>,
+  ): EntityInstance<Dictionary, ModelName>
   /**
    * Return the total number of entities.
    */
@@ -69,26 +73,26 @@ export interface ModelAPI<
    * Find a first entity matching the query.
    */
   findFirst(
-    query: QuerySelector<Value<Dictionary[K], Dictionary>>,
-  ): Value<Dictionary[K], Dictionary>
+    query: QuerySelector<Value<Dictionary[ModelName], Dictionary>>,
+  ): EntityInstance<Dictionary, ModelName>
   /**
    * Find multiple entities.
    */
   findMany(
-    query: QuerySelector<Value<Dictionary[K], Dictionary>>,
-  ): Value<Dictionary[K], Dictionary>[]
+    query: QuerySelector<Value<Dictionary[ModelName], Dictionary>>,
+  ): EntityInstance<Dictionary, ModelName>[]
   /**
    * Return all entities of the current model.
    */
-  getAll(): Value<Dictionary[K], Dictionary>[]
+  getAll(): EntityInstance<Dictionary, ModelName>[]
   /**
    * Update a single entity with the next data.
    */
   update(
-    query: QuerySelector<Value<Dictionary[K], Dictionary>> & {
-      data: Partial<Value<Dictionary[K], Dictionary>>
+    query: QuerySelector<Value<Dictionary[ModelName], Dictionary>> & {
+      data: Partial<Value<Dictionary[ModelName], Dictionary>>
     },
-  ): Value<Dictionary[K], Dictionary>
+  ): EntityInstance<Dictionary, ModelName>
   /**
    * Update many entities with the next data.
    */
@@ -101,14 +105,14 @@ export interface ModelAPI<
    * Delete a single entity.
    */
   delete(
-    query: QuerySelector<Value<Dictionary[K], Dictionary>>,
-  ): Value<Dictionary[K], Dictionary>
+    query: QuerySelector<Value<Dictionary[ModelName], Dictionary>>,
+  ): EntityInstance<Dictionary, ModelName>
   /**
    * Delete multiple entities.
    */
   deleteMany(
-    query: QuerySelector<Value<Dictionary[K], Dictionary>>,
-  ): Value<Dictionary[K], Dictionary>[]
+    query: QuerySelector<Value<Dictionary[ModelName], Dictionary>>,
+  ): EntityInstance<Dictionary, ModelName>[]
 }
 
 export type UpdateManyValue<
@@ -125,9 +129,9 @@ export type Value<
   Parent extends Record<string, any>
 > = {
   [K in keyof T]: T[K] extends OneOf<any>
-    ? Value<Parent[T[K]['modelName']], Parent>
+    ? EntityInstance<Parent[T[K]['modelName']], T[K]['modelName']>
     : T[K] extends ManyOf<any>
-    ? Value<Parent[T[K]['modelName']], Parent>[]
+    ? EntityInstance<Parent[T[K]['modelName']], T[K]['modelName']>[]
     : ReturnType<T[K]>
 }
 
