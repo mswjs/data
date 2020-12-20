@@ -20,6 +20,11 @@ test('should update many entity with evolution value', () => {
     role: 'Auditor',
   })
 
+  db.user.create({
+    firstName: 'Jack',
+    role: 'Writer',
+  })
+
   const updateMultiUsers = db.user.updateMany({
     which: {
       role: {
@@ -63,6 +68,11 @@ test('should update many entities with primitive values', () => {
     role: 'Auditor',
   })
 
+  db.user.create({
+    firstName: 'Jack',
+    role: 'Writer',
+  })
+
   const updateMultiUsers = db.user.updateMany({
     which: {
       role: {
@@ -70,10 +80,10 @@ test('should update many entities with primitive values', () => {
       },
     },
     data: {
-      role: 'Administrator',
+      role: 'Admin',
     },
   })
 
   expect(updateMultiUsers).toHaveLength(2)
-  updateMultiUsers.forEach((user) => expect(user.role).toEqual('Administrator'))
+  updateMultiUsers.forEach((user) => expect(user.role).toEqual('Admin'))
 })
