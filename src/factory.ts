@@ -96,9 +96,9 @@ function createModelApi<
       return nextEntity
     },
     updateMany(query) {
-      let nextEntity: any
       const executeQuery = compileQuery(query)
       const prevRecords = db[modelName]
+      let nextEntity: EntityInstance<Dictionary, ModelName>
 
       const { updatedEntities, entities } = prevRecords.reduce(
         (acc, entity) => {
@@ -114,7 +114,7 @@ function createModelApi<
               },
               {},
             )
-            nextEntity = mergeDeepRight(entity, evaluatedData)
+            nextEntity = mergeDeepRight(entity, evaluatedData) as any
             acc.updatedEntities.push(nextEntity)
             acc.entities.push(nextEntity)
           } else {
