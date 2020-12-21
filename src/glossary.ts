@@ -97,10 +97,10 @@ export interface ModelAPI<
    * Update many entities with the next data.
    */
   updateMany(
-    query: QuerySelector<Value<Dictionary[K], Dictionary>> & {
-      data: Partial<UpdateManyValue<Dictionary[K], Dictionary>>
+    query: QuerySelector<Value<Dictionary[ModelName], Dictionary>> & {
+      data: Partial<UpdateManyValue<Dictionary[ModelName], Dictionary>>
     },
-  ): Value<Dictionary[K], Dictionary>[]
+  ): Value<Dictionary[ModelName], Dictionary>[]
   /**
    * Delete a single entity.
    */
