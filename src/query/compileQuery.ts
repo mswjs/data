@@ -1,6 +1,7 @@
 import { debug } from 'debug'
 import { QuerySelector } from './queryTypes'
 import { getComparatorsForValue } from './getComparatorsForValue'
+import { EntityInstance } from '../glossary'
 
 const log = debug('compileQuery')
 
@@ -11,7 +12,7 @@ const log = debug('compileQuery')
 export function compileQuery(query: QuerySelector<any>) {
   log(JSON.stringify(query))
 
-  return (entity: any) => {
+  return (entity: EntityInstance<any, any>) => {
     return Object.entries(query.which)
       .map<boolean>(([propName, queryChunk]) => {
         const actualValue = entity[propName]

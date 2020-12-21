@@ -1,8 +1,6 @@
 import { mergeDeepRight } from 'ramda'
 import {
   FactoryAPI,
-  Value,
-  Limit,
   Database,
   OneOf,
   ManyOf,
@@ -10,6 +8,7 @@ import {
   BaseTypes,
   EntityInstance,
   ModelDictionary,
+  Value,
 } from './glossary'
 import { first } from './utils/first'
 import { executeQuery } from './query/executeQuery'
@@ -18,7 +17,7 @@ import { parseModelDeclaration } from './model/parseModelDeclaration'
 import { createModel } from './model/createModel'
 
 /**
- * Create a database models factory.
+ * Create a database with the given models.
  */
 export function factory<Dictionary extends ModelDictionary>(
   dict: Dictionary,
@@ -81,91 +80,97 @@ function createModelApi<
     update(query) {
       const executeQuery = compileQuery(query)
       const prevRecords = db[modelName]
-      let nextEntity: EntityInstance<Dictionary, ModelName>
+      let nextRecord: EntityInstance<Dictionary, ModelName>
 
       for (let index = 0; index < prevRecords.length; index++) {
-        const entity = prevRecords[index]
+        const record = prevRecords[index]
 
-        if (executeQuery(entity)) {
-          nextEntity = mergeDeepRight(entity, query.data) as any
-          db[modelName].splice(index, -1, nextEntity)
+        if (executeQuery(record)) {
+          nextRecord = mergeDeepRight<
+            EntityInstance<Dictionary, ModelName>,
+            any
+          >(record, query.data)
+          db[modelName].splice(index, -1, nextRecord)
           break
         }
       }
 
-      return nextEntity
+      return nextRecord
     },
     updateMany(query) {
       const executeQuery = compileQuery(query)
       const prevRecords = db[modelName]
-      let nextEntity: EntityInstance<Dictionary, ModelName>
 
-      const { updatedEntities, entities } = prevRecords.reduce(
-        (acc, entity) => {
-          if (executeQuery(entity)) {
+      const { updatedRecords, nextRecords } = prevRecords.reduce(
+        (acc, record) => {
+          if (executeQuery(record)) {
             const evaluatedData = Object.entries(query.data).reduce(
               (acc, [property, propertyValue]) => {
                 const nextValue =
                   typeof propertyValue === 'function'
-                    ? propertyValue(entity[property])
+                    ? propertyValue(record[property])
                     : propertyValue
                 acc[property] = nextValue
                 return acc
               },
               {},
             )
-            nextEntity = mergeDeepRight(entity, evaluatedData) as any
-            acc.updatedEntities.push(nextEntity)
-            acc.entities.push(nextEntity)
+
+            const nextRecord = mergeDeepRight<
+              EntityInstance<Dictionary, ModelName>,
+              any
+            >(record, evaluatedData)
+            acc.updatedRecords.push(nextRecord)
+            acc.nextRecords.push(nextRecord)
           } else {
-            acc.entities.push(entity)
+            acc.nextRecords.push(record)
           }
 
           return acc
         },
-        { updatedEntities: [], entities: [] },
+        { updatedRecords: [], nextRecords: [] },
       )
 
-      db[modelName] = entities
+      db[modelName] = nextRecords
 
-      return updatedEntities
+      return updatedRecords
     },
     delete(query) {
-      let deletedEntity: EntityInstance<Dictionary, ModelName>
+      let deletedRecord: EntityInstance<Dictionary, ModelName>
       const executeQuery = compileQuery(query)
       const prevRecords = db[modelName]
 
       for (let index = 0; index < prevRecords.length; index++) {
-        const entity = prevRecords[index]
+        const record = prevRecords[index]
 
-        if (executeQuery(entity)) {
-          deletedEntity = entity
+        if (executeQuery(record)) {
+          deletedRecord = record
           db[modelName].splice(index, 1)
           break
         }
       }
 
-      return deletedEntity
+      return deletedRecord
     },
     deleteMany(query) {
       const executeQuery = compileQuery(query)
       const prevRecords = db[modelName]
-      const { deletedRecords, newRecords } = prevRecords.reduce<{
+      const { deletedRecords, nextRecords } = prevRecords.reduce<{
         deletedRecords: EntityInstance<Dictionary, ModelName>[]
-        newRecords: EntityInstance<Dictionary, ModelName>[]
+        nextRecords: EntityInstance<Dictionary, ModelName>[]
       }>(
-        (acc, entity) => {
-          if (executeQuery(entity)) {
-            acc.deletedRecords.push(entity)
+        (acc, record) => {
+          if (executeQuery(record)) {
+            acc.deletedRecords.push(record)
           } else {
-            acc.newRecords.push(entity)
+            acc.nextRecords.push(record)
           }
           return acc
         },
-        { deletedRecords: [], newRecords: [] },
+        { deletedRecords: [], nextRecords: [] },
       )
 
-      db[modelName] = newRecords
+      db[modelName] = nextRecords
 
       return deletedRecords
     },
