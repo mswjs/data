@@ -69,18 +69,43 @@ function createModelApi<
     },
     findFirst(query) {
       const results = executeQuery(modelName, 'PRIMARY_KEY', query, db)
-      return first(results)
+      const firstResult = first(results)
+
+      invariant(
+        query.strict && !firstResult,
+        `Failed to execute "findFirst" on the "${modelName}" model: no entity found matching the query "${JSON.stringify(
+          query.which,
+        )}".`,
+      )
+
+      return firstResult
     },
     findMany(query) {
-      return executeQuery(modelName, 'PRIMARY_KEY', query, db)
+      const results = executeQuery(modelName, 'PRIMARY_KEY', query, db)
+
+      invariant(
+        query.strict && results.length === 0,
+        `Failed to execute "findMany" on the "${modelName}" model: no entities found matching the query "${JSON.stringify(
+          query.which,
+        )}".`,
+      )
+
+      return results
     },
     getAll() {
       return Array.from(db[modelName].values())
     },
-    update(query) {
+    update({ strict, ...query }) {
       const record = api.findFirst(query)
 
       if (!record) {
+        invariant(
+          strict,
+          `Failed to execute "update" on the "${modelName}" model: no entity found matching the query "${JSON.stringify(
+            query.which,
+          )}".`,
+        )
+
         return null
       }
 
@@ -90,11 +115,18 @@ function createModelApi<
 
       return nextRecord
     },
-    updateMany(query) {
+    updateMany({ strict, ...query }) {
       const records = api.findMany(query)
       const updatedRecords = []
 
-      if (!records) {
+      if (records.length === 0) {
+        invariant(
+          strict,
+          `Failed to execute "updateMany" on the "${modelName}" model: no entities found matching the query "${JSON.stringify(
+            query.which,
+          )}".`,
+        )
+
         return null
       }
 
@@ -106,21 +138,35 @@ function createModelApi<
 
       return updatedRecords
     },
-    delete(query) {
+    delete({ strict, ...query }) {
       const record = api.findFirst(query)
 
       if (!record) {
+        invariant(
+          strict,
+          `Failed to execute "delete" on the "user" model: no entity found matching the query "${JSON.stringify(
+            query.which,
+          )}".`,
+        )
+
         return null
       }
 
       db[modelName].delete(record[record.__primaryKey] as string)
       return record
     },
-    deleteMany(query) {
+    deleteMany({ strict, ...query }) {
       const records = api.findMany(query)
 
-      if (!records) {
-        return null
+      if (records.length === 0) {
+        invariant(
+          strict,
+          `Failed to execute "deleteMany" on the "user" model: no entities found matching the query "${JSON.stringify(
+            query.which,
+          )}".`,
+        )
+
+        return []
       }
 
       records.forEach((record) => {

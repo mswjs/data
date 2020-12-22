@@ -75,6 +75,33 @@ test('updates the first entity when multiple entities match the query', () => {
   expect(kate).toHaveProperty('firstName', 'Kate')
 })
 
+test('throws an exception when no model matches the query in strict mode', () => {
+  const db = factory({
+    user: {
+      id: primaryKey(random.uuid),
+      firstName: String,
+    },
+  })
+  db.user.create()
+  db.user.create()
+
+  expect(() => {
+    db.user.update({
+      which: {
+        id: {
+          equals: 'abc-123',
+        },
+      },
+      data: {
+        firstName: 'John',
+      },
+      strict: true,
+    })
+  }).toThrowError(
+    'Failed to execute "update" on the "user" model: no entity found matching the query "{"id":{"equals":"abc-123"}}"',
+  )
+})
+
 test('does nothing when no entity matches the query', () => {
   const db = factory({
     user: {

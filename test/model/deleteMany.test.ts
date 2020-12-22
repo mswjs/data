@@ -55,6 +55,29 @@ test('deletes all entites that match the query', () => {
   expect(restUserNames).toEqual(['John', 'Joseph'])
 })
 
+test('throws an exception when no entities match the query in a strict mode', () => {
+  const db = factory({
+    user: {
+      id: primaryKey(random.uuid),
+    },
+  })
+  db.user.create()
+  db.user.create()
+
+  expect(() => {
+    db.user.deleteMany({
+      which: {
+        id: {
+          in: ['abc-123', 'def-456'],
+        },
+      },
+      strict: true,
+    })
+  }).toThrowError(
+    'Failed to execute "deleteMany" on the "user" model: no entities found matching the query "{"id":{"in":["abc-123","def-456"]}}".',
+  )
+})
+
 test('does nothing when no entities match the query', () => {
   const db = factory({
     user: {

@@ -65,6 +65,29 @@ test('deletes the first entity that matches the query', () => {
   expect(userNames).toEqual(['John', 'Alice'])
 })
 
+test('throws an exception when no entities matches the query in strict mode', () => {
+  const db = factory({
+    user: {
+      id: primaryKey(random.uuid),
+    },
+  })
+  db.user.create()
+  db.user.create()
+
+  expect(() => {
+    db.user.delete({
+      which: {
+        id: {
+          equals: 'abc-123',
+        },
+      },
+      strict: true,
+    })
+  }).toThrowError(
+    'Failed to execute "delete" on the "user" model: no entity found matching the query "{"id":{"equals":"abc-123"}}".',
+  )
+})
+
 test('does nothing when no entity matches the query', () => {
   const db = factory({
     user: {

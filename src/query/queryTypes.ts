@@ -1,9 +1,14 @@
 import { Value } from '../glossary'
 
-export interface QuerySelector<EntityType extends Record<string, any>> {
+export interface QuerySelector<EntityType extends Record<string, any>>
+  extends QueryOptions {
   which: {
     [K in keyof EntityType]?: Partial<GetQueryFor<EntityType[K]>>
   }
+}
+
+interface QueryOptions {
+  strict?: boolean
 }
 
 export type QueryToComparator<

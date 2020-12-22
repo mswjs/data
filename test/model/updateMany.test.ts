@@ -49,6 +49,33 @@ test('should update many entity with evolution value', () => {
   expect(userResult).toHaveProperty('firstName', 'JOSEPH')
 })
 
+test('throws an exception when no entity matches the query in strict mode', () => {
+  const db = factory({
+    user: {
+      id: primaryKey(random.uuid),
+      firstName: name.firstName,
+    },
+  })
+  db.user.create()
+  db.user.create()
+
+  expect(() => {
+    db.user.updateMany({
+      which: {
+        id: {
+          in: ['abc-123', 'def-456'],
+        },
+      },
+      data: {
+        firstName: (value) => value.toUpperCase(),
+      },
+      strict: true,
+    })
+  }).toThrowError(
+    'Failed to execute "updateMany" on the "user" model: no entities found matching the query "{"id":{"in":["abc-123","def-456"]}}".',
+  )
+})
+
 test('should update many entities with primitive values', () => {
   const db = factory({
     user: {
