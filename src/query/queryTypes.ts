@@ -1,4 +1,4 @@
-import { Value } from '../glossary'
+import { PrimaryKeyType, Value } from '../glossary'
 
 export interface QuerySelector<EntityType extends Record<string, any>>
   extends QueryOptions {
@@ -11,9 +11,12 @@ interface QueryOptions {
   strict?: boolean
 }
 
-export interface BulkQueryOptions {
+export type BulkQueryOptions = {
   take?: number
   skip?: number
+} & {
+  take?: number
+  cursor?: PrimaryKeyType
 }
 
 export type QueryToComparator<
