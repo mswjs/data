@@ -11,13 +11,21 @@ interface QueryOptions {
   strict?: boolean
 }
 
-export type BulkQueryOptions = {
+interface BulkQueryBaseOptions {
   take?: number
-  skip?: number
-} & {
-  take?: number
-  cursor?: PrimaryKeyType
 }
+
+interface BulkQueryOffsetOptions extends BulkQueryBaseOptions {
+  skip?: number
+  cursor?: never
+}
+
+interface BulkQueryCursorOptions extends BulkQueryBaseOptions {
+  skip?: never
+  cursor: PrimaryKeyType
+}
+
+export type BulkQueryOptions = BulkQueryOffsetOptions | BulkQueryCursorOptions
 
 export type QueryToComparator<
   QueryType extends StringQuery | NumberQuery | BooleanQuery | DateQuery
