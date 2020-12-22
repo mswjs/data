@@ -5,7 +5,7 @@ import { identity } from '../../src/utils/identity'
 test('should update many entity with evolution value', () => {
   const db = factory({
     user: {
-      id: identity(random.uuid()),
+      id: identity(random.uuid),
       firstName: name.findName,
       role: String,
     },
@@ -53,7 +53,7 @@ test('should update many entity with evolution value', () => {
 test('should update many entities with primitive values', () => {
   const db = factory({
     user: {
-      id: identity(random.uuid()),
+      id: identity(random.uuid),
       firstName: name.findName,
       role: String,
     },
