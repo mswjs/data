@@ -162,3 +162,41 @@ test('should update many entities with primitive values', () => {
   expect(updateMultiUsers).toHaveLength(2)
   updateMultiUsers.forEach((user) => expect(user.role).toEqual('Admin'))
 })
+
+test('throw an error when trying entities using a key already used', () => {
+  const db = factory({
+    user: {
+      id: primaryKey(random.uuid),
+      role: String,
+    },
+  })
+
+  db.user.create({
+    id: '123',
+    role: 'Admin',
+  })
+  db.user.create({
+    id: '456',
+    role: 'Auditor',
+  })
+
+  db.user.create({
+    id: '789',
+    role: 'Auditor',
+  })
+
+  expect(() =>
+    db.user.update({
+      which: {
+        role: {
+          equals: 'Auditor',
+        },
+      },
+      data: {
+        id: '123',
+      },
+    }),
+  ).toThrowError(
+    'Failed to execute "update" on the "user" model: the entity has a key "123" already used by another entity.',
+  )
+})

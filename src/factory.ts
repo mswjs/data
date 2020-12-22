@@ -13,6 +13,7 @@ import { parseModelDeclaration } from './model/parseModelDeclaration'
 import { createModel } from './model/createModel'
 import { invariant } from './utils/invariant'
 import { updateEntity } from './model/updateEntity'
+import { DuplicateKeyError } from './exceptions'
 
 /**
  * Create a database with the given models.
@@ -116,6 +117,11 @@ function createModelApi<
       const nextRecord = updateEntity(record, query.data)
 
       if (nextRecord[record.__primaryKey] !== record[record.__primaryKey]) {
+        invariant(
+          db[modelName].has(nextRecord[record.__primaryKey]),
+          () =>
+            new DuplicateKeyError(modelName, nextRecord[record.__primaryKey]),
+        )
         db[modelName].delete(record[record.__primaryKey] as string)
       }
 
@@ -141,7 +147,12 @@ function createModelApi<
       records.forEach((record) => {
         const nextRecord = updateEntity(record, query.data)
 
-        if (nextRecord[record.__primaryKey] !== record.__primaryKey) {
+        if (nextRecord[record.__primaryKey] !== record[record.__primaryKey]) {
+          invariant(
+            db[modelName].has(nextRecord[record.__primaryKey]),
+            () =>
+              new DuplicateKeyError(modelName, nextRecord[record.__primaryKey]),
+          )
           db[modelName].delete(record[record.__primaryKey] as string)
         }
 

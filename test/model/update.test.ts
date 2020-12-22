@@ -166,3 +166,33 @@ test('does nothing when no entity matches the query', () => {
   })
   expect(updatedUser).toBeNull()
 })
+
+test('throw an error when trying to update an entity using a key already used', () => {
+  const db = factory({
+    user: {
+      id: primaryKey(random.uuid),
+    },
+  })
+
+  db.user.create({
+    id: '123',
+  })
+  db.user.create({
+    id: '456',
+  })
+
+  expect(() =>
+    db.user.update({
+      which: {
+        id: {
+          equals: '456',
+        },
+      },
+      data: {
+        id: '123',
+      },
+    }),
+  ).toThrowError(
+    'Failed to execute "update" on the "user" model: the entity has a key "123" already used by another entity.',
+  )
+})
