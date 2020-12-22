@@ -5,6 +5,7 @@ import {
   ModelDeclaration,
   EntityInstance,
   ModelDictionary,
+  PrimaryKeyType,
 } from './glossary'
 import { first } from './utils/first'
 import { executeQuery } from './query/executeQuery'
@@ -38,6 +39,8 @@ function createModelApi<
   Dictionary extends ModelDictionary,
   ModelName extends string
 >(modelName: ModelName, declaration: ModelDeclaration, db: Database) {
+  let modelPrimaryKey: PrimaryKeyType
+
   const api: ModelAPI<Dictionary, ModelName> = {
     create(initialValues = {}) {
       const { primaryKey, properties, relations } = parseModelDeclaration<
@@ -45,30 +48,31 @@ function createModelApi<
         ModelName
       >(modelName, declaration, initialValues)
 
-      const model = createModel<Dictionary, ModelName>(
+      const entity = createModel<Dictionary, ModelName>(
         modelName,
         primaryKey,
         properties,
         relations,
         db,
       )
-      const modelPrimaryKey = model[model.__primaryKey]
+      modelPrimaryKey = entity.__primaryKey
+      const entityPrimaryKey = entity[entity.__primaryKey] as string
 
       // Prevent creation of multiple entities with the same primary key value.
       invariant(
-        db[modelName].has(modelPrimaryKey as string),
-        `Failed to create "${modelName}": entity with the primary key "${modelPrimaryKey}" ("${model.__primaryKey}") already exists.`,
+        db[modelName].has(entityPrimaryKey),
+        `Failed to create "${modelName}": entity with the primary key "${entityPrimaryKey}" ("${entity.__primaryKey}") already exists.`,
       )
 
-      db[modelName].set(modelPrimaryKey as string, model)
+      db[modelName].set(entityPrimaryKey as string, entity)
 
-      return model
+      return entity
     },
     count() {
       return db[modelName].size
     },
     findFirst(query) {
-      const results = executeQuery(modelName, 'PRIMARY_KEY', query, db)
+      const results = executeQuery(modelName, modelPrimaryKey, query, db)
       const firstResult = first(results)
 
       invariant(
@@ -81,7 +85,7 @@ function createModelApi<
       return firstResult
     },
     findMany(query) {
-      const results = executeQuery(modelName, 'PRIMARY_KEY', query, db)
+      const results = executeQuery(modelName, modelPrimaryKey, query, db)
 
       invariant(
         query.strict && results.length === 0,
