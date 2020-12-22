@@ -1,9 +1,10 @@
 import { debug } from 'debug'
 import { Database, EntityInstance } from '../glossary'
 import { compileQuery } from './compileQuery'
-import { QuerySelector } from './queryTypes'
+import { BulkQueryOptions, QuerySelector } from './queryTypes'
 import { invariant } from '../utils/invariant'
 import * as iteratorUtils from '../utils/iteratorUtils'
+import { paginateResults } from './paginateResults'
 
 const log = debug('executeQuery')
 
@@ -28,7 +29,7 @@ function queryByPrimaryKey(
 export function executeQuery(
   modelName: string,
   primaryKey: string,
-  query: QuerySelector<any>,
+  query: QuerySelector<any> & BulkQueryOptions,
   db: Database,
 ): EntityInstance<any, any>[] {
   log(`${JSON.stringify(query)} on "${modelName}"`)
@@ -61,5 +62,8 @@ export function executeQuery(
     resultJson,
   )
 
-  return resultJson
+  const paginatedResults = paginateResults(query, resultJson)
+  log('paginated query results', paginatedResults)
+
+  return paginatedResults
 }

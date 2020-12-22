@@ -1,4 +1,4 @@
-import { QuerySelector } from './query/queryTypes'
+import { BulkQueryOptions, QuerySelector } from './query/queryTypes'
 
 export type PrimaryKeyType = string
 export type BaseTypes = string | number | boolean | Date
@@ -92,7 +92,8 @@ export interface ModelAPI<
    * Find multiple entities.
    */
   findMany(
-    query: QuerySelector<Value<Dictionary[ModelName], Dictionary>>,
+    query: QuerySelector<Value<Dictionary[ModelName], Dictionary>> &
+      BulkQueryOptions,
   ): EntityInstance<Dictionary, ModelName>[]
   /**
    * Return all entities of the current model.

@@ -11,6 +11,11 @@ interface QueryOptions {
   strict?: boolean
 }
 
+export interface BulkQueryOptions {
+  take?: number
+  skip?: number
+}
+
 export type QueryToComparator<
   QueryType extends StringQuery | NumberQuery | BooleanQuery | DateQuery
 > = {
