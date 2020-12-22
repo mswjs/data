@@ -1,8 +1,10 @@
-import { factory } from '../../src'
+import { random } from 'faker'
+import { factory, primaryKey } from '../../src'
 
 test('queries entities based on a boolean value', () => {
   const db = factory({
     book: {
+      id: primaryKey(random.uuid),
       title: String,
       published: Boolean,
     },

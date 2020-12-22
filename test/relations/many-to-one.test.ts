@@ -1,15 +1,14 @@
 import { random, name } from 'faker'
-import { factory, oneOf } from '../../src'
-import { identity } from '../../src/utils/identity'
+import { factory, oneOf, primaryKey } from '../../src'
 
 test('supports querying against a many-to-one relation', () => {
-  const userId = random.uuid()
   const db = factory({
     user: {
-      id: identity(userId),
+      id: primaryKey(random.uuid),
       firstName: name.firstName,
     },
     post: {
+      id: primaryKey(random.uuid),
       title: random.words,
       author: oneOf('user'),
     },
@@ -33,7 +32,7 @@ test('supports querying against a many-to-one relation', () => {
     which: {
       author: {
         id: {
-          equals: userId,
+          equals: user.id,
         },
       },
     },
@@ -44,16 +43,19 @@ test('supports querying against a many-to-one relation', () => {
   expect(postTitles).toEqual(['First post', 'Second post', 'Third post'])
 })
 
-test('supports querying against nested relational properties', () => {
+test('supports querying through nested relational properties', () => {
   const db = factory({
     role: {
+      id: primaryKey(random.uuid),
       title: random.word,
     },
     user: {
+      id: primaryKey(random.uuid),
       firstName: name.firstName,
       role: oneOf('role'),
     },
     post: {
+      id: primaryKey(random.uuid),
       title: random.words,
       author: oneOf('user'),
     },

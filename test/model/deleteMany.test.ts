@@ -1,9 +1,10 @@
 import { random, name } from 'faker'
-import { factory } from '../../src'
+import { factory, primaryKey } from '../../src'
 
 test('deletes all entites that match the query', () => {
   const db = factory({
     user: {
+      id: primaryKey(random.uuid),
       firstName: name.firstName,
       followersCount: random.number,
     },
@@ -57,6 +58,7 @@ test('deletes all entites that match the query', () => {
 test('does nothing when no entities match the query', () => {
   const db = factory({
     user: {
+      id: primaryKey(random.uuid),
       firstName: name.firstName,
       followersCount: random.number,
     },

@@ -22,11 +22,11 @@ $ npm install @mswjs/data --save-dev
 
 ```js
 // src/mocks/db.js
-import { factory } from '@mswjs/data'
+import { factory, primaryKey } from '@mswjs/data'
 
 export const db = factory({
   user: {
-    id: () => 'abc-123',
+    id: primaryKey(() => 'abc-123'),
     firstName: () => 'John',
     lastName: () => 'Maverick',
   },
@@ -243,14 +243,14 @@ const popularPosts = db.post.findMany({
 #### One-to-one
 
 ```js
-import { factory, oneOf } from '@mswjs/data'
+import { factory, primaryKey, oneOf } from '@mswjs/data'
 
 const db = factory({
   user: {
-    id: String
+    id: primaryKey(String)
   },
   post: {
-    it: String
+    id: String
     title: String
     // The `post` model has the `author` property
     // that points to the `user` entity.
@@ -270,11 +270,11 @@ db.post.create({
 
 ```js
 import { random, name } from 'faker'
-import { factory } from '@mswjs/data'
+import { factory, primaryKey } from '@mswjs/data'
 
 factory({
   user: {
-    id: random.uuid,
+    id: primaryKey(random.uuid),
     firstName: name.firstName,
   },
 })

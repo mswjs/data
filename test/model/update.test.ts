@@ -1,12 +1,11 @@
 import { random, name } from 'faker'
-import { factory } from '../../src'
-import { identity } from '../../src/utils/identity'
+import { factory, primaryKey } from '../../src'
 
 test('updates a unique entity that matches the query', () => {
   const userId = random.uuid()
   const db = factory({
     user: {
-      id: identity(userId),
+      id: primaryKey(random.uuid),
       firstName: name.findName,
     },
   })
@@ -41,6 +40,7 @@ test('updates a unique entity that matches the query', () => {
 test('updates the first entity when multiple entities match the query', () => {
   const db = factory({
     user: {
+      id: primaryKey(random.uuid),
       firstName: name.findName,
       followersCount: random.number,
     },
@@ -78,7 +78,7 @@ test('updates the first entity when multiple entities match the query', () => {
 test('does nothing when no entity matches the query', () => {
   const db = factory({
     user: {
-      id: random.uuid,
+      id: primaryKey(random.uuid),
     },
   })
 
@@ -95,5 +95,5 @@ test('does nothing when no entity matches the query', () => {
       id: 'def-456',
     },
   })
-  expect(updatedUser).toBeUndefined()
+  expect(updatedUser).toBeNull()
 })

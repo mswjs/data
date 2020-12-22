@@ -1,12 +1,12 @@
 import { random } from 'faker'
-import { factory } from '../../src'
+import { factory, primaryKey } from '../../src'
 import { identity } from '../../src/utils/identity'
 
 test('creates a new entity', () => {
   const userId = random.uuid()
   const db = factory({
     user: {
-      id: identity(userId),
+      id: primaryKey(identity(userId)),
     },
   })
 
@@ -19,7 +19,7 @@ test('creates a new entity', () => {
 test('creates a new entity with initial values', () => {
   const db = factory({
     user: {
-      id: random.uuid,
+      id: primaryKey(random.uuid),
     },
   })
 

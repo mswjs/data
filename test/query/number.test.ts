@@ -1,8 +1,10 @@
-import { factory } from '../../src'
+import { random } from 'faker'
+import { factory, primaryKey } from '../../src'
 
 const setup = () => {
   const db = factory({
     user: {
+      id: primaryKey(random.uuid),
       firstName: String,
       age: Number,
     },

@@ -1,33 +1,53 @@
 import { debug } from 'debug'
 import {
-  BaseTypes,
-  ManyOf,
-  OneOf,
   RelationalNode,
   RelationKind,
   ModelDictionary,
   Value,
+  ModelDeclaration,
+  PrimaryKeyType,
 } from '../glossary'
+import { invariant } from '../utils/invariant'
 
 const log = debug('parseModelDeclaration')
+
+interface ParsedModelDeclaration {
+  primaryKey: PrimaryKeyType
+  properties: Value<any, any>
+  relations: Record<string, RelationalNode<string>>
+}
 
 export function parseModelDeclaration<
   Dictionary extends ModelDictionary,
   ModelName extends string
 >(
   modelName: ModelName,
-  declaration: Record<string, (() => BaseTypes) | OneOf<any> | ManyOf<any>>,
+  declaration: ModelDeclaration,
   initialValues?: Partial<Value<Dictionary[ModelName], Dictionary>>,
-) {
-  log(`create a "${modelName}" entity`, declaration, initialValues)
+): ParsedModelDeclaration {
+  log(
+    `parsing model declaration for "${modelName}" entity`,
+    declaration,
+    initialValues,
+  )
 
-  return Object.entries(declaration).reduce<{
-    properties: Value<any, any>
-    relations: Record<string, RelationalNode<ModelName>>
-  }>(
+  const result = Object.entries(declaration).reduce<ParsedModelDeclaration>(
     (acc, [key, valueGetter]) => {
       const exactValue = initialValues?.[key]
       log(`initial value for key "${modelName}.${key}"`, exactValue)
+
+      if ('isPrimaryKey' in valueGetter) {
+        invariant(
+          !!acc.primaryKey,
+          `Failed to parse model declaration for "${modelName}": cannot specify more than one primary key for a model.`,
+        )
+
+        log(`using "${key}" as the primary key for "${modelName}"`)
+
+        acc.primaryKey = key
+        acc.properties[key] = exactValue || valueGetter.getValue()
+        return acc
+      }
 
       if (
         typeof exactValue === 'string' ||
@@ -76,6 +96,7 @@ export function parseModelDeclaration<
               {
                 __type: relation.__type,
                 __nodeId: relation.__nodeId,
+                __primaryKey: 'PRIMARY_KEY',
               },
             ],
           }
@@ -105,8 +126,18 @@ export function parseModelDeclaration<
       return acc
     },
     {
+      primaryKey: null,
       properties: {},
       relations: {},
     },
   )
+
+  // Primary key is required on each model declaration.
+  if (result.primaryKey === null) {
+    throw new Error(
+      `Failed to parse model declaration for "${modelName}": primary key not found.`,
+    )
+  }
+
+  return result
 }

@@ -1,10 +1,10 @@
 import { random } from 'faker'
-import { factory } from '../../src'
+import { factory, primaryKey } from '../../src'
 
 test('returns all entities', () => {
   const db = factory({
     user: {
-      id: random.uuid,
+      id: primaryKey(random.uuid),
       firstName: String,
     },
   })
@@ -23,7 +23,7 @@ test('returns all entities', () => {
 test('returns an empty list when found no entities', () => {
   const db = factory({
     user: {
-      id: random.uuid,
+      id: primaryKey(random.uuid),
       firstName: String,
     },
   })
