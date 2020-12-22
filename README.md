@@ -8,7 +8,7 @@ Data modeling and relation library for testing JavaScript applications.
 
 ## Motivation
 
-When testing API interactions you often need to mock the data. Instead of keeping a hard-coded set of fixtures, this library provides you with an intuitive interface to model your data, create relations between different models, and query them alike to an actual database. A must-have for a data-driven API mocking.
+When testing API interactions you often need to mock data. Instead of keeping a hard-coded set of fixtures, this library provides you with an intuitive interface to model your data, create relations between models, and query it in a way similar to an actual database. A must-have tool for data-driven API mocking.
 
 ## Getting started
 
@@ -20,18 +20,24 @@ $ npm install @mswjs/data --save-dev
 
 ### Describe data
 
+With this library you're modeling data using the `factory` function. That function accepts an object where each key represents a _model name_ and values are _model declarations_. Model declaration, in turn, is also an object where keys stand for model properties and values for value getter functions.
+
 ```js
 // src/mocks/db.js
 import { factory, primaryKey } from '@mswjs/data'
 
 export const db = factory({
+  // Create a "user" model,
   user: {
+    // ...with these properties and value getters.
     id: primaryKey(() => 'abc-123'),
     firstName: () => 'John',
     lastName: () => 'Maverick',
   },
 })
 ```
+
+> See the [Recipes](#recipes) for more tips and tricks on data modeling.
 
 ### Integrate with mocks
 
@@ -280,7 +286,7 @@ const db = factory({
     id: String
     title: String
     // The `post` model has the `author` property
-    // that points to the `user` entity.
+    // that references to the `user` entity.
     author: oneOf('user')
   }
 })
@@ -294,6 +300,8 @@ db.post.create({
 ```
 
 ### Usage with `faker`
+
+Libraries like [`faker`](https://github.com/Marak/Faker.js) can help you generate fake data for your models.
 
 ```js
 import { random, name } from 'faker'
