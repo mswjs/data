@@ -1,7 +1,13 @@
 import { QuerySelector } from './query/queryTypes'
 
+export type PrimaryKeyType = string
 export type BaseTypes = string | number | boolean | Date
 export type KeyType = string | number | symbol
+
+export interface PrimaryKeyDeclaration {
+  isPrimaryKey: boolean
+  getValue(): PrimaryKeyType
+}
 
 export enum RelationKind {
   OneOf = 'oneOf',
@@ -24,6 +30,11 @@ export type ManyOf<T extends KeyType> = {
   modelName: T
 }
 
+export type ModelDeclaration = Record<
+  string,
+  (() => BaseTypes) | OneOf<any> | ManyOf<any> | PrimaryKeyDeclaration
+>
+
 export type FactoryAPI<Dictionary extends Record<string, any>> = {
   [K in keyof Dictionary]: ModelAPI<Dictionary, K>
 }
@@ -31,6 +42,7 @@ export type FactoryAPI<Dictionary extends Record<string, any>> = {
 export interface InternalEntityProperties<ModelName extends KeyType> {
   readonly __type: ModelName
   readonly __nodeId: string
+  readonly __primaryKey: PrimaryKeyType
 }
 
 export type EntityInstance<
@@ -45,6 +57,7 @@ export type Limit<T extends Record<string, any>> = {
   [RK in keyof T]: {
     [SK in keyof T[RK]]: T[RK][SK] extends
       | (() => BaseTypes)
+      | PrimaryKeyDeclaration
       | OneOf<keyof T>
       | ManyOf<keyof T>
       ? T[RK][SK]
@@ -132,7 +145,9 @@ export type Value<
     ? EntityInstance<Parent, T[K]['modelName']>
     : T[K] extends ManyOf<any>
     ? EntityInstance<Parent, T[K]['modelName']>[]
+    : T[K] extends PrimaryKeyDeclaration
+    ? ReturnType<T[K]['getValue']>
     : ReturnType<T[K]>
 }
 
-export type Database<EntityType> = Record<KeyType, EntityType[]>
+export type Database = Record<KeyType, Map<string, EntityInstance<any, any>>>

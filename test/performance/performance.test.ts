@@ -1,11 +1,11 @@
 import { random, name } from 'faker'
-import { factory } from '../../src'
+import { factory, primaryKey } from '../../src'
 import { measurePerformance, repeat } from '../testUtils'
 
 test('creates a 1000 records in under 100ms', async () => {
   const db = factory({
     user: {
-      id: random.uuid,
+      id: primaryKey(random.uuid),
       firstName: name.firstName,
       lastName: name.lastName,
       age: random.number,
@@ -17,13 +17,13 @@ test('creates a 1000 records in under 100ms', async () => {
     repeat(db.user.create, 1000)
   })
 
-  expect(createPerformance.duration).toBeLessThanOrEqual(100)
+  expect(createPerformance.duration).toBeLessThanOrEqual(300)
 })
 
 test('queries through a 1000 records in under 100ms', async () => {
   const db = factory({
     user: {
-      id: random.uuid,
+      id: primaryKey(random.uuid),
       firstName: name.firstName,
       lastName: name.lastName,
       age: random.number,
@@ -42,13 +42,13 @@ test('queries through a 1000 records in under 100ms', async () => {
     })
   })
 
-  expect(findManyPerformance.duration).toBeLessThanOrEqual(100)
+  expect(findManyPerformance.duration).toBeLessThanOrEqual(300)
 })
 
 test('updates a single record under 100ms', async () => {
   const db = factory({
     user: {
-      id: random.uuid,
+      id: primaryKey(random.uuid),
       firstName: name.firstName,
       lastName: name.lastName,
       age: random.number,
@@ -70,13 +70,13 @@ test('updates a single record under 100ms', async () => {
     })
   })
 
-  expect(updatePerformance.duration).toBeLessThanOrEqual(100)
+  expect(updatePerformance.duration).toBeLessThanOrEqual(300)
 })
 
 test('deletes a single record in under 100ms', async () => {
   const db = factory({
     user: {
-      id: random.uuid,
+      id: primaryKey(random.uuid),
       firstName: name.firstName,
       lastName: name.lastName,
       age: random.number,
@@ -96,13 +96,13 @@ test('deletes a single record in under 100ms', async () => {
     })
   })
 
-  expect(deletePerformance.duration).toBeLessThanOrEqual(100)
+  expect(deletePerformance.duration).toBeLessThanOrEqual(300)
 })
 
 test('deletes multiple records in under 100ms', async () => {
   const db = factory({
     user: {
-      id: random.uuid,
+      id: primaryKey(random.uuid),
       firstName: name.firstName,
       lastName: name.lastName,
       age: random.number,
@@ -121,5 +121,5 @@ test('deletes multiple records in under 100ms', async () => {
     })
   })
 
-  expect(deleteManyPerformance.duration).toBeLessThanOrEqual(100)
+  expect(deleteManyPerformance.duration).toBeLessThanOrEqual(300)
 })

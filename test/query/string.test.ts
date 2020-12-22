@@ -1,8 +1,10 @@
-import { factory } from '../../src'
+import { random } from 'faker'
+import { factory, primaryKey } from '../../src'
 
 const setup = () => {
   const db = factory({
     recipe: {
+      id: primaryKey(random.uuid),
       title: String,
       category: String,
     },
@@ -21,6 +23,7 @@ const setup = () => {
   })
   return db
 }
+
 test('queries entity which property equals a string', () => {
   const db = setup()
 

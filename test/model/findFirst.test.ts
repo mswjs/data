@@ -1,12 +1,12 @@
 import { random } from 'faker'
-import { factory } from '../../src'
+import { factory, primaryKey } from '../../src'
 import { identity } from '../../src/utils/identity'
 
 test('returns the only matching entity', () => {
   const userId = random.uuid()
   const db = factory({
     user: {
-      id: identity(userId),
+      id: primaryKey(identity(userId)),
     },
   })
 
@@ -25,7 +25,7 @@ test('returns the only matching entity', () => {
 test('returns the first entity among multiple matching entities', () => {
   const db = factory({
     user: {
-      id: random.uuid,
+      id: primaryKey(random.uuid),
       followersCount: Number,
     },
   })
@@ -47,7 +47,7 @@ test('returns the first entity among multiple matching entities', () => {
 test('returns null when found no matching entities', () => {
   const db = factory({
     user: {
-      id: random.uuid,
+      id: primaryKey(random.uuid),
     },
   })
   db.user.create()

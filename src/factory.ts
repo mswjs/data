@@ -1,20 +1,17 @@
-import { mergeDeepRight } from 'ramda'
 import {
   FactoryAPI,
   Database,
-  OneOf,
-  ManyOf,
   ModelAPI,
-  BaseTypes,
+  ModelDeclaration,
   EntityInstance,
   ModelDictionary,
-  Value,
 } from './glossary'
 import { first } from './utils/first'
 import { executeQuery } from './query/executeQuery'
-import { compileQuery } from './query/compileQuery'
 import { parseModelDeclaration } from './model/parseModelDeclaration'
 import { createModel } from './model/createModel'
+import { invariant } from './utils/invariant'
+import { updateEntity } from './model/updateEntity'
 
 /**
  * Create a database with the given models.
@@ -22,13 +19,10 @@ import { createModel } from './model/createModel'
 export function factory<Dictionary extends ModelDictionary>(
   dict: Dictionary,
 ): FactoryAPI<Dictionary> {
-  const db: Database<EntityInstance<any, any>> = Object.keys(dict).reduce(
-    (acc, modelName) => {
-      acc[modelName] = []
-      return acc
-    },
-    {},
-  )
+  const db: Database = Object.keys(dict).reduce((acc, modelName) => {
+    acc[modelName] = new Map<string, EntityInstance<Dictionary, string>>()
+    return acc
+  }, {})
 
   return Object.entries(dict).reduce<any>((acc, [modelName, props]) => {
     acc[modelName] = createModelApi<Dictionary, typeof modelName>(
@@ -43,136 +37,99 @@ export function factory<Dictionary extends ModelDictionary>(
 function createModelApi<
   Dictionary extends ModelDictionary,
   ModelName extends string
->(
-  modelName: ModelName,
-  declaration: Record<string, (() => BaseTypes) | OneOf<any> | ManyOf<any>>,
-  db: Database<EntityInstance<Dictionary, ModelName>>,
-): ModelAPI<Dictionary, ModelName> {
-  return {
+>(modelName: ModelName, declaration: ModelDeclaration, db: Database) {
+  const api: ModelAPI<Dictionary, ModelName> = {
     create(initialValues = {}) {
-      const { properties, relations } = parseModelDeclaration<
+      const { primaryKey, properties, relations } = parseModelDeclaration<
         Dictionary,
         ModelName
       >(modelName, declaration, initialValues)
+
       const model = createModel<Dictionary, ModelName>(
         modelName,
+        primaryKey,
         properties,
         relations,
         db,
       )
+      const modelPrimaryKey = model[model.__primaryKey]
 
-      db[modelName].push(model)
+      // Prevent creation of multiple entities with the same primary key value.
+      invariant(
+        db[modelName].has(modelPrimaryKey as string),
+        `Failed to create "${modelName}": entity with the primary key "${modelPrimaryKey}" ("${model.__primaryKey}") already exists.`,
+      )
+
+      db[modelName].set(modelPrimaryKey as string, model)
+
       return model
     },
     count() {
-      return db[modelName].length
+      return db[modelName].size
     },
     findFirst(query) {
-      const results = executeQuery(modelName, query, db)
+      const results = executeQuery(modelName, 'PRIMARY_KEY', query, db)
       return first(results)
     },
     findMany(query) {
-      return executeQuery(modelName, query, db)
+      return executeQuery(modelName, 'PRIMARY_KEY', query, db)
     },
     getAll() {
-      return Object.values(db[modelName])
+      return Array.from(db[modelName].values())
     },
     update(query) {
-      const executeQuery = compileQuery(query)
-      const prevRecords = db[modelName]
-      let nextRecord: EntityInstance<Dictionary, ModelName>
+      const record = api.findFirst(query)
 
-      for (let index = 0; index < prevRecords.length; index++) {
-        const record = prevRecords[index]
-
-        if (executeQuery(record)) {
-          nextRecord = mergeDeepRight<
-            EntityInstance<Dictionary, ModelName>,
-            any
-          >(record, query.data)
-          db[modelName].splice(index, -1, nextRecord)
-          break
-        }
+      if (!record) {
+        return null
       }
+
+      const nextRecord = updateEntity(record, query.data)
+
+      db[modelName].set(record[record.__primaryKey] as string, nextRecord)
 
       return nextRecord
     },
     updateMany(query) {
-      const executeQuery = compileQuery(query)
-      const prevRecords = db[modelName]
+      const records = api.findMany(query)
+      const updatedRecords = []
 
-      const { updatedRecords, nextRecords } = prevRecords.reduce(
-        (acc, record) => {
-          if (executeQuery(record)) {
-            const evaluatedData = Object.entries(query.data).reduce(
-              (acc, [property, propertyValue]) => {
-                const nextValue =
-                  typeof propertyValue === 'function'
-                    ? propertyValue(record[property])
-                    : propertyValue
-                acc[property] = nextValue
-                return acc
-              },
-              {},
-            )
+      if (!records) {
+        return null
+      }
 
-            const nextRecord = mergeDeepRight<
-              EntityInstance<Dictionary, ModelName>,
-              any
-            >(record, evaluatedData)
-            acc.updatedRecords.push(nextRecord)
-            acc.nextRecords.push(nextRecord)
-          } else {
-            acc.nextRecords.push(record)
-          }
-
-          return acc
-        },
-        { updatedRecords: [], nextRecords: [] },
-      )
-
-      db[modelName] = nextRecords
+      records.forEach((record) => {
+        const nextRecord = updateEntity(record, query.data)
+        db[modelName].set(record[record.__primaryKey] as string, nextRecord)
+        updatedRecords.push(nextRecord)
+      })
 
       return updatedRecords
     },
     delete(query) {
-      let deletedRecord: EntityInstance<Dictionary, ModelName>
-      const executeQuery = compileQuery(query)
-      const prevRecords = db[modelName]
+      const record = api.findFirst(query)
 
-      for (let index = 0; index < prevRecords.length; index++) {
-        const record = prevRecords[index]
-
-        if (executeQuery(record)) {
-          deletedRecord = record
-          db[modelName].splice(index, 1)
-          break
-        }
+      if (!record) {
+        return null
       }
 
-      return deletedRecord
+      db[modelName].delete(record[record.__primaryKey] as string)
+      return record
     },
     deleteMany(query) {
-      const executeQuery = compileQuery(query)
-      const prevRecords = db[modelName]
-      const { deletedRecords, nextRecords } = prevRecords.reduce<{
-        deletedRecords: EntityInstance<Dictionary, ModelName>[]
-        nextRecords: EntityInstance<Dictionary, ModelName>[]
-      }>(
-        (acc, record) => {
-          if (executeQuery(record)) {
-            acc.deletedRecords.push(record)
-          } else {
-            acc.nextRecords.push(record)
-          }
-          return acc
-        },
-        { deletedRecords: [], nextRecords: [] },
-      )
+      const records = api.findMany(query)
 
-      db[modelName] = nextRecords
+      if (!records) {
+        return null
+      }
 
-      return deletedRecords
+      records.forEach((record) => {
+        db[modelName].delete(record[record.__primaryKey] as string)
+      })
+
+      return records
     },
   }
+
+  return api
 }

@@ -4,7 +4,7 @@ import {
   Database,
   InternalEntityProperties,
   ModelDictionary,
-  EntityInstance,
+  PrimaryKeyType,
   Value,
 } from '../glossary'
 import { defineRelationalProperties } from './defineRelationalProperties'
@@ -16,15 +16,17 @@ export function createModel<
   ModelName extends string
 >(
   modelName: ModelName,
+  primaryKey: PrimaryKeyType,
   properties: Value<Dictionary[ModelName], Dictionary>,
   relations: Record<string, any>,
-  db: Database<EntityInstance<Dictionary, ModelName>>,
+  db: Database,
 ) {
-  log('creating model', modelName, properties, relations)
+  log('creating model', modelName, primaryKey, properties, relations)
 
   const internalProperties: InternalEntityProperties<ModelName> = {
     __type: modelName,
     __nodeId: v4(),
+    __primaryKey: primaryKey,
   }
   const model = Object.assign({}, properties, internalProperties)
   defineRelationalProperties(model, relations, db)

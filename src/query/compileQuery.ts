@@ -9,14 +9,17 @@ const log = debug('compileQuery')
  * Compile a query expression into a function that accepts an actual entity
  * and returns a query execution result (whether the entity satisfies the query).
  */
-export function compileQuery(query: QuerySelector<any>) {
+export function compileQuery<V extends Record<string, any>>(
+  query: QuerySelector<any>,
+) {
   log(JSON.stringify(query))
 
-  return (entity: EntityInstance<any, any>) => {
+  return (data: V) => {
     return Object.entries(query.which)
       .map<boolean>(([propName, queryChunk]) => {
-        const actualValue = entity[propName]
-        log('executing query chunk', queryChunk, entity)
+        const actualValue = data[propName]
+
+        log('executing query chunk', queryChunk, data)
         log(`actual value for "${propName}"`, actualValue)
 
         return Object.entries(queryChunk).reduce<boolean>(
@@ -26,7 +29,7 @@ export function compileQuery(query: QuerySelector<any>) {
             }
 
             // When the actual value is a resolved relational property reference,
-            // execute the current query chunk on it.
+            // execute the current query chunk on the referenced record.
             if (actualValue.__type) {
               return compileQuery({ which: queryChunk })(actualValue)
             }

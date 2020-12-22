@@ -1,11 +1,11 @@
 import { random, name } from 'faker'
-import { factory } from '../../src'
+import { factory, primaryKey } from '../../src'
 
 test('deletes a unique entity that matches the query', () => {
   const userId = random.uuid()
   const db = factory({
     user: {
-      id: random.uuid,
+      id: primaryKey(random.uuid),
       firstName: name.findName,
     },
   })
@@ -32,6 +32,7 @@ test('deletes a unique entity that matches the query', () => {
 test('deletes the first entity that matches the query', () => {
   const db = factory({
     user: {
+      id: primaryKey(random.uuid),
       firstName: name.firstName,
       followersCount: Number,
     },
@@ -67,7 +68,7 @@ test('deletes the first entity that matches the query', () => {
 test('does nothing when no entity matches the query', () => {
   const db = factory({
     user: {
-      id: random.uuid,
+      id: primaryKey(random.uuid),
       firstName: name.firstName,
     },
   })
@@ -82,7 +83,7 @@ test('does nothing when no entity matches the query', () => {
       },
     },
   })
-  expect(deletedUser).toBeUndefined()
+  expect(deletedUser).toBeNull()
 
   const allUsers = db.user.getAll()
   expect(allUsers).toHaveLength(3)

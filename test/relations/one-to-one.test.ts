@@ -1,12 +1,14 @@
 import { random } from 'faker'
-import { factory, oneOf } from '../../src'
+import { factory, primaryKey, oneOf } from '../../src'
 
 test('supports one-to-one relation', () => {
   const db = factory({
     country: {
+      id: primaryKey(random.uuid),
       name: random.words,
     },
     capital: {
+      id: primaryKey(random.uuid),
       name: random.word,
       country: oneOf('country'),
     },
@@ -26,9 +28,11 @@ test('supports one-to-one relation', () => {
 test('supports querying through a one-to-one relational property', () => {
   const db = factory({
     country: {
+      id: primaryKey(random.uuid),
       name: random.words,
     },
     capital: {
+      id: primaryKey(random.uuid),
       name: random.word,
       country: oneOf('country'),
     },

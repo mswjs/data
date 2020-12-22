@@ -1,11 +1,10 @@
 import { random, name } from 'faker'
-import { factory } from '../../src'
-import { identity } from '../../src/utils/identity'
+import { factory, primaryKey } from '../../src'
 
 test('should update many entity with evolution value', () => {
   const db = factory({
     user: {
-      id: identity(random.uuid),
+      id: primaryKey(random.uuid),
       firstName: name.findName,
       role: String,
     },
@@ -53,7 +52,7 @@ test('should update many entity with evolution value', () => {
 test('should update many entities with primitive values', () => {
   const db = factory({
     user: {
-      id: identity(random.uuid),
+      id: primaryKey(random.uuid),
       firstName: name.findName,
       role: String,
     },
