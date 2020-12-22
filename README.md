@@ -261,6 +261,7 @@ db.user.findFirst({
       equals: 'def-456',
     },
   },
+  strict: true,
 })
 ```
 
