@@ -134,7 +134,11 @@ export type UpdateManyValue<
 > =
   | Value<T, Parent>
   | {
-      [K in keyof T]: (currentValue: ReturnType<T[K]>) => ReturnType<T[K]>
+      [K in keyof T]: T[K] extends PrimaryKeyDeclaration
+        ? (
+            prevValue: ReturnType<T[K]['getValue']>,
+          ) => ReturnType<T[K]['getValue']>
+        : (prevValue: ReturnType<T[K]>) => ReturnType<T[K]>
     }
 
 export type Value<
