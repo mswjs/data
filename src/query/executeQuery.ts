@@ -9,13 +9,15 @@ const log = debug('executeQuery')
 
 function queryByPrimaryKey(
   records: Map<string, EntityInstance<any, any>>,
-  primaryKey: string,
   query: QuerySelector<any>,
 ) {
+  log('querying by primary key')
   const matchPrimaryKey = compileQuery(query)
 
-  return iteratorUtils.filter((id) => {
-    return matchPrimaryKey({ [primaryKey]: id })
+  return iteratorUtils.filter((id, value) => {
+    return matchPrimaryKey({
+      [value.__primaryKey]: id,
+    })
   }, records)
 }
 
@@ -38,12 +40,12 @@ export function executeQuery(
   )
 
   // Reduce the query scope if there's a query by primary key of the model.
-  const { [primaryKey]: primaryKeyQuery, ...restQueries } = query.which
-  log('primary key query', primaryKeyQuery)
+  const { [primaryKey]: primaryKeyComparator, ...restQueries } = query.which
+  log('primary key query', primaryKeyComparator)
 
-  const scopedRecords = primaryKeyQuery
-    ? queryByPrimaryKey(db[modelName], primaryKey, {
-        which: primaryKeyQuery,
+  const scopedRecords = primaryKeyComparator
+    ? queryByPrimaryKey(db[modelName], {
+        which: { [primaryKey]: primaryKeyComparator },
       })
     : records
 
