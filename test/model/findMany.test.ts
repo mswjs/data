@@ -25,6 +25,29 @@ test('returns the first entity among multiple matching entities', () => {
   expect(usersFollowersCount).toEqual([12, 15])
 })
 
+test('throws an exception when no results in strict mode', () => {
+  const db = factory({
+    user: {
+      id: primaryKey(random.uuid),
+    },
+  })
+  db.user.create()
+  db.user.create()
+
+  expect(() => {
+    db.user.findMany({
+      which: {
+        id: {
+          in: ['abc-123', 'def-456'],
+        },
+      },
+      strict: true,
+    })
+  }).toThrowError(
+    'Failed to execute "findMany" on the "user" model: no entities found matching the query "{"id":{"in":["abc-123","def-456"]}}"',
+  )
+})
+
 test('returns an empty array when not found matching entities', () => {
   const db = factory({
     user: {

@@ -238,6 +238,32 @@ const popularPosts = db.post.findMany({
 })
 ```
 
+### Strict mode
+
+When querying or updating the entities you can supply the `strict: boolean` property on the query. When supplied, if a query operation fails (i.e. no entity found), the library would throw an exception.
+
+```js
+import { factory, primaryKey } from '@mswjs/data'
+
+const db = factory({
+  user: {
+    id: primaryKey(String),
+  },
+})
+
+db.user.create({ id: 'abc-123' })
+
+// This will throw an exception, because there are
+// no "user" entities matching this query.
+db.user.findFirst({
+  which: {
+    id: {
+      equals: 'def-456',
+    },
+  },
+})
+```
+
 ### Models relation
 
 #### One-to-one

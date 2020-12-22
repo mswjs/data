@@ -44,6 +44,28 @@ test('returns the first entity among multiple matching entities', () => {
   expect(user).toHaveProperty('followersCount', 12)
 })
 
+test('throws an exception when no results in strict mode', () => {
+  const db = factory({
+    user: {
+      id: primaryKey(random.uuid),
+    },
+  })
+  db.user.create()
+
+  expect(() => {
+    db.user.findFirst({
+      which: {
+        id: {
+          equals: 'abc-123',
+        },
+      },
+      strict: true,
+    })
+  }).toThrowError(
+    `Failed to execute "findFirst" on the "user" model: no entity found matching the query "{"id":{"equals":"abc-123"}}".`,
+  )
+})
+
 test('returns null when found no matching entities', () => {
   const db = factory({
     user: {
