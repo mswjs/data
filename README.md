@@ -39,6 +39,8 @@ export const db = factory({
 
 > See the [Recipes](#recipes) for more tips and tricks on data modeling.
 
+Note that **each model must have a primary key**—a key which value is a unique string representing the entity. You can define a primary key by wrapping the value for that key in the `primaryKey` helper function exported by the library.
+
 ### Integrate with mocks
 
 Although this library can be used standalone, it's specifically fine-tuned to integrate with [Mock Service Worker](https://github.com/mswjs/msw) to compose an unrivaled API mocking experience for both testing and development of your JavaScript applications.
