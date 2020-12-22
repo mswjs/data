@@ -102,6 +102,48 @@ test('throws an exception when no model matches the query in strict mode', () =>
   )
 })
 
+test('moves the entity when it updates the primary key', () => {
+  const db = factory({
+    user: {
+      id: primaryKey(random.uuid),
+    },
+  })
+
+  db.user.create({
+    id: 'abc-123',
+  })
+
+  const updatedUser = db.user.update({
+    which: {
+      id: {
+        equals: 'abc-123',
+      },
+    },
+    data: {
+      id: 'def-456',
+    },
+  })
+  expect(updatedUser).toHaveProperty('id', 'def-456')
+
+  const userResult = db.user.findFirst({
+    which: {
+      id: {
+        equals: 'def-456',
+      },
+    },
+  })
+  expect(userResult).toHaveProperty('id', 'def-456')
+
+  const oldUser = db.user.findFirst({
+    which: {
+      id: {
+        equals: 'abc-123',
+      },
+    },
+  })
+  expect(oldUser).toBeNull()
+})
+
 test('does nothing when no entity matches the query', () => {
   const db = factory({
     user: {

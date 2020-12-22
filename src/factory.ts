@@ -115,7 +115,11 @@ function createModelApi<
 
       const nextRecord = updateEntity(record, query.data)
 
-      db[modelName].set(record[record.__primaryKey] as string, nextRecord)
+      if (nextRecord[record.__primaryKey] !== record[record.__primaryKey]) {
+        db[modelName].delete(record[record.__primaryKey] as string)
+      }
+
+      db[modelName].set(nextRecord[record.__primaryKey] as string, nextRecord)
 
       return nextRecord
     },
@@ -136,7 +140,12 @@ function createModelApi<
 
       records.forEach((record) => {
         const nextRecord = updateEntity(record, query.data)
-        db[modelName].set(record[record.__primaryKey] as string, nextRecord)
+
+        if (nextRecord[record.__primaryKey] !== record.__primaryKey) {
+          db[modelName].delete(record[record.__primaryKey] as string)
+        }
+
+        db[modelName].set(nextRecord[record.__primaryKey] as string, nextRecord)
         updatedRecords.push(nextRecord)
       })
 

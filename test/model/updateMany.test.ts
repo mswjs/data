@@ -49,6 +49,55 @@ test('should update many entity with evolution value', () => {
   expect(userResult).toHaveProperty('firstName', 'JOSEPH')
 })
 
+test('moves entities when they update primary keys', () => {
+  const db = factory({
+    user: {
+      id: primaryKey(String),
+    },
+  })
+  db.user.create({ id: 'a' })
+  db.user.create({ id: 'b' })
+  db.user.create({ id: 'c' })
+
+  db.user.updateMany({
+    which: {
+      id: {
+        in: ['a', 'b'],
+      },
+    },
+    data: {
+      id: (value) => value + 1,
+    },
+  })
+
+  const updatedUsers = db.user.findMany({
+    which: {
+      id: {
+        in: ['a1', 'b1'],
+      },
+    },
+  })
+  expect(updatedUsers).toHaveLength(2)
+  const updatedUserIds = updatedUsers.map((user) => user.id)
+  expect(updatedUserIds).toEqual(['a1', 'b1'])
+
+  const oldUsers = db.user.findMany({
+    which: {
+      id: {
+        in: ['a', 'b'],
+      },
+    },
+  })
+  expect(oldUsers).toHaveLength(0)
+
+  const intactUser = db.user.findFirst({
+    which: {
+      id: { equals: 'c' },
+    },
+  })
+  expect(intactUser).toHaveProperty('id', 'c')
+})
+
 test('throws an exception when no entity matches the query in strict mode', () => {
   const db = factory({
     user: {
