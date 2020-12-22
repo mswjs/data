@@ -1,5 +1,10 @@
-export function invariant(value: boolean, message: string) {
+type Exception = string | (() => Error)
+
+export function invariant(value: boolean, expection: Exception) {
   if (value) {
-    throw new Error(message)
+    if (typeof expection === 'string') {
+      throw new Error(expection)
+    }
+    throw expection()
   }
 }
