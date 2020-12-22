@@ -301,6 +301,67 @@ db.post.create({
 })
 ```
 
+### Pagination
+
+This library supports _offset-based_ and _cursor-based_ pagination of the `findMany` query results.
+
+#### Offset-based pagination
+
+```js
+const db = factory({
+  post: {
+    id: primaryKey(String),
+    category: String,
+  },
+})
+
+db.post.findMany({
+  which: {
+    category: {
+      equals: 'Science',
+    },
+  },
+  take: 15,
+  skip: 10,
+})
+```
+
+#### Cursor-based pagination
+
+The `cursor` option of the `findMany` query expects a primary key value of a model to start the pagination from.
+
+```js
+const db = factory({
+  post: {
+    // The `id` primary key will be used as a cursor.
+    id: primaryKey(String),
+    category: String,
+  },
+})
+
+const firstPage = db.post.findMany({
+  which: {
+    category: {
+      equals: 'Science',
+    },
+  },
+  take: 15,
+  cursor: null,
+})
+
+const secondPage = db.post.findMany({
+  which: {
+    category: {
+      equals: 'Science',
+    },
+  },
+  take: 15,
+  // The second page will start from the last post
+  // of the `firstPage`.
+  cursor: firstPage[firstPage.length - 1].id,
+})
+```
+
 ### Usage with `faker`
 
 Libraries like [`faker`](https://github.com/Marak/Faker.js) can help you generate fake data for your models.
