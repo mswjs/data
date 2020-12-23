@@ -98,7 +98,7 @@ test('throws an exception when no model matches the query in strict mode', () =>
       strict: true,
     })
   }).toThrowError(
-    'Failed to execute "update" on the "user" model: no entity found matching the query "{"id":{"equals":"abc-123"}}"',
+    'Failed to execute "update" on the "user" model: no entity found matching the query "{"id":{"equals":"abc-123"}}".',
   )
 })
 
@@ -193,6 +193,6 @@ test('throw an error when trying to update an entity using a key already used', 
       },
     }),
   ).toThrowError(
-    'Failed to execute "update" on the "user" model: the entity has a key "123" already used by another entity.',
+    'Failed to execute "update" on the "user" model: the entity with a primary key "123" ("id") already exists.',
   )
 })
