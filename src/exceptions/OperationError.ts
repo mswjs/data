@@ -1,6 +1,10 @@
+export type ErrorType = 'GENERAL' | 'ENTITY_NOT_FOUND' | 'DUPLICATE_KEY_ERROR'
+
 class OperationError extends Error {
-  constructor(message: string) {
+  type: ErrorType
+  constructor(message: string, type: ErrorType) {
     super(message)
+    this.type = type
   }
 }
 
