@@ -1,10 +1,23 @@
-type Exception = string | (() => Error)
+import {
+  OperationError,
+  DuplicateKeyError,
+  EntityNotFound,
+} from '../exceptions'
 
-export function invariant(value: boolean, expection: Exception) {
+const errors = {
+  OperationError,
+  DuplicateKeyError,
+  EntityNotFound,
+}
+
+type Errors = keyof typeof errors
+
+export function invariant<
+  T extends Errors,
+  K extends ConstructorParameters<typeof errors[T]>
+>(value: boolean, errorClassName: T, ...rest: K) {
   if (value) {
-    if (typeof expection === 'string') {
-      throw new Error(expection)
-    }
-    throw expection()
+    //@ts-ignore
+    throw new errors[errorClassName](...rest)
   }
 }

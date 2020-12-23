@@ -62,6 +62,7 @@ function createModelApi<
       // Prevent creation of multiple entities with the same primary key value.
       invariant(
         db[modelName].has(entityPrimaryKey),
+        'OperationError',
         `Failed to create "${modelName}": entity with the primary key "${entityPrimaryKey}" ("${entity.__primaryKey}") already exists.`,
       )
 
@@ -78,9 +79,11 @@ function createModelApi<
 
       invariant(
         query.strict && !firstResult,
-        `Failed to execute "findFirst" on the "${modelName}" model: no entity found matching the query "${JSON.stringify(
-          query.which,
-        )}".`,
+        'EntityNotFound',
+        'findFirst',
+        modelName,
+        false,
+        query,
       )
 
       return firstResult
@@ -90,9 +93,11 @@ function createModelApi<
 
       invariant(
         query.strict && results.length === 0,
-        `Failed to execute "findMany" on the "${modelName}" model: no entities found matching the query "${JSON.stringify(
-          query.which,
-        )}".`,
+        'EntityNotFound',
+        'findMany',
+        modelName,
+        true,
+        query,
       )
 
       return results
@@ -104,12 +109,7 @@ function createModelApi<
       const record = api.findFirst(query)
 
       if (!record) {
-        invariant(
-          strict,
-          `Failed to execute "update" on the "${modelName}" model: no entity found matching the query "${JSON.stringify(
-            query.which,
-          )}".`,
-        )
+        invariant(strict, 'EntityNotFound', 'update', modelName, false, query)
 
         return null
       }
@@ -119,8 +119,10 @@ function createModelApi<
       if (nextRecord[record.__primaryKey] !== record[record.__primaryKey]) {
         invariant(
           db[modelName].has(nextRecord[record.__primaryKey]),
-          () =>
-            new DuplicateKeyError(modelName, nextRecord[record.__primaryKey]),
+          'DuplicateKeyError',
+          modelName,
+          modelPrimaryKey,
+          nextRecord[record.__primaryKey],
         )
         db[modelName].delete(record[record.__primaryKey] as string)
       }
@@ -136,9 +138,11 @@ function createModelApi<
       if (records.length === 0) {
         invariant(
           strict,
-          `Failed to execute "updateMany" on the "${modelName}" model: no entities found matching the query "${JSON.stringify(
-            query.which,
-          )}".`,
+          'EntityNotFound',
+          'updateMany',
+          modelName,
+          true,
+          query,
         )
 
         return null
@@ -150,8 +154,10 @@ function createModelApi<
         if (nextRecord[record.__primaryKey] !== record[record.__primaryKey]) {
           invariant(
             db[modelName].has(nextRecord[record.__primaryKey]),
-            () =>
-              new DuplicateKeyError(modelName, nextRecord[record.__primaryKey]),
+            'DuplicateKeyError',
+            modelName,
+            modelPrimaryKey,
+            nextRecord[record.__primaryKey],
           )
           db[modelName].delete(record[record.__primaryKey] as string)
         }
@@ -166,12 +172,7 @@ function createModelApi<
       const record = api.findFirst(query)
 
       if (!record) {
-        invariant(
-          strict,
-          `Failed to execute "delete" on the "user" model: no entity found matching the query "${JSON.stringify(
-            query.which,
-          )}".`,
-        )
+        invariant(strict, 'EntityNotFound', 'delete', modelName, false, query)
 
         return null
       }
@@ -185,9 +186,11 @@ function createModelApi<
       if (records.length === 0) {
         invariant(
           strict,
-          `Failed to execute "deleteMany" on the "user" model: no entities found matching the query "${JSON.stringify(
-            query.which,
-          )}".`,
+          'EntityNotFound',
+          'deleteMany',
+          modelName,
+          true,
+          query,
         )
 
         return []

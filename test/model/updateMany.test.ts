@@ -197,6 +197,6 @@ test('throw an error when trying entities using a key already used', () => {
       },
     }),
   ).toThrowError(
-    'Failed to execute "update" on the "user" model: the entity has a key "123" already used by another entity.',
+    'Failed to execute "update" on the "user" model: the entity with a primary key "123" ("id") already exists.',
   )
 })
