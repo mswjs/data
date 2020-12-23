@@ -39,7 +39,23 @@ export const db = factory({
 
 > See the [Recipes](#recipes) for more tips and tricks on data modeling.
 
-Note that **each model must have a primary key**—a key which value is a unique string representing the entity. You can define a primary key by wrapping the value for that key in the `primaryKey` helper function exported by the library.
+#### Using the primary key
+
+Each model **must have a primary key**. That is a single key that can be used to reference an entity of that model. Think of it as an ID column for a particular table in a database.
+
+Declare a primary key by using the `primaryKey` helper function:
+
+```js
+import { factory, primaryKey } from '@mswjs/data'
+
+factory({
+  user: {
+    id: primaryKey(String),
+  },
+})
+```
+
+In the example above the `id` is the primary key for the `user` model. This means that whenever a `user` is created it must have the `id` property that equals a unique `String`.
 
 ### Integrate with mocks
 
@@ -88,7 +104,7 @@ setupWorker(
 
 #### `create`
 
-Creates an entity of the model.
+Creates an entity for the model.
 
 ```js
 const user = db.user.create()
@@ -132,6 +148,8 @@ const allUsers = db.user.getAll()
 
 #### `update`
 
+Updates the first entity that matches the query.
+
 ```js
 const updatedUser = db.user.update({
   // Query for the entity to modify.
@@ -143,12 +161,18 @@ const updatedUser = db.user.update({
   // Provide partial next data to be
   // merged with the existing properties.
   data: {
+    // Can use exact next value.
     firstName: 'John',
+    // Or a function that accepts the previous value
+    // and returns the next one.
+    role: (value) => reformatRole(value),
   },
 })
 ```
 
 #### `updateMany`
+
+Updates multiple entities that match the query.
 
 ```js
 const updatedUser = db.user.updateMany({
@@ -181,6 +205,8 @@ const deletedUser = db.user.delete({
 ```
 
 #### `deleteMany`
+
+Deletes multiple entities that match the query.
 
 ```js
 const deletedUsers = db.user.deleteMany({
