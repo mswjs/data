@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-    "target": "ES5",
     "outDir": "lib",
     "declaration": true,
     "moduleResolution": "node",
