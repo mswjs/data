@@ -102,6 +102,17 @@ setupWorker(
 
 ### Model methods
 
+Each model has the following methods:
+
+- [`create()`](#create)
+- [`findFirst()`](#findFirst)
+- [`findMany()`](#findMany)
+- [`getAll()`](#getAll)
+- [`update()`](#update)
+- [`updateMany()`](#updateMany)
+- [`delete()`](#delete)
+- [`deleteMany()`](#deleteMany)
+
 #### `create`
 
 Creates an entity for the model.
