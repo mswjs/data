@@ -106,6 +106,14 @@ export interface ModelAPI<
     initialValues?: Partial<Value<Dictionary[ModelName], Dictionary>>,
   ): EntityInstance<Dictionary, ModelName>
   /**
+   * Create multiple entities for the model.
+   * @param count Amount of models to create.
+   */
+  createMany(
+    count?: number,
+    options?: CreateManyOptions<Dictionary[ModelName]>,
+  ): EntityInstance<Dictionary, ModelName>[]
+  /**
    * Return the total number of entities.
    */
   count(query?: QuerySelector<Value<Dictionary[ModelName], Dictionary>>): number
@@ -180,6 +188,21 @@ export type Value<
     : T[K] extends PrimaryKeyDeclaration
     ? ReturnType<T[K]['getValue']>
     : ReturnType<T[K]>
+}
+
+type SubType<P, Condition> = Pick<
+  P,
+  {
+    [K in keyof P]: P[K] extends Condition ? K : never
+  }[keyof P]
+>
+
+interface CreateManyOptions<T extends Record<string, any>> {
+  relations: {
+    [K in keyof SubType<T, OneOf<any> | ManyOf<any>>]: T[K] extends ManyOf<any>
+      ? number
+      : boolean
+  }
 }
 
 export type Database = Record<KeyType, Map<string, EntityInstance<any, any>>>

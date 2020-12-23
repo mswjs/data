@@ -6,6 +6,7 @@ import {
   EntityInstance,
   ModelDictionary,
   PrimaryKeyType,
+  RelationKind,
 } from './glossary'
 import { first } from './utils/first'
 import { executeQuery } from './query/executeQuery'
@@ -14,6 +15,7 @@ import { createModel } from './model/createModel'
 import { invariant } from './utils/invariant'
 import { updateEntity } from './model/updateEntity'
 import { OperationError, OperationErrorType } from './errors/OperationError'
+import { getRandomNumber } from './utils/getRandomNumber'
 
 /**
  * Create a database with the given models.
@@ -31,6 +33,7 @@ export function factory<Dictionary extends ModelDictionary>(
       modelName,
       props,
       db,
+      acc,
     )
     return acc
   }, {})
@@ -39,7 +42,12 @@ export function factory<Dictionary extends ModelDictionary>(
 function createModelApi<
   Dictionary extends ModelDictionary,
   ModelName extends string
->(modelName: ModelName, declaration: ModelDeclaration, db: Database) {
+>(
+  modelName: ModelName,
+  declaration: ModelDeclaration,
+  db: Database,
+  factory: FactoryAPI<Dictionary>,
+) {
   let modelPrimaryKey: PrimaryKeyType
 
   const api: ModelAPI<Dictionary, ModelName> = {
@@ -69,6 +77,39 @@ function createModelApi<
       db[modelName].set(entityPrimaryKey as string, entity)
 
       return entity
+    },
+    createMany(count, options) {
+      const resolvedCount = count || getRandomNumber(5, 10)
+      const getRelations = options?.relations
+        ? () =>
+            Object.entries(options.relations).reduce((acc, [key, count]) => {
+              const propDeclaration = declaration[key]
+
+              if ('__type' in propDeclaration) {
+                const isManyOfRelationType =
+                  propDeclaration.__type === RelationKind.ManyOf
+                const resolvedCount = isManyOfRelationType
+                  ? (count as number)
+                  : 1
+                const relationalModel = factory[propDeclaration.modelName]
+                const records = isManyOfRelationType
+                  ? relationalModel.createMany(resolvedCount)
+                  : relationalModel.create()
+
+                acc[key] = records
+              }
+
+              return acc
+            }, {})
+        : null
+
+      const createdEntities = new Array(resolvedCount)
+        .fill(null)
+        .map<EntityInstance<any, any>>(() => {
+          return api.create(getRelations?.())
+        })
+
+      return createdEntities
     },
     count(query) {
       if (!query) {
