@@ -37,6 +37,7 @@ export function executeQuery(
 
   invariant(
     records.size === 0,
+    'OperationError',
     `Failed to execute query on the "${modelName}" model: unknown database model.`,
   )
 
