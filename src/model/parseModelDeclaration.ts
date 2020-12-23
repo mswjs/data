@@ -39,7 +39,6 @@ export function parseModelDeclaration<
       if ('isPrimaryKey' in valueGetter) {
         invariant(
           !!acc.primaryKey,
-          'OperationError',
           `Failed to parse model declaration for "${modelName}": cannot specify more than one primary key for a model.`,
         )
 
