@@ -1,23 +1,11 @@
-import {
-  OperationError,
-  DuplicateKeyError,
-  EntityNotFound,
-} from '../exceptions'
+import OperationError, { ErrorType } from '../exceptions/OperationError'
 
-const errors = {
-  OperationError,
-  DuplicateKeyError,
-  EntityNotFound,
-}
-
-type Errors = keyof typeof errors
-
-export function invariant<
-  T extends Errors,
-  K extends ConstructorParameters<typeof errors[T]>
->(value: boolean, errorClassName: T, ...rest: K) {
+export function invariant(
+  value: boolean,
+  message: string,
+  errorType: ErrorType = 'GENERAL',
+) {
   if (value) {
-    //@ts-ignore
-    throw new errors[errorClassName](...rest)
+    throw new OperationError(message, errorType)
   }
 }
