@@ -100,6 +100,12 @@ setupWorker(
 
 ## Recipes
 
+- [Model methods](#model-methods)
+- [Querying data](#querying-data)
+- [Strict mode](#strict-mode)
+- [Models relation](#models-relation)
+- [Pagination](#pagination)
+
 ### Model methods
 
 Each model has the following methods:
