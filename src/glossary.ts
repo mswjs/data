@@ -81,7 +81,7 @@ export interface ModelAPI<
   /**
    * Return the total number of entities.
    */
-  count(): number
+  count(query?: QuerySelector<Value<Dictionary[ModelName], Dictionary>>): number
   /**
    * Find a first entity matching the query.
    */

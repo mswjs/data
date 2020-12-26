@@ -155,6 +155,29 @@ const users = db.user.findMany({
 })
 ```
 
+#### `count`
+
+Returns the amount of records for the given model.
+
+```js
+db.user.create()
+db.user.create()
+
+db.user.count() // 2
+```
+
+Can accept an optional query argument to filter the records before counting them.
+
+```js
+db.user.count({
+  which: {
+    role: {
+      equals: 'reader',
+    },
+  },
+})
+```
+
 #### `getAll`
 
 Returns all the entities of the given model.
