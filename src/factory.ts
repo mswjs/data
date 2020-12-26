@@ -13,6 +13,7 @@ import { parseModelDeclaration } from './model/parseModelDeclaration'
 import { createModel } from './model/createModel'
 import { invariant } from './utils/invariant'
 import { updateEntity } from './model/updateEntity'
+import { OperationError, OperationErrorType } from './errors/OperationError'
 
 /**
  * Create a database with the given models.
@@ -62,6 +63,7 @@ function createModelApi<
       invariant(
         db[modelName].has(entityPrimaryKey),
         `Failed to create "${modelName}": entity with the primary key "${entityPrimaryKey}" ("${entity.__primaryKey}") already exists.`,
+        new OperationError(OperationErrorType.DuplicatePrimaryKey),
       )
 
       db[modelName].set(entityPrimaryKey as string, entity)
@@ -80,7 +82,7 @@ function createModelApi<
         `Failed to execute "findFirst" on the "${modelName}" model: no entity found matching the query "${JSON.stringify(
           query.which,
         )}".`,
-        'ENTITY_NOT_FOUND',
+        new OperationError(OperationErrorType.EntityNotFound),
       )
 
       return firstResult
@@ -93,7 +95,7 @@ function createModelApi<
         `Failed to execute "findMany" on the "${modelName}" model: no entities found matching the query "${JSON.stringify(
           query.which,
         )}".`,
-        'ENTITY_NOT_FOUND',
+        new OperationError(OperationErrorType.EntityNotFound),
       )
 
       return results
@@ -110,7 +112,7 @@ function createModelApi<
           `Failed to execute "update" on the "${modelName}" model: no entity found matching the query "${JSON.stringify(
             query.which,
           )}".`,
-          'ENTITY_NOT_FOUND',
+          new OperationError(OperationErrorType.EntityNotFound),
         )
 
         return null
@@ -124,8 +126,9 @@ function createModelApi<
           `Failed to execute "update" on the "${modelName}" model: the entity with a primary key "${
             nextRecord[record.__primaryKey]
           }" ("${modelPrimaryKey}") already exists.`,
-          'DUPLICATE_KEY_ERROR',
+          new OperationError(OperationErrorType.DuplicatePrimaryKey),
         )
+
         db[modelName].delete(record[record.__primaryKey] as string)
       }
 
@@ -143,7 +146,7 @@ function createModelApi<
           `Failed to execute "updateMany" on the "${modelName}" model: no entities found matching the query "${JSON.stringify(
             query.which,
           )}".`,
-          'ENTITY_NOT_FOUND',
+          new OperationError(OperationErrorType.EntityNotFound),
         )
 
         return null
@@ -158,8 +161,9 @@ function createModelApi<
             `Failed to execute "updateMany" on the "${modelName}" model: no entities found matching the query "${JSON.stringify(
               query.which,
             )}".`,
-            'ENTITY_NOT_FOUND',
+            new OperationError(OperationErrorType.EntityNotFound),
           )
+
           db[modelName].delete(record[record.__primaryKey] as string)
         }
 
@@ -178,7 +182,7 @@ function createModelApi<
           `Failed to execute "delete" on the "${modelName}" model: no entity found matching the query "${JSON.stringify(
             query.which,
           )}".`,
-          'ENTITY_NOT_FOUND',
+          new OperationError(OperationErrorType.EntityNotFound),
         )
 
         return null
@@ -196,7 +200,7 @@ function createModelApi<
           `Failed to execute "deleteMany" on the "${modelName}" model: no entities found matching the query "${JSON.stringify(
             query.which,
           )}".`,
-          'ENTITY_NOT_FOUND',
+          new OperationError(OperationErrorType.EntityNotFound),
         )
 
         return []
