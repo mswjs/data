@@ -1,5 +1,7 @@
 import { random, name } from 'faker'
 import { factory, primaryKey } from '../../src'
+import { OperationErrorType } from '../../src/errors/OperationError'
+import { getThrownError } from '../utils/getThrownError'
 
 test('updates a unique entity that matches the query', () => {
   const userId = random.uuid()
@@ -85,7 +87,7 @@ test('throws an exception when no model matches the query in strict mode', () =>
   db.user.create()
   db.user.create()
 
-  expect(() => {
+  const error = getThrownError(() => {
     db.user.update({
       which: {
         id: {
@@ -97,7 +99,12 @@ test('throws an exception when no model matches the query in strict mode', () =>
       },
       strict: true,
     })
-  }).toThrowError(
+  })
+
+  expect(error).toHaveProperty('name', 'OperationError')
+  expect(error).toHaveProperty('type', OperationErrorType.EntityNotFound)
+  expect(error).toHaveProperty(
+    'message',
     'Failed to execute "update" on the "user" model: no entity found matching the query "{"id":{"equals":"abc-123"}}".',
   )
 })
@@ -181,7 +188,7 @@ test('throw an error when trying to update an entity using a key already used', 
     id: '456',
   })
 
-  expect(() =>
+  const error = getThrownError(() => {
     db.user.update({
       which: {
         id: {
@@ -191,8 +198,13 @@ test('throw an error when trying to update an entity using a key already used', 
       data: {
         id: '123',
       },
-    }),
-  ).toThrowError(
+    })
+  })
+
+  expect(error).toHaveProperty('name', 'OperationError')
+  expect(error).toHaveProperty('type', OperationErrorType.DuplicatePrimaryKey)
+  expect(error).toHaveProperty(
+    'message',
     'Failed to execute "update" on the "user" model: the entity with a primary key "123" ("id") already exists.',
   )
 })

@@ -1,6 +1,8 @@
 import { random } from 'faker'
 import { factory, primaryKey } from '../../src'
+import { OperationErrorType } from '../../src/errors/OperationError'
 import { identity } from '../../src/utils/identity'
+import { getThrownError } from '../utils/getThrownError'
 
 test('returns the only matching entity', () => {
   const userId = random.uuid()
@@ -52,7 +54,7 @@ test('throws an exception when no results in strict mode', () => {
   })
   db.user.create()
 
-  expect(() => {
+  const error = getThrownError(() => {
     db.user.findFirst({
       which: {
         id: {
@@ -61,7 +63,12 @@ test('throws an exception when no results in strict mode', () => {
       },
       strict: true,
     })
-  }).toThrowError(
+  })
+
+  expect(error).toHaveProperty('name', 'OperationError')
+  expect(error).toHaveProperty('type', OperationErrorType.EntityNotFound)
+  expect(error).toHaveProperty(
+    'message',
     `Failed to execute "findFirst" on the "user" model: no entity found matching the query "{"id":{"equals":"abc-123"}}".`,
   )
 })

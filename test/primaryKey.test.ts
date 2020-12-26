@@ -1,6 +1,10 @@
 import { v4 } from 'uuid'
 import { random } from 'faker'
 import { factory, primaryKey } from '../src'
+import {
+  OperationError,
+  OperationErrorType,
+} from '../src/errors/OperationError'
 
 test('supports querying by the primary key', () => {
   const db = factory({
@@ -117,6 +121,9 @@ test('throws an exception when creating entity with existing primary key', () =>
   expect(() => {
     db.user.create({ id: 'abc-123' })
   }).toThrowError(
-    'Failed to create "user": entity with the primary key "abc-123" ("id") already exists.',
+    new OperationError(
+      OperationErrorType.DuplicatePrimaryKey,
+      'Failed to create "user": entity with the primary key "abc-123" ("id") already exists.',
+    ),
   )
 })

@@ -1,5 +1,7 @@
 import { random, name } from 'faker'
 import { factory, primaryKey } from '../../src'
+import { OperationErrorType } from '../../src/errors/OperationError'
+import { getThrownError } from '../utils/getThrownError'
 
 test('deletes a unique entity that matches the query', () => {
   const userId = random.uuid()
@@ -74,7 +76,7 @@ test('throws an exception when no entities matches the query in strict mode', ()
   db.user.create()
   db.user.create()
 
-  expect(() => {
+  const error = getThrownError(() => {
     db.user.delete({
       which: {
         id: {
@@ -83,7 +85,12 @@ test('throws an exception when no entities matches the query in strict mode', ()
       },
       strict: true,
     })
-  }).toThrowError(
+  })
+
+  expect(error).toHaveProperty('name', 'OperationError')
+  expect(error).toHaveProperty('type', OperationErrorType.EntityNotFound)
+  expect(error).toHaveProperty(
+    'message',
     'Failed to execute "delete" on the "user" model: no entity found matching the query "{"id":{"equals":"abc-123"}}".',
   )
 })

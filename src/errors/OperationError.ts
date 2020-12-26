@@ -8,6 +8,7 @@ export class OperationError extends Error {
 
   constructor(type: OperationErrorType, message?: string) {
     super(message)
+    this.name = 'OperationError'
     this.type = type
   }
 }

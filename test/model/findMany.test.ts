@@ -1,5 +1,7 @@
 import { random } from 'faker'
 import { factory, primaryKey } from '../../src'
+import { OperationErrorType } from '../../src/errors/OperationError'
+import { getThrownError } from '../utils/getThrownError'
 
 test('returns the first entity among multiple matching entities', () => {
   const db = factory({
@@ -34,7 +36,7 @@ test('throws an exception when no results in strict mode', () => {
   db.user.create()
   db.user.create()
 
-  expect(() => {
+  const error = getThrownError(() => {
     db.user.findMany({
       which: {
         id: {
@@ -43,8 +45,13 @@ test('throws an exception when no results in strict mode', () => {
       },
       strict: true,
     })
-  }).toThrowError(
-    'Failed to execute "findMany" on the "user" model: no entities found matching the query "{"id":{"in":["abc-123","def-456"]}}"',
+  })
+
+  expect(error).toHaveProperty('name', 'OperationError')
+  expect(error).toHaveProperty('type', OperationErrorType.EntityNotFound)
+  expect(error).toHaveProperty(
+    'message',
+    'Failed to execute "findMany" on the "user" model: no entities found matching the query "{"id":{"in":["abc-123","def-456"]}}".',
   )
 })
 
