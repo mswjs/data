@@ -70,8 +70,13 @@ function createModelApi<
 
       return entity
     },
-    count() {
-      return db[modelName].size
+    count(query) {
+      if (!query) {
+        return db[modelName].size
+      }
+
+      const results = executeQuery(modelName, modelPrimaryKey, query, db)
+      return results.length
     },
     findFirst(query) {
       const results = executeQuery(modelName, modelPrimaryKey, query, db)
