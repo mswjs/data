@@ -29,3 +29,11 @@ export async function measurePerformance(
     performance.measure(name, startEvent, endEvent)
   })
 }
+
+export function getThrownError(fn: () => void) {
+  try {
+    fn()
+  } catch (error) {
+    return error
+  }
+}

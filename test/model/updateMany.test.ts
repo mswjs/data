@@ -1,7 +1,7 @@
 import { random, name } from 'faker'
 import { factory, primaryKey } from '../../src'
 import { OperationErrorType } from '../../src/errors/OperationError'
-import { getThrownError } from '../utils/getThrownError'
+import { getThrownError } from '../testUtils'
 
 test('should update many entity with evolution value', () => {
   const db = factory({

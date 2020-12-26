@@ -1,7 +1,7 @@
 import { random, name } from 'faker'
 import { factory, primaryKey } from '../../src'
 import { OperationErrorType } from '../../src/errors/OperationError'
-import { getThrownError } from '../utils/getThrownError'
+import { getThrownError } from '../testUtils'
 
 test('deletes all entites that match the query', () => {
   const db = factory({

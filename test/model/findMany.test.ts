@@ -1,7 +1,7 @@
 import { random } from 'faker'
 import { factory, primaryKey } from '../../src'
 import { OperationErrorType } from '../../src/errors/OperationError'
-import { getThrownError } from '../utils/getThrownError'
+import { getThrownError } from '../testUtils'
 
 test('returns the first entity among multiple matching entities', () => {
   const db = factory({

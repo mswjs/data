@@ -2,7 +2,7 @@ import { random } from 'faker'
 import { factory, primaryKey } from '../../src'
 import { OperationErrorType } from '../../src/errors/OperationError'
 import { identity } from '../../src/utils/identity'
-import { getThrownError } from '../utils/getThrownError'
+import { getThrownError } from '../testUtils'
 
 test('returns the only matching entity', () => {
   const userId = random.uuid()
