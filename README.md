@@ -420,3 +420,8 @@ factory({
   },
 })
 ```
+
+## Honorable mentions
+
+- [Prisma](https://www.prisma.io) for inspiring the querying client.
+- [Lenz Weber](https://twitter.com/phry) and [Matt Sutkowski](https://twitter.com/de_stroy) for great help with the TypeScript support.
