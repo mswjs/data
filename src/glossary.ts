@@ -17,7 +17,11 @@ export enum RelationKind {
 export interface RelationalNode<ModelName extends string> {
   kind: RelationKind
   modelName: string
-  nodes: Array<InternalEntityProperties<ModelName>>
+  nodes: Array<
+    InternalEntityProperties<ModelName> & {
+      __nodeId: PrimaryKeyType
+    }
+  >
 }
 
 export type OneOf<T extends KeyType> = {
@@ -41,7 +45,6 @@ export type FactoryAPI<Dictionary extends Record<string, any>> = {
 
 export interface InternalEntityProperties<ModelName extends KeyType> {
   readonly __type: ModelName
-  readonly __nodeId: string
   readonly __primaryKey: PrimaryKeyType
 }
 

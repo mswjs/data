@@ -6,6 +6,7 @@ import {
   Value,
   ModelDeclaration,
   PrimaryKeyType,
+  EntityInstance,
 } from '../glossary'
 import { invariant } from '../utils/invariant'
 
@@ -73,20 +74,25 @@ export function parseModelDeclaration<
           acc.relations[key] = {
             kind: RelationKind.ManyOf,
             modelName: key,
-            nodes: exactValue.map((relation) => ({
-              __type: relation.__type,
-              __nodeId: relation.__nodeId,
-            })),
+            nodes: exactValue.map(
+              (nodeRef: EntityInstance<Dictionary, ModelName>) => ({
+                __type: nodeRef.__type,
+                __primaryKey: nodeRef.__primaryKey,
+                __nodeId: nodeRef[nodeRef.__primaryKey],
+              }),
+            ),
           }
 
           return acc
         }
 
-        if ('__nodeId' in exactValue) {
-          const relation = exactValue
+        if ('__primaryKey' in exactValue) {
+          const nodeRef = exactValue
 
           log(
-            `initial value for "${modelName}.${key}" references "${relation.__type}" with id "${relation.__nodeId}"`,
+            `initial value for "${modelName}.${key}" references "${
+              nodeRef.__type
+            }" with id "${nodeRef[nodeRef.__primaryKey]}"`,
           )
 
           acc.relations[key] = {
@@ -94,9 +100,9 @@ export function parseModelDeclaration<
             modelName: key,
             nodes: [
               {
-                __type: relation.__type,
-                __nodeId: relation.__nodeId,
-                __primaryKey: 'PRIMARY_KEY',
+                __type: nodeRef.__type,
+                __primaryKey: nodeRef.__primaryKey,
+                __nodeId: nodeRef[nodeRef.__primaryKey],
               },
             ],
           }
