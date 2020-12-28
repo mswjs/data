@@ -433,8 +433,12 @@ const secondPage = db.post.findMany({
 Libraries like [`faker`](https://github.com/Marak/Faker.js) can help you generate fake data for your models.
 
 ```js
-import { random, name } from 'faker'
+import { seed, random, name } from 'faker'
 import { factory, primaryKey } from '@mswjs/data'
+
+// Seed `faker` to ensure reproducible random values
+// of model properties.
+seed(123)
 
 factory({
   user: {
