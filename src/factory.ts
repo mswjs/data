@@ -88,12 +88,9 @@ function createModelApi<
               if ('__type' in propDeclaration) {
                 const isManyOfRelationType =
                   propDeclaration.__type === RelationKind.ManyOf
-                const resolvedCount = isManyOfRelationType
-                  ? (count as number)
-                  : 1
                 const relationalModel = factory[propDeclaration.modelName]
                 const records = isManyOfRelationType
-                  ? relationalModel.createMany(resolvedCount)
+                  ? relationalModel.createMany(count as number)
                   : relationalModel.create()
 
                 acc[key] = records
