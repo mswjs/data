@@ -25,7 +25,6 @@ export function createModel<
 
   const internalProperties: InternalEntityProperties<ModelName> = {
     __type: modelName,
-    __nodeId: v4(),
     __primaryKey: primaryKey,
   }
   const model = Object.assign({}, properties, internalProperties)

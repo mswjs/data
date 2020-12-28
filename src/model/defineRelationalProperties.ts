@@ -16,15 +16,15 @@ export function defineRelationalProperties(
         get() {
           log(`get "${property}"`, relation)
 
-          const refResults = relation.nodes.reduce((acc, node) => {
+          const refResults = relation.nodes.reduce((acc, relationNode) => {
             return acc.concat(
               executeQuery(
-                node.__type,
-                null,
+                relationNode.__type,
+                relationNode.__primaryKey,
                 {
                   which: {
-                    __nodeId: {
-                      equals: node.__nodeId,
+                    [relationNode.__primaryKey]: {
+                      equals: relationNode.__nodeId,
                     },
                   },
                 },
