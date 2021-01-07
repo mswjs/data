@@ -35,11 +35,6 @@ export function executeQuery(
   log(`${JSON.stringify(query)} on "${modelName}"`)
   const records = db[modelName]
 
-  invariant(
-    records.size === 0,
-    `Failed to execute query on the "${modelName}" model: unknown database model.`,
-  )
-
   // Reduce the query scope if there's a query by primary key of the model.
   const { [primaryKey]: primaryKeyComparator, ...restQueries } = query.which
   log('primary key query', primaryKeyComparator)
