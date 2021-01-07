@@ -428,6 +428,19 @@ const secondPage = db.post.findMany({
 })
 ```
 
+### Database utilities
+
+#### `drop`
+
+```js
+import { factory, drop } from '@mswjs/data'
+
+const db = factory({...})
+
+// Deletes all records in the database.
+drop(db)
+```
+
 ### Usage with `faker`
 
 Libraries like [`faker`](https://github.com/Marak/Faker.js) can help you generate fake data for your models.
