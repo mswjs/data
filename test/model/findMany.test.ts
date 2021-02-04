@@ -3,7 +3,7 @@ import { factory, primaryKey } from '../../src'
 import { OperationErrorType } from '../../src/errors/OperationError'
 import { getThrownError } from '../testUtils'
 
-test('returns the first entity among multiple matching entities', () => {
+test('returns all matching entities', () => {
   const db = factory({
     user: {
       id: primaryKey(random.uuid),
