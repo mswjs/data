@@ -1,7 +1,6 @@
 import { debug } from 'debug'
 import { QuerySelector } from './queryTypes'
 import { getComparatorsForValue } from './getComparatorsForValue'
-import { EntityInstance } from '../glossary'
 
 const log = debug('compileQuery')
 
@@ -14,7 +13,7 @@ export function compileQuery<V extends Record<string, any>>(
 ) {
   log(JSON.stringify(query))
 
-  return (data: V) => {
+  return (data: V): boolean => {
     return Object.entries(query.which)
       .map<boolean>(([propName, queryChunk]) => {
         const actualValue = data[propName]
@@ -28,8 +27,25 @@ export function compileQuery<V extends Record<string, any>>(
               return acc
             }
 
+            if (Array.isArray(actualValue)) {
+              log(
+                'actual value is array, checking if at least one item matches...',
+                {
+                  comparatorName,
+                  expectedValue,
+                },
+              )
+
+              /**
+               * @fixme Can assume `some`? Why not `every`?
+               */
+              return actualValue.some((value) => {
+                return compileQuery({ which: queryChunk })(value)
+              })
+            }
+
             // When the actual value is a resolved relational property reference,
-            // execute the current query chunk on the referenced record.
+            // execute the current query chunk on the referenced entity.
             if (actualValue.__type) {
               return compileQuery({ which: queryChunk })(actualValue)
             }
