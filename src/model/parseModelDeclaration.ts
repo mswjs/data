@@ -2,6 +2,7 @@ import { debug } from 'debug'
 import {
   Relation,
   RelationKind,
+  RelationDefinition,
   ModelDictionary,
   Value,
   ModelDeclaration,
@@ -65,6 +66,11 @@ export function parseModelDeclaration<
         return acc
       }
 
+      const relationDefinition = declaration[key] as RelationDefinition<
+        RelationKind.OneOf,
+        ModelName
+      >
+
       if (exactValue) {
         if (Array.isArray(exactValue)) {
           /**
@@ -73,7 +79,8 @@ export function parseModelDeclaration<
            */
           acc.relations[key] = {
             kind: RelationKind.ManyOf,
-            modelName: key,
+            modelName: relationDefinition.modelName,
+            unique: relationDefinition.unique,
             refs: exactValue.map(
               (entityRef: EntityInstance<Dictionary, ModelName>) => ({
                 __type: entityRef.__type,
@@ -98,7 +105,8 @@ export function parseModelDeclaration<
 
           acc.relations[key] = {
             kind: RelationKind.OneOf,
-            modelName: key,
+            modelName: relationDefinition.modelName,
+            unique: relationDefinition.unique,
             refs: [
               {
                 __type: entityRef.__type,

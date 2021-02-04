@@ -23,12 +23,14 @@ export interface RelationDefinition<
   ModelName extends KeyType
 > {
   kind: Kind
+  unique: boolean
   modelName: ModelName
 }
 
 export interface Relation<ModelName extends string> {
   kind: RelationKind
   modelName: string
+  unique: boolean
   refs: RelationRef<ModelName>[]
 }
 
@@ -40,6 +42,10 @@ export type RelationRef<
   ModelName extends string
 > = InternalEntityProperties<ModelName> & {
   __nodeId: PrimaryKeyType
+}
+
+export interface RelationOptions {
+  unique: boolean
 }
 
 export type OneOf<ModelName extends KeyType> = RelationDefinition<
