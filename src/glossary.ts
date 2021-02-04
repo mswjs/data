@@ -14,25 +14,43 @@ export enum RelationKind {
   ManyOf = 'manyOf',
 }
 
-export interface RelationalNode<ModelName extends string> {
+/**
+ * Definition of the relation.
+ * @example factory({ user: { post: oneOf('post') } })
+ */
+export interface RelationDefinition<
+  Kind extends RelationKind,
+  ModelName extends KeyType
+> {
+  kind: Kind
+  modelName: ModelName
+}
+
+export interface Relation<ModelName extends string> {
   kind: RelationKind
   modelName: string
-  nodes: Array<
-    InternalEntityProperties<ModelName> & {
-      __nodeId: PrimaryKeyType
-    }
-  >
+  refs: RelationRef<ModelName>[]
 }
 
-export type OneOf<T extends KeyType> = {
-  __type: RelationKind.OneOf
-  modelName: T
+/**
+ * Minimal representation of an entity to look it up
+ * in the database and resolve upon reference.
+ */
+export type RelationRef<
+  ModelName extends string
+> = InternalEntityProperties<ModelName> & {
+  __nodeId: PrimaryKeyType
 }
 
-export type ManyOf<T extends KeyType> = {
-  __type: RelationKind.ManyOf
-  modelName: T
-}
+export type OneOf<ModelName extends KeyType> = RelationDefinition<
+  RelationKind.OneOf,
+  ModelName
+>
+
+export type ManyOf<ModelName extends KeyType> = RelationDefinition<
+  RelationKind.ManyOf,
+  ModelName
+>
 
 export type ModelDeclaration = Record<
   string,

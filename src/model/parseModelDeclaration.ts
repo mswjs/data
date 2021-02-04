@@ -1,6 +1,6 @@
 import { debug } from 'debug'
 import {
-  RelationalNode,
+  Relation,
   RelationKind,
   ModelDictionary,
   Value,
@@ -15,7 +15,7 @@ const log = debug('parseModelDeclaration')
 interface ParsedModelDeclaration {
   primaryKey: PrimaryKeyType
   properties: Value<any, any>
-  relations: Record<string, RelationalNode<string>>
+  relations: Record<string, Relation<string>>
 }
 
 export function parseModelDeclaration<
@@ -74,11 +74,11 @@ export function parseModelDeclaration<
           acc.relations[key] = {
             kind: RelationKind.ManyOf,
             modelName: key,
-            nodes: exactValue.map(
-              (nodeRef: EntityInstance<Dictionary, ModelName>) => ({
-                __type: nodeRef.__type,
-                __primaryKey: nodeRef.__primaryKey,
-                __nodeId: nodeRef[nodeRef.__primaryKey],
+            refs: exactValue.map(
+              (entityRef: EntityInstance<Dictionary, ModelName>) => ({
+                __type: entityRef.__type,
+                __primaryKey: entityRef.__primaryKey,
+                __nodeId: entityRef[entityRef.__primaryKey],
               }),
             ),
           }
@@ -87,22 +87,23 @@ export function parseModelDeclaration<
         }
 
         if ('__primaryKey' in exactValue) {
-          const nodeRef = exactValue
+          const entityRef = exactValue
 
           log(
-            `initial value for "${modelName}.${key}" references "${
-              nodeRef.__type
-            }" with id "${nodeRef[nodeRef.__primaryKey]}"`,
+            `value for "${modelName}.${key}" references "${
+              entityRef.__type
+            }" with id "${entityRef[entityRef.__primaryKey]}"`,
+            entityRef,
           )
 
           acc.relations[key] = {
             kind: RelationKind.OneOf,
             modelName: key,
-            nodes: [
+            refs: [
               {
-                __type: nodeRef.__type,
-                __primaryKey: nodeRef.__primaryKey,
-                __nodeId: nodeRef[nodeRef.__primaryKey],
+                __type: entityRef.__type,
+                __primaryKey: entityRef.__primaryKey,
+                __nodeId: entityRef[entityRef.__primaryKey],
               },
             ],
           }
@@ -115,7 +116,7 @@ export function parseModelDeclaration<
         return acc
       }
 
-      if ('__type' in valueGetter) {
+      if ('kind' in valueGetter) {
         throw new Error(
           `Failed to set "${modelName}.${key}" as its a relational property with no value.`,
         )

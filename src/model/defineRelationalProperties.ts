@@ -1,30 +1,32 @@
 import { debug } from 'debug'
-import { Database, RelationalNode, RelationKind } from '../glossary'
+import { Database, Relation, RelationKind } from '../glossary'
 import { executeQuery } from '../query/executeQuery'
 import { first } from '../utils/first'
 
-const log = debug('relationalProperty')
+const log = debug('defineRelationalProperties')
 
 export function defineRelationalProperties(
   entity: Record<string, any>,
-  relations: Record<string, RelationalNode<any>>,
+  relations: Record<string, Relation<any>>,
   db: Database,
 ): void {
+  log('setting relations', relations)
+
   const properties = Object.entries(relations).reduce(
     (acc, [property, relation]) => {
       acc[property] = {
         get() {
           log(`get "${property}"`, relation)
 
-          const refResults = relation.nodes.reduce((acc, relationNode) => {
+          const refResults = relation.refs.reduce((acc, entityRef) => {
             return acc.concat(
               executeQuery(
-                relationNode.__type,
-                relationNode.__primaryKey,
+                entityRef.__type,
+                entityRef.__primaryKey,
                 {
                   which: {
-                    [relationNode.__primaryKey]: {
-                      equals: relationNode.__nodeId,
+                    [entityRef.__primaryKey]: {
+                      equals: entityRef.__nodeId,
                     },
                   },
                 },
