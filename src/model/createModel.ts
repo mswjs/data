@@ -21,7 +21,11 @@ export function createModel<
   relations: Record<string, any>,
   db: Database,
 ) {
-  log('creating model', modelName, primaryKey, properties, relations)
+  log(
+    `creating model "${modelName}" (primary key: "${primaryKey}")`,
+    properties,
+    relations,
+  )
 
   const internalProperties: InternalEntityProperties<ModelName> = {
     __type: modelName,

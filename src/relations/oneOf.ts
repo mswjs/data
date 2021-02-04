@@ -1,8 +1,10 @@
 import { OneOf, RelationKind } from '../glossary'
 
-export function oneOf<T extends string>(modelName: T): OneOf<T> {
+export function oneOf<ModelName extends string>(
+  modelName: ModelName,
+): OneOf<ModelName> {
   return {
-    __type: RelationKind.OneOf,
+    kind: RelationKind.OneOf,
     modelName,
   }
 }

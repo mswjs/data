@@ -1,8 +1,10 @@
 import { ManyOf, RelationKind } from '../glossary'
 
-export function manyOf<T extends string>(modelName: T): ManyOf<T> {
+export function manyOf<ModelName extends string>(
+  modelName: ModelName,
+): ManyOf<ModelName> {
   return {
-    __type: RelationKind.ManyOf,
+    kind: RelationKind.ManyOf,
     modelName,
   }
 }
