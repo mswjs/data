@@ -181,5 +181,3 @@ export type Value<
     ? ReturnType<T[K]['getValue']>
     : ReturnType<T[K]>
 }
-
-export type Database = Record<KeyType, Map<string, EntityInstance<any, any>>>

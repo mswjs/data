@@ -1,9 +1,7 @@
 import {
   FactoryAPI,
-  Database,
   ModelAPI,
   ModelDeclaration,
-  EntityInstance,
   ModelDictionary,
   PrimaryKeyType,
 } from './glossary'
@@ -14,19 +12,17 @@ import { createModel } from './model/createModel'
 import { invariant } from './utils/invariant'
 import { updateEntity } from './model/updateEntity'
 import { OperationError, OperationErrorType } from './errors/OperationError'
+import { Database } from './db/Database'
 
 /**
  * Create a database with the given models.
  */
 export function factory<Dictionary extends ModelDictionary>(
-  dict: Dictionary,
+  dictionary: Dictionary,
 ): FactoryAPI<Dictionary> {
-  const db: Database = Object.keys(dict).reduce((acc, modelName) => {
-    acc[modelName] = new Map<string, EntityInstance<Dictionary, string>>()
-    return acc
-  }, {})
+  const db = new Database<Dictionary>(dictionary)
 
-  return Object.entries(dict).reduce<any>((acc, [modelName, props]) => {
+  return Object.entries(dictionary).reduce<any>((acc, [modelName, props]) => {
     acc[modelName] = createModelApi<Dictionary, typeof modelName>(
       modelName,
       props,
@@ -39,7 +35,11 @@ export function factory<Dictionary extends ModelDictionary>(
 function createModelApi<
   Dictionary extends ModelDictionary,
   ModelName extends string
->(modelName: ModelName, declaration: ModelDeclaration, db: Database) {
+>(
+  modelName: ModelName,
+  declaration: ModelDeclaration,
+  db: Database<Dictionary>,
+) {
   let modelPrimaryKey: PrimaryKeyType
 
   const api: ModelAPI<Dictionary, ModelName> = {
@@ -61,18 +61,18 @@ function createModelApi<
 
       // Prevent creation of multiple entities with the same primary key value.
       invariant(
-        db[modelName].has(entityPrimaryKey),
+        db.has(modelName, entityPrimaryKey),
         `Failed to create "${modelName}": entity with the primary key "${entityPrimaryKey}" ("${entity.__primaryKey}") already exists.`,
         new OperationError(OperationErrorType.DuplicatePrimaryKey),
       )
 
-      db[modelName].set(entityPrimaryKey as string, entity)
+      db.create(modelName, entity)
 
       return entity
     },
     count(query) {
       if (!query) {
-        return db[modelName].size
+        return db.count(modelName)
       }
 
       const results = executeQuery(modelName, modelPrimaryKey, query, db)
@@ -106,7 +106,7 @@ function createModelApi<
       return results
     },
     getAll() {
-      return Array.from(db[modelName].values())
+      return db.listEntities(modelName)
     },
     update({ strict, ...query }) {
       const record = api.findFirst(query)
@@ -127,17 +127,21 @@ function createModelApi<
 
       if (nextRecord[record.__primaryKey] !== record[record.__primaryKey]) {
         invariant(
-          db[modelName].has(nextRecord[record.__primaryKey]),
+          db.has(modelName, nextRecord[record.__primaryKey]),
           `Failed to execute "update" on the "${modelName}" model: the entity with a primary key "${
             nextRecord[record.__primaryKey]
           }" ("${modelPrimaryKey}") already exists.`,
           new OperationError(OperationErrorType.DuplicatePrimaryKey),
         )
 
-        db[modelName].delete(record[record.__primaryKey] as string)
+        db.delete(modelName, record[record.__primaryKey] as string)
       }
 
-      db[modelName].set(nextRecord[record.__primaryKey] as string, nextRecord)
+      db.create(
+        modelName,
+        nextRecord,
+        nextRecord[record.__primaryKey] as string,
+      )
 
       return nextRecord
     },
@@ -162,17 +166,22 @@ function createModelApi<
 
         if (nextRecord[record.__primaryKey] !== record[record.__primaryKey]) {
           invariant(
-            db[modelName].has(nextRecord[record.__primaryKey]),
+            db.has(modelName, nextRecord[record.__primaryKey]),
             `Failed to execute "updateMany" on the "${modelName}" model: no entities found matching the query "${JSON.stringify(
               query.which,
             )}".`,
             new OperationError(OperationErrorType.EntityNotFound),
           )
 
-          db[modelName].delete(record[record.__primaryKey] as string)
+          db.delete(modelName, record[record.__primaryKey] as string)
         }
 
-        db[modelName].set(nextRecord[record.__primaryKey] as string, nextRecord)
+        db.create(
+          modelName,
+          nextRecord,
+          nextRecord[record.__primaryKey] as string,
+        )
+
         updatedRecords.push(nextRecord)
       })
 
@@ -193,7 +202,7 @@ function createModelApi<
         return null
       }
 
-      db[modelName].delete(record[record.__primaryKey] as string)
+      db.delete(modelName, record[record.__primaryKey] as string)
       return record
     },
     deleteMany({ strict, ...query }) {
@@ -212,7 +221,7 @@ function createModelApi<
       }
 
       records.forEach((record) => {
-        db[modelName].delete(record[record.__primaryKey] as string)
+        db.delete(modelName, record[record.__primaryKey] as string)
       })
 
       return records

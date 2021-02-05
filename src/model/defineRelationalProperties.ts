@@ -1,5 +1,6 @@
 import { debug } from 'debug'
-import { Database, EntityInstance, Relation, RelationKind } from '../glossary'
+import { Database } from '../db/Database'
+import { EntityInstance, Relation, RelationKind } from '../glossary'
 import { executeQuery } from '../query/executeQuery'
 import { first } from '../utils/first'
 
@@ -8,7 +9,7 @@ const log = debug('defineRelationalProperties')
 export function defineRelationalProperties(
   entity: EntityInstance<any, any>,
   relations: Record<string, Relation<any>>,
-  db: Database,
+  db: Database<any>,
 ): void {
   log('setting relations', relations)
 

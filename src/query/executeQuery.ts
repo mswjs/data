@@ -1,10 +1,10 @@
 import { debug } from 'debug'
-import { Database, EntityInstance } from '../glossary'
+import { EntityInstance } from '../glossary'
 import { compileQuery } from './compileQuery'
 import { BulkQueryOptions, QuerySelector } from './queryTypes'
-import { invariant } from '../utils/invariant'
 import * as iteratorUtils from '../utils/iteratorUtils'
 import { paginateResults } from './paginateResults'
+import { Database } from '../db/Database'
 
 const log = debug('executeQuery')
 
@@ -30,17 +30,17 @@ export function executeQuery(
   modelName: string,
   primaryKey: string,
   query: QuerySelector<any> & BulkQueryOptions,
-  db: Database,
+  db: Database<any>,
 ): EntityInstance<any, any>[] {
   log(`${JSON.stringify(query)} on "${modelName}"`)
-  const records = db[modelName]
+  const records = db.getModel(modelName)
 
   // Reduce the query scope if there's a query by primary key of the model.
   const { [primaryKey]: primaryKeyComparator, ...restQueries } = query.which
   log('primary key query', primaryKeyComparator)
 
   const scopedRecords = primaryKeyComparator
-    ? queryByPrimaryKey(db[modelName], {
+    ? queryByPrimaryKey(db.getModel(modelName), {
         which: { [primaryKey]: primaryKeyComparator },
       })
     : records

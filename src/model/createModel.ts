@@ -1,13 +1,12 @@
-import { v4 } from 'uuid'
 import { debug } from 'debug'
 import {
-  Database,
   InternalEntityProperties,
   ModelDictionary,
   PrimaryKeyType,
   Value,
 } from '../glossary'
 import { defineRelationalProperties } from './defineRelationalProperties'
+import { Database } from '../db/Database'
 
 const log = debug('createModel')
 
@@ -19,7 +18,7 @@ export function createModel<
   primaryKey: PrimaryKeyType,
   properties: Value<Dictionary[ModelName], Dictionary>,
   relations: Record<string, any>,
-  db: Database,
+  db: Database<Dictionary>,
 ) {
   log(
     `creating model "${modelName}" (primary key: "${primaryKey}")`,
