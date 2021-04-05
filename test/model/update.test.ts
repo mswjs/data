@@ -208,3 +208,48 @@ test('throw an error when trying to update an entity using a key already used', 
     'Failed to execute "update" on the "user" model: the entity with a primary key "123" ("id") already exists.',
   )
 })
+
+test('derives next entity values based on the existing ones', () => {
+  const db = factory({
+    user: {
+      id: primaryKey(random.uuid),
+      firstName: name.findName,
+      role: String,
+    },
+  })
+
+  db.user.create({
+    firstName: 'John',
+    role: 'Auditor',
+  })
+  db.user.create({
+    firstName: 'Jessie',
+    role: 'Writer',
+  })
+
+  db.user.update({
+    which: {
+      role: {
+        equals: 'Auditor',
+      },
+    },
+    data: {
+      firstName(firstName) {
+        return firstName.toUpperCase()
+      },
+      role(role, user) {
+        return user.firstName === 'John' ? 'Writer' : role
+      },
+    },
+  })
+
+  const userResult = db.user.findFirst({
+    which: {
+      firstName: {
+        equals: 'JOHN',
+      },
+    },
+  })
+  expect(userResult).toHaveProperty('firstName', 'JOHN')
+  expect(userResult).toHaveProperty('role', 'Writer')
+})

@@ -131,7 +131,7 @@ export interface ModelAPI<
    */
   update(
     query: QuerySelector<Value<Dictionary[ModelName], Dictionary>> & {
-      data: Partial<Value<Dictionary[ModelName], Dictionary>>
+      data: Partial<UpdateManyValue<Dictionary[ModelName], Dictionary>>
     },
   ): EntityInstance<Dictionary, ModelName>
   /**
@@ -165,8 +165,12 @@ export type UpdateManyValue<
       [K in keyof T]: T[K] extends PrimaryKeyDeclaration
         ? (
             prevValue: ReturnType<T[K]['getValue']>,
+            entity: Value<T, Parent>,
           ) => ReturnType<T[K]['getValue']>
-        : (prevValue: ReturnType<T[K]>) => ReturnType<T[K]>
+        : (
+            prevValue: ReturnType<T[K]>,
+            entity: Value<T, Parent>,
+          ) => ReturnType<T[K]>
     }
 
 export type Value<
