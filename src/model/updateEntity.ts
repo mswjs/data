@@ -16,7 +16,7 @@ export function updateEntity(
       return acc
     }
 
-    acc[key] = typeof value === 'function' ? value(entity[key]) : value
+    acc[key] = typeof value === 'function' ? value(entity[key], entity) : value
     return acc
   }, {})
 

@@ -3,7 +3,7 @@ import { factory, primaryKey } from '../../src'
 import { OperationErrorType } from '../../src/errors/OperationError'
 import { getThrownError } from '../testUtils'
 
-test('should update many entity with evolution value', () => {
+test('derives updated value from the existing value', () => {
   const db = factory({
     user: {
       id: primaryKey(random.uuid),
@@ -15,15 +15,13 @@ test('should update many entity with evolution value', () => {
     firstName: 'Joseph',
     role: 'Auditor',
   })
-
-  db.user.create({
-    firstName: 'John',
-    role: 'Auditor',
-  })
-
   db.user.create({
     firstName: 'Jack',
     role: 'Writer',
+  })
+  db.user.create({
+    firstName: 'John',
+    role: 'Auditor',
   })
 
   const updateMultiUsers = db.user.updateMany({
@@ -33,22 +31,31 @@ test('should update many entity with evolution value', () => {
       },
     },
     data: {
-      firstName: (firstName) => firstName.toUpperCase(),
+      firstName(firstName) {
+        return firstName.toUpperCase()
+      },
+      role(role, user) {
+        return user.firstName === 'John' ? 'Writer' : role
+      },
     },
   })
 
   expect(updateMultiUsers).toHaveLength(2)
   const names = updateMultiUsers.map((user) => user.firstName)
+  const roles = updateMultiUsers.map((user) => user.role)
   expect(names).toEqual(['JOSEPH', 'JOHN'])
+  expect(roles).toEqual(['Auditor', 'Writer'])
 
-  const userResult = db.user.findFirst({
+  const userResult = db.user.findMany({
     which: {
       role: {
         equals: 'Auditor',
       },
     },
   })
-  expect(userResult).toHaveProperty('firstName', 'JOSEPH')
+  const allFirstNames = userResult.map((user) => user.firstName)
+  // "John" is no longer in the results because it's role changed to "Writer".
+  expect(allFirstNames).toEqual(['JOSEPH'])
 })
 
 test('moves entities when they update primary keys', () => {
