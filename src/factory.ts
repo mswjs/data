@@ -13,6 +13,8 @@ import { invariant } from './utils/invariant'
 import { updateEntity } from './model/updateEntity'
 import { OperationError, OperationErrorType } from './errors/OperationError'
 import { Database } from './db/Database'
+import { applySyncMiddleware } from './middleware/applySyncMiddleware'
+import { applyStorage } from './middleware/newMiddleware'
 
 /**
  * Create a database with the given models.
@@ -41,6 +43,10 @@ function createModelApi<
   db: Database<Dictionary>,
 ) {
   let modelPrimaryKey: PrimaryKeyType
+
+  // Apply database middleware
+  // applySyncMiddleware(db)
+  applyStorage(db)
 
   const api: ModelAPI<Dictionary, ModelName> = {
     create(initialValues = {}) {
@@ -109,9 +115,9 @@ function createModelApi<
       return db.listEntities(modelName)
     },
     update({ strict, ...query }) {
-      const record = api.findFirst(query)
+      const prevRecord = api.findFirst(query)
 
-      if (!record) {
+      if (!prevRecord) {
         invariant(
           strict,
           `Failed to execute "update" on the "${modelName}" model: no entity found matching the query "${JSON.stringify(
@@ -123,25 +129,22 @@ function createModelApi<
         return null
       }
 
-      const nextRecord = updateEntity(record, query.data)
+      const nextRecord = updateEntity(prevRecord, query.data)
 
-      if (nextRecord[record.__primaryKey] !== record[record.__primaryKey]) {
+      if (
+        nextRecord[prevRecord.__primaryKey] !==
+        prevRecord[prevRecord.__primaryKey]
+      ) {
         invariant(
-          db.has(modelName, nextRecord[record.__primaryKey]),
+          db.has(modelName, nextRecord[prevRecord.__primaryKey]),
           `Failed to execute "update" on the "${modelName}" model: the entity with a primary key "${
-            nextRecord[record.__primaryKey]
+            nextRecord[prevRecord.__primaryKey]
           }" ("${modelPrimaryKey}") already exists.`,
           new OperationError(OperationErrorType.DuplicatePrimaryKey),
         )
-
-        db.delete(modelName, record[record.__primaryKey] as string)
       }
 
-      db.create(
-        modelName,
-        nextRecord,
-        nextRecord[record.__primaryKey] as string,
-      )
+      db.update(modelName, nextRecord, prevRecord)
 
       return nextRecord
     },
@@ -161,26 +164,23 @@ function createModelApi<
         return null
       }
 
-      records.forEach((record) => {
-        const nextRecord = updateEntity(record, query.data)
+      records.forEach((prevRecord) => {
+        const nextRecord = updateEntity(prevRecord, query.data)
 
-        if (nextRecord[record.__primaryKey] !== record[record.__primaryKey]) {
+        if (
+          nextRecord[prevRecord.__primaryKey] !==
+          prevRecord[prevRecord.__primaryKey]
+        ) {
           invariant(
-            db.has(modelName, nextRecord[record.__primaryKey]),
+            db.has(modelName, nextRecord[prevRecord.__primaryKey]),
             `Failed to execute "updateMany" on the "${modelName}" model: no entities found matching the query "${JSON.stringify(
               query.which,
             )}".`,
             new OperationError(OperationErrorType.EntityNotFound),
           )
-
-          db.delete(modelName, record[record.__primaryKey] as string)
         }
 
-        db.create(
-          modelName,
-          nextRecord,
-          nextRecord[record.__primaryKey] as string,
-        )
+        db.update(modelName, nextRecord, prevRecord)
 
         updatedRecords.push(nextRecord)
       })
