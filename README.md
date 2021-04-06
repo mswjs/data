@@ -201,11 +201,12 @@ const updatedUser = db.user.update({
   // Provide partial next data to be
   // merged with the existing properties.
   data: {
-    // Can use exact next value.
+    // Specify the exact next value.
     firstName: 'John',
-    // Or a function that accepts the previous value
-    // and returns the next one.
-    role: (value) => reformatRole(value),
+
+    // Alternatively, derive the next value from
+    // the previous one and the unmodified entity.
+    role: (prevRole, user) => reformatRole(prevRole),
   },
 })
 ```
