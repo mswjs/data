@@ -56,11 +56,16 @@ describe('GET /users', () => {
     const users = await res.json()
 
     expect(res.status).toEqual(200)
-    expect(users).toHaveLength(2)
-    expect(users[0]).toHaveProperty('id', 'abc-123')
-    expect(users[0]).toHaveProperty('firstName', 'John')
-    expect(users[1]).toHaveProperty('id', 'def-456')
-    expect(users[1]).toHaveProperty('firstName', 'Kate')
+    expect(users).toEqual([
+      {
+        id: 'abc-123',
+        firstName: 'John',
+      },
+      {
+        id: 'def-456',
+        firstName: 'Kate',
+      },
+    ])
   })
 
   it('returns offset paginated entities', async () => {
@@ -85,11 +90,16 @@ describe('GET /users', () => {
     const res = await fetch('http://localhost/users?skip=1&take=2')
     const users = await res.json()
 
-    expect(users).toHaveLength(2)
-    expect(users[0]).toHaveProperty('id', 'def-456')
-    expect(users[0]).toHaveProperty('firstName', 'Kate')
-    expect(users[1]).toHaveProperty('id', 'ghi-789')
-    expect(users[1]).toHaveProperty('firstName', 'Joseph')
+    expect(users).toEqual([
+      {
+        id: 'def-456',
+        firstName: 'Kate',
+      },
+      {
+        id: 'ghi-789',
+        firstName: 'Joseph',
+      },
+    ])
   })
 
   it('returns cursor paginated entities', async () => {
@@ -114,11 +124,16 @@ describe('GET /users', () => {
     const res = await fetch('http://localhost/users?cursor=def-456&take=2')
     const users = await res.json()
 
-    expect(users).toHaveLength(2)
-    expect(users[0]).toHaveProperty('id', 'ghi-789')
-    expect(users[0]).toHaveProperty('firstName', 'Joseph')
-    expect(users[1]).toHaveProperty('id', 'xyz-321')
-    expect(users[1]).toHaveProperty('firstName', 'Eva')
+    expect(users).toEqual([
+      {
+        id: 'ghi-789',
+        firstName: 'Joseph',
+      },
+      {
+        id: 'xyz-321',
+        firstName: 'Eva',
+      },
+    ])
   })
 })
 
@@ -138,8 +153,10 @@ describe('GET /users/:id', () => {
     const user = await res.json()
 
     expect(res.status).toEqual(200)
-    expect(user).toHaveProperty('id', 'def-456')
-    expect(user).toHaveProperty('firstName', 'Kate')
+    expect(user).toEqual({
+      id: 'def-456',
+      firstName: 'Kate',
+    })
   })
 
   it('returns a 404 response when getting a non-existing entity', async () => {
@@ -177,8 +194,10 @@ describe('POST /users', () => {
     const user = await res.json()
 
     expect(res.status).toEqual(201)
-    expect(user).toHaveProperty('id', 'abc-123')
-    expect(user).toHaveProperty('firstName', 'Joseph')
+    expect(user).toEqual({
+      id: 'abc-123',
+      firstName: 'Joseph',
+    })
   })
 
   it('returns a 409 response when creating a user with the same id', async () => {
@@ -227,8 +246,10 @@ describe('PUT /users/:id', () => {
     const user = await res.json()
 
     expect(res.status).toEqual(200)
-    expect(user).toHaveProperty('id', 'abc-123')
-    expect(user).toHaveProperty('firstName', 'Joseph')
+    expect(user).toEqual({
+      id: 'abc-123',
+      firstName: 'Joseph',
+    })
   })
 
   it('returns a 404 response when updating a non-existing entity', async () => {
@@ -300,15 +321,20 @@ describe('DELETE /users/:id', () => {
     })
     const user = await res.json()
     expect(res.status).toEqual(200)
-    expect(user).toHaveProperty('id', 'def-456')
-    expect(user).toHaveProperty('firstName', 'Kate')
+    expect(user).toEqual({
+      id: 'def-456',
+      firstName: 'Kate',
+    })
 
     const allUsers = await fetch('http://localhost/users').then((res) =>
       res.json(),
     )
-    expect(allUsers).toHaveLength(1)
-    expect(allUsers[0]).toHaveProperty('id', 'abc-123')
-    expect(allUsers[0]).toHaveProperty('firstName', 'John')
+    expect(allUsers).toEqual([
+      {
+        id: 'abc-123',
+        firstName: 'John',
+      },
+    ])
   })
 
   it('returns a 404 response when deleting a non-existing entity', async () => {
