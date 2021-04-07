@@ -113,6 +113,7 @@ Each model has the following methods:
 - [`create()`](#create)
 - [`findFirst()`](#findFirst)
 - [`findMany()`](#findMany)
+- [`count()`](#count)
 - [`getAll()`](#getAll)
 - [`update()`](#update)
 - [`updateMany()`](#updateMany)
