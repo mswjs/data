@@ -9,6 +9,10 @@ export type QuerySelectorWhich<EntityType extends Record<string, any>> = {
   [K in keyof EntityType]?: Partial<GetQueryFor<EntityType[K]>>
 }
 
+export interface WeakQuerySelectorWhich<KeyType extends PrimaryKeyType> {
+  [key: string]: Partial<GetQueryFor<KeyType>>
+}
+
 interface BulkQueryBaseOptions {
   take?: number
 }

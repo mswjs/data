@@ -15,6 +15,7 @@ import { OperationError, OperationErrorType } from './errors/OperationError'
 import { Database } from './db/Database'
 import { generateHandlers } from './model/generateHandlers'
 import { findPrimaryKey } from './utils/findPrimaryKey'
+import { generateGraphQLHandlers } from './model/generateGraphQLHandlers'
 
 /**
  * Create a database with the given models.
@@ -247,6 +248,9 @@ function createModelApi<
     },
     toHandlers(baseUrl) {
       return generateHandlers(modelName, primaryKey, api, baseUrl)
+    },
+    toGraphQLHandlers(baseUrl) {
+      return generateGraphQLHandlers(modelName, primaryKey, api, baseUrl)
     },
   }
 
