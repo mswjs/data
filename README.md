@@ -118,6 +118,7 @@ Each model has the following methods:
 - [`updateMany()`](#updateMany)
 - [`delete()`](#delete)
 - [`deleteMany()`](#deleteMany)
+- [`toHandlers()`](#toHandlers)
 
 #### `create`
 
@@ -258,6 +259,34 @@ const deletedUsers = db.user.deleteMany({
   },
 })
 ```
+
+#### `toHandlers`
+
+Generate CRUD request handlers for the given model to use with [Mock Service Worker](https://github.com/mswjs/msw).
+
+```js
+import { factory, primaryKey } from '@mswjs/data'
+import { setupWorker } from 'msw'
+
+const db = factory({
+  user: {
+    id: primaryKey(String),
+    firstName: String,
+  },
+})
+
+const worker = setupWorker(...db.user.toHandlers())
+
+worker.start()
+```
+
+This generates the following request handlers that automatically perform respective database operations:
+
+- `GET /users`, returns all users (supports [pagination](#pagination)).
+- `GET /users/:id` (where "id" is your model's primary key), returns a user by primary key.
+- `POST /users`, creates a new user.
+- `PUT /users/:id`, updates an existing user by primary key.
+- `DELETE /users/:id`, deletes an existing user by primary key.
 
 ### Querying data
 
