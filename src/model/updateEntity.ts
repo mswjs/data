@@ -1,4 +1,3 @@
-import { mergeDeepRight } from 'ramda'
 import { EntityInstance } from '../glossary'
 
 /**
@@ -9,16 +8,20 @@ export function updateEntity(
   entity: EntityInstance<any, any>,
   data: any,
 ): EntityInstance<any, any> {
-  const evolvedData = Object.entries(data).reduce((acc, [key, value]) => {
-    // Ignore attempts to update entity with properties
-    // that were not specified in the model declaration.
-    if (!entity.hasOwnProperty(key)) {
+  return Object.entries(data).reduce<EntityInstance<any, any>>(
+    (acc, [key, value]) => {
+      // Ignore attempts to update entity with properties
+      // that were not specified in the model declaration.
+      if (!entity.hasOwnProperty(key)) {
+        return acc
+      }
+
+      acc[key] =
+        typeof value === 'function' ? value(entity[key], entity) : value
       return acc
-    }
-
-    acc[key] = typeof value === 'function' ? value(entity[key], entity) : value
-    return acc
-  }, {})
-
-  return mergeDeepRight(entity, evolvedData)
+    },
+    {
+      ...entity,
+    },
+  )
 }

@@ -1,5 +1,5 @@
 export function invariant(
-  value: boolean,
+  value: any,
   message: string,
   error: Error = new Error(),
 ) {

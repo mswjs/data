@@ -1,6 +1,7 @@
 export enum OperationErrorType {
-  EntityNotFound = 'EntityNotFound',
+  MissingPrimaryKey = 'MissingPrimaryKey',
   DuplicatePrimaryKey = 'DuplicatePrimaryKey',
+  EntityNotFound = 'EntityNotFound',
 }
 
 export class OperationError extends Error {

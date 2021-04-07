@@ -7,6 +7,6 @@ export function oneOf<ModelName extends string>(
   return {
     kind: RelationKind.OneOf,
     modelName,
-    unique: options?.unique,
+    unique: !!options?.unique,
   }
 }

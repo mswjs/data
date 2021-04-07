@@ -1,5 +1,7 @@
 {
   "compilerOptions": {
+    "strict": true,
+    "strictNullChecks": true,
     "outDir": "lib",
     "declaration": true,
     "moduleResolution": "node",

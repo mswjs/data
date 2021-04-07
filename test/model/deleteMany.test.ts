@@ -35,7 +35,7 @@ test('deletes all entites that match the query', () => {
         between: [11, 20],
       },
     },
-  })
+  })!
   expect(deletedUsers).toHaveLength(2)
 
   const deletedUserNames = deletedUsers.map((user) => user.firstName)
@@ -110,7 +110,7 @@ test('does nothing when no entities match the query', () => {
       },
     },
   })
-  expect(deletedUsers).toHaveLength(0)
+  expect(deletedUsers).toBeNull()
 
   const restUsers = db.user.getAll()
   expect(restUsers).toHaveLength(2)

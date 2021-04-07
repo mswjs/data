@@ -1,9 +1,9 @@
 import {
+  EntityInstance,
   FactoryAPI,
   ModelAPI,
   ModelDeclaration,
   ModelDictionary,
-  PrimaryKeyType,
 } from './glossary'
 import { first } from './utils/first'
 import { executeQuery } from './query/executeQuery'
@@ -44,12 +44,30 @@ function createModelApi<
 ) {
   const primaryKey = findPrimaryKey(declaration)
 
+  if (typeof primaryKey === 'undefined') {
+    throw new OperationError(
+      OperationErrorType.MissingPrimaryKey,
+      `Failed to create a "${modelName}" model: none of the listed properties is marked as a primary key (${Object.keys(
+        declaration,
+      ).join()}).`,
+    )
+  }
+
   const api: ModelAPI<Dictionary, ModelName> = {
     create(initialValues = {}) {
       const { primaryKey, properties, relations } = parseModelDeclaration<
         Dictionary,
         ModelName
       >(modelName, declaration, initialValues)
+
+      if (typeof primaryKey === 'undefined') {
+        throw new OperationError(
+          OperationErrorType.MissingPrimaryKey,
+          `Failed to create a "${modelName}" model: none of the listed properties is marked as a primary key (${Object.keys(
+            declaration,
+          ).join()}).`,
+        )
+      }
 
       const entity = createModel<Dictionary, ModelName>(
         modelName,
@@ -148,7 +166,7 @@ function createModelApi<
     },
     updateMany({ strict, ...query }) {
       const records = api.findMany(query)
-      const updatedRecords = []
+      const updatedRecords: EntityInstance<any, any>[] = []
 
       if (records.length === 0) {
         invariant(
@@ -218,7 +236,7 @@ function createModelApi<
           new OperationError(OperationErrorType.EntityNotFound),
         )
 
-        return []
+        return null
       }
 
       records.forEach((record) => {

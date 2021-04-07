@@ -126,7 +126,7 @@ export interface ModelAPI<
   /**
    * Return all entities of the current model.
    */
-  getAll(): EntityInstance<Dictionary, ModelName>[]
+  getAll(): EntityInstance<Limit<Record<string, Record<string, any>>>, any>[]
   /**
    * Update a single entity with the next data.
    */
@@ -134,7 +134,7 @@ export interface ModelAPI<
     query: QuerySelector<Value<Dictionary[ModelName], Dictionary>> & {
       data: Partial<UpdateManyValue<Dictionary[ModelName], Dictionary>>
     },
-  ): EntityInstance<Dictionary, ModelName>
+  ): EntityInstance<Dictionary, ModelName> | null
   /**
    * Update many entities with the next data.
    */
@@ -142,19 +142,19 @@ export interface ModelAPI<
     query: QuerySelector<Value<Dictionary[ModelName], Dictionary>> & {
       data: Partial<UpdateManyValue<Dictionary[ModelName], Dictionary>>
     },
-  ): Value<Dictionary[ModelName], Dictionary>[]
+  ): Value<Dictionary[ModelName], Dictionary>[] | null
   /**
    * Delete a single entity.
    */
   delete(
     query: QuerySelector<Value<Dictionary[ModelName], Dictionary>>,
-  ): EntityInstance<Dictionary, ModelName>
+  ): EntityInstance<Dictionary, ModelName> | null
   /**
    * Delete multiple entities.
    */
   deleteMany(
     query: QuerySelector<Value<Dictionary[ModelName], Dictionary>>,
-  ): EntityInstance<Dictionary, ModelName>[]
+  ): EntityInstance<Dictionary, ModelName>[] | null
   /**
    * Generate handlers from entity
    */

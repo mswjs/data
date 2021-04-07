@@ -38,7 +38,7 @@ test('derives updated value from the existing value', () => {
         return user.firstName === 'John' ? 'Writer' : role
       },
     },
-  })
+  })!
 
   expect(updateMultiUsers).toHaveLength(2)
   const names = updateMultiUsers.map((user) => user.firstName)
@@ -171,7 +171,7 @@ test('should update many entities with primitive values', () => {
     data: {
       role: 'Admin',
     },
-  })
+  })!
 
   expect(updateMultiUsers).toHaveLength(2)
   updateMultiUsers.forEach((user) => expect(user.role).toEqual('Admin'))
