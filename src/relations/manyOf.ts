@@ -7,6 +7,6 @@ export function manyOf<ModelName extends string>(
   return {
     kind: RelationKind.ManyOf,
     modelName,
-    unique: options?.unique,
+    unique: !!options?.unique,
   }
 }

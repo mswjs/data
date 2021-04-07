@@ -20,18 +20,23 @@ interface BulkQueryOffsetOptions extends BulkQueryBaseOptions {
 
 interface BulkQueryCursorOptions extends BulkQueryBaseOptions {
   skip?: never
-  cursor: PrimaryKeyType
+  cursor: PrimaryKeyType | null
 }
 
 export type BulkQueryOptions = BulkQueryOffsetOptions | BulkQueryCursorOptions
 
+export type ComparatorFn<ExpectedType extends any, ActualType extends any> = (
+  expected: ExpectedType,
+  actual: ActualType,
+) => boolean
+
 export type QueryToComparator<
   QueryType extends StringQuery | NumberQuery | BooleanQuery | DateQuery
 > = {
-  [K in keyof QueryType]: (
-    expected: QueryType[K],
-    actual: QueryType[K] extends Array<infer T> ? T : QueryType[K],
-  ) => boolean
+  [K in keyof QueryType]: ComparatorFn<
+    QueryType[K],
+    QueryType[K] extends Array<infer T> ? T : QueryType[K]
+  >
 }
 
 export type GetQueryFor<

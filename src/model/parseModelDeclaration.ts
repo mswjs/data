@@ -14,7 +14,7 @@ import { invariant } from '../utils/invariant'
 const log = debug('parseModelDeclaration')
 
 interface ParsedModelDeclaration {
-  primaryKey: PrimaryKeyType
+  primaryKey?: PrimaryKeyType
   properties: Value<any, any>
   relations: Record<string, Relation<string>>
 }
@@ -55,7 +55,7 @@ export function parseModelDeclaration<
         typeof exactValue === 'string' ||
         typeof exactValue === 'number' ||
         typeof exactValue === 'boolean' ||
-        exactValue?.constructor.name === 'Date'
+        (exactValue as any)?.constructor.name === 'Date'
       ) {
         log(
           `"${modelName}.${key}" has a plain initial value, setting to`,
@@ -120,7 +120,7 @@ export function parseModelDeclaration<
         }
 
         // A plain exact initial value is provided (not a relational property).
-        acc[key] = exactValue
+        acc.properties[key] = exactValue
         return acc
       }
 
@@ -141,14 +141,14 @@ export function parseModelDeclaration<
       return acc
     },
     {
-      primaryKey: null,
+      primaryKey: undefined,
       properties: {},
       relations: {},
     },
   )
 
   // Primary key is required on each model declaration.
-  if (result.primaryKey === null) {
+  if (result.primaryKey == null) {
     throw new Error(
       `Failed to parse model declaration for "${modelName}": primary key not found.`,
     )

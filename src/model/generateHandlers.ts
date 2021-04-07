@@ -14,6 +14,10 @@ interface WeakQuerySelectorWhich<KeyType extends PrimaryKeyType> {
   [key: string]: Partial<GetQueryFor<KeyType>>
 }
 
+type RequestParams<Key extends PrimaryKeyType> = {
+  [K in PrimaryKeyType]: PrimaryKeyType
+}
+
 export function createUrlBuilder(baseUrl?: string) {
   return (path: string) => {
     const url = new URL(path, baseUrl || 'http://localhost')
@@ -70,16 +74,22 @@ export function generateHandlers<
   return [
     rest.get(
       buildUrl(modelPath),
-      withErrors((req, res, ctx) => {
+      withErrors<EntityInstance<Dictionary, ModelName>>((req, res, ctx) => {
         const cursor = req.url.searchParams.get('cursor')
-        const skip = parseInt(req.url.searchParams.get('skip') ?? '0', 10)
-        const take = parseInt(req.url.searchParams.get('take'), 10)
+        const rawSkip = req.url.searchParams.get('skip')
+        const rawTake = req.url.searchParams.get('take')
+
+        const skip = parseInt(rawSkip ?? '0', 10)
+        const take = rawTake == null ? rawTake : parseInt(rawTake, 10)
+
         let options = { which: {} }
 
-        if (!isNaN(take) && !isNaN(skip))
+        if (take && !isNaN(take) && !isNaN(skip)) {
           options = Object.assign(options, { take, skip })
-        if (!isNaN(take) && cursor)
+        }
+        if (take && !isNaN(take) && cursor) {
           options = Object.assign(options, { take, cursor })
+        }
 
         const records = model.findMany(options)
 
@@ -88,7 +98,10 @@ export function generateHandlers<
     ),
     rest.get(
       buildUrl(`${modelPath}/:${primaryKey}`),
-      withErrors<void, { id: PrimaryKeyType }>((req, res, ctx) => {
+      withErrors<
+        EntityInstance<Dictionary, ModelName>,
+        RequestParams<PrimaryKeyType>
+      >((req, res, ctx) => {
         const id = req.params[primaryKey]
         const which: WeakQuerySelectorWhich<typeof primaryKey> = {
           [primaryKey]: {
@@ -115,42 +128,44 @@ export function generateHandlers<
     ),
     rest.put(
       buildUrl(`${modelPath}/:${primaryKey}`),
-      withErrors<EntityInstance<Dictionary, ModelName>, { id: PrimaryKeyType }>(
-        (req, res, ctx) => {
-          const id = req.params[primaryKey]
-          const which: WeakQuerySelectorWhich<typeof primaryKey> = {
-            [primaryKey]: {
-              equals: id,
-            },
-          }
-          const updatedEntity = model.update({
-            strict: true,
-            which: which as any,
-            data: req.body,
-          })
+      withErrors<
+        EntityInstance<Dictionary, ModelName>,
+        RequestParams<PrimaryKeyType>
+      >((req, res, ctx) => {
+        const id = req.params[primaryKey]
+        const which: WeakQuerySelectorWhich<typeof primaryKey> = {
+          [primaryKey]: {
+            equals: id,
+          },
+        }
+        const updatedEntity = model.update({
+          strict: true,
+          which: which as any,
+          data: req.body,
+        })!
 
-          return res(ctx.json(removeInternalProperties(updatedEntity)))
-        },
-      ),
+        return res(ctx.json(removeInternalProperties(updatedEntity)))
+      }),
     ),
     rest.delete(
       buildUrl(`${modelPath}/:${primaryKey}`),
-      withErrors<EntityInstance<Dictionary, ModelName>, { id: PrimaryKeyType }>(
-        (req, res, ctx) => {
-          const id = req.params[primaryKey]
-          const which: WeakQuerySelectorWhich<typeof primaryKey> = {
-            [primaryKey]: {
-              equals: id,
-            },
-          }
-          const deletedEntity = model.delete({
-            strict: true,
-            which: which as any,
-          })
+      withErrors<
+        EntityInstance<Dictionary, ModelName>,
+        RequestParams<PrimaryKeyType>
+      >((req, res, ctx) => {
+        const id = req.params[primaryKey]
+        const which: WeakQuerySelectorWhich<typeof primaryKey> = {
+          [primaryKey]: {
+            equals: id,
+          },
+        }
+        const deletedEntity = model.delete({
+          strict: true,
+          which: which as any,
+        })!
 
-          return res(ctx.json(removeInternalProperties(deletedEntity)))
-        },
-      ),
+        return res(ctx.json(removeInternalProperties(deletedEntity)))
+      }),
     ),
   ]
 }

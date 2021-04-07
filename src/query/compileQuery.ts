@@ -1,5 +1,5 @@
 import { debug } from 'debug'
-import { QuerySelector } from './queryTypes'
+import { ComparatorFn, QuerySelector } from './queryTypes'
 import { getComparatorsForValue } from './getComparatorsForValue'
 
 const log = debug('compileQuery')
@@ -8,18 +8,22 @@ const log = debug('compileQuery')
  * Compile a query expression into a function that accepts an actual entity
  * and returns a query execution result (whether the entity satisfies the query).
  */
-export function compileQuery<V extends Record<string, any>>(
+export function compileQuery<Data extends Record<string, any>>(
   query: QuerySelector<any>,
 ) {
   log(JSON.stringify(query))
 
-  return (data: V): boolean => {
+  return (data: Data): boolean => {
     return Object.entries(query.which)
       .map<boolean>(([propName, queryChunk]) => {
         const actualValue = data[propName]
 
         log('executing query chunk', queryChunk, data)
         log(`actual value for "${propName}"`, actualValue)
+
+        if (!queryChunk) {
+          return true
+        }
 
         return Object.entries(queryChunk).reduce<boolean>(
           (acc, [comparatorName, expectedValue]) => {
@@ -53,9 +57,10 @@ export function compileQuery<V extends Record<string, any>>(
             const comparatorSet = getComparatorsForValue(actualValue)
             log('comparators', comparatorSet)
 
-            const comparatorFn = comparatorSet[comparatorName]
-            const hasMatch = comparatorFn(expectedValue, actualValue)
-            return hasMatch
+            const comparatorFn = (comparatorSet as any)[
+              comparatorName
+            ] as ComparatorFn<any, any>
+            return comparatorFn(expectedValue, actualValue)
           },
           true,
         )

@@ -1,14 +1,22 @@
 import { EntityInstance, ModelDictionary, PrimaryKeyType } from '../glossary'
 
+type Models<Dictionary extends ModelDictionary> = Record<
+  string,
+  Map<string, EntityInstance<Dictionary, any>>
+>
+
 export class Database<Dictionary extends ModelDictionary> {
-  private models: Record<string, Map<string, EntityInstance<Dictionary, any>>>
+  private models: Models<ModelDictionary>
 
   constructor(dictionary: Dictionary) {
-    this.models = Object.keys(dictionary).reduce((acc, modelName) => {
-      acc[modelName] = new Map<string, EntityInstance<Dictionary, string>>()
+    this.models = Object.keys(dictionary).reduce<Models<ModelDictionary>>(
+      (acc, modelName) => {
+        acc[modelName] = new Map<string, EntityInstance<Dictionary, string>>()
 
-      return acc
-    }, {})
+        return acc
+      },
+      {},
+    )
   }
 
   getModel(name: string) {

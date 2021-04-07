@@ -4,7 +4,7 @@ it('returns the primary key property name of the model declaration', () => {
   const primaryKey = findPrimaryKey({
     id: {
       isPrimaryKey: true,
-      getValue: null,
+      getValue: String,
     },
   })
   expect(primaryKey).toEqual('id')
