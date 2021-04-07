@@ -1,5 +1,5 @@
 import { BulkQueryOptions, QuerySelector } from './query/queryTypes'
-import { RestHandler } from 'msw'
+import { GraphQLHandler, RestHandler } from 'msw'
 
 export type PrimaryKeyType = string
 export type BaseTypes = string | number | boolean | Date
@@ -158,7 +158,9 @@ export interface ModelAPI<
   /**
    * Generate handlers from entity
    */
-  toHandlers(baseUrl?: string): RestHandler[]
+  toHandlers(baseUri?: string): RestHandler[]
+
+  toGraphQLHandlers(baseUri?: string): GraphQLHandler[]
 }
 
 export type UpdateManyValue<
