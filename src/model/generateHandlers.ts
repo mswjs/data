@@ -1,5 +1,5 @@
 import pluralize from 'pluralize'
-import { RestContext, MockedRequest, ResponseResolver, rest } from 'msw'
+import { RestContext, RestRequest, ResponseResolver, rest } from 'msw'
 import {
   EntityInstance,
   ModelDictionary,
@@ -38,11 +38,11 @@ export function getResponseStatusByErrorType(error: OperationError): number {
 
 export function withErrors<RequestBodyType = any, RequestParamsType = any>(
   handler: ResponseResolver<
-    MockedRequest<RequestBodyType, RequestParamsType>,
+    RestRequest<RequestBodyType, RequestParamsType>,
     RestContext
   >,
 ): ResponseResolver<
-  MockedRequest<RequestBodyType, RequestParamsType>,
+  RestRequest<RequestBodyType, RequestParamsType>,
   RestContext
 > {
   return (req, res, ctx) => {

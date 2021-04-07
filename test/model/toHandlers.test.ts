@@ -27,16 +27,14 @@ afterAll(() => {
 
 it('generates CRUD request handlers for the model', () => {
   const userHandlers = db.user.toHandlers()
-  const displayRoutes = userHandlers.map(
-    (handler) => handler.getMetaInfo().header,
-  )
+  const displayRoutes = userHandlers.map((handler) => handler.info.header)
 
   expect(displayRoutes).toEqual([
-    '[rest] GET /users',
-    '[rest] GET /users/:id',
-    '[rest] POST /users',
-    '[rest] PUT /users/:id',
-    '[rest] DELETE /users/:id',
+    'GET /users',
+    'GET /users/:id',
+    'POST /users',
+    'PUT /users/:id',
+    'DELETE /users/:id',
   ])
 })
 
