@@ -20,7 +20,7 @@ $ npm install @mswjs/data --save-dev
 
 ### Describe data
 
-With this library you're modeling data using the `factory` function. That function accepts an object where each key represents a _model name_ and values are _model declarations_. Model declaration, in turn, is also an object where keys stand for model properties and values for value getter functions.
+With this library, you're modeling data using the `factory` function. That function accepts an object where each key represents a _model name_ and values are _model declarations_. Model declaration, in turn, is also an object where keys stand for model properties and values for value getters.
 
 ```js
 // src/mocks/db.js
@@ -158,7 +158,7 @@ const users = db.user.findMany({
 
 #### `count`
 
-Returns the amount of records for the given model.
+Returns the number of records for the given model.
 
 ```js
 db.user.create()
