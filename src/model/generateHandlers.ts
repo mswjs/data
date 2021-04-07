@@ -1,21 +1,26 @@
-import { rest, RestContext, MockedRequest, ResponseResolver } from 'msw'
 import pluralize from 'pluralize'
+import { RestContext, MockedRequest, ResponseResolver, rest } from 'msw'
 import {
   EntityInstance,
   ModelDictionary,
   ModelAPI,
   PrimaryKeyType,
-  Value,
 } from '../glossary'
-import { BulkQueryOptions, QuerySelector } from '../query/queryTypes'
+import { GetQueryFor } from '../query/queryTypes'
 import { OperationErrorType, OperationError } from '../errors/OperationError'
 
-function normalizeUrl(path: string, baseUri?: string) {
-  const url = new URL(path, baseUri || 'http://localhost')
-  return baseUri ? url.toString() : url.pathname
+interface WeakQuerySelectorWhich<KeyType extends PrimaryKeyType> {
+  [key: string]: Partial<GetQueryFor<KeyType>>
 }
 
-function getResponseStatusByErrorType(error: OperationError) {
+export function createUrlBuilder(baseUrl?: string) {
+  return (path: string) => {
+    const url = new URL(path, baseUrl || 'http://localhost')
+    return baseUrl ? url.toString() : url.pathname
+  }
+}
+
+export function getResponseStatusByErrorType(error: OperationError): number {
   switch (error.type) {
     case OperationErrorType.EntityNotFound:
       return 404
@@ -26,20 +31,23 @@ function getResponseStatusByErrorType(error: OperationError) {
   }
 }
 
-function withErrors<RequestBodyType = any, RequestParamsType = any>(
+export function withErrors<RequestBodyType = any, RequestParamsType = any>(
   handler: ResponseResolver<
     MockedRequest<RequestBodyType, RequestParamsType>,
     RestContext
   >,
-) {
+): ResponseResolver<
+  MockedRequest<RequestBodyType, RequestParamsType>,
+  RestContext
+> {
   return (req, res, ctx) => {
     try {
       return handler(req, res, ctx)
-    } catch (e) {
+    } catch (error) {
       return res(
-        ctx.status(getResponseStatusByErrorType(e)),
+        ctx.status(getResponseStatusByErrorType(error)),
         ctx.json({
-          message: e.message,
+          message: error.message,
         }),
       )
     }
@@ -52,76 +60,91 @@ export function generateHandlers<
 >(
   modelName: ModelName,
   primaryKey: PrimaryKeyType,
-  api: ModelAPI<Dictionary, ModelName>,
-  baseUri: string = '',
+  model: ModelAPI<Dictionary, ModelName>,
+  baseUrl: string = '',
 ) {
   const modelPath = pluralize(modelName)
+  const buildUrl = createUrlBuilder(baseUrl)
 
   return [
     rest.get(
-      normalizeUrl(modelPath, baseUri),
+      buildUrl(modelPath),
       withErrors((req, res, ctx) => {
-        const skip = parseInt(req.url.searchParams.get('skip') ?? '0', 10)
         const cursor = req.url.searchParams.get('cursor')
+        const skip = parseInt(req.url.searchParams.get('skip') ?? '0', 10)
         const take = parseInt(req.url.searchParams.get('take'), 10)
         let options = { which: {} }
+
         if (!isNaN(take) && !isNaN(skip))
           options = Object.assign(options, { take, skip })
         if (!isNaN(take) && cursor)
           options = Object.assign(options, { take, cursor })
-        const records = api.findMany(options)
 
-        return res(ctx.status(200), ctx.json(records))
+        const records = model.findMany(options)
+
+        return res(ctx.json(records))
       }),
     ),
     rest.get(
-      normalizeUrl(`${modelPath}/:${primaryKey}`, baseUri),
+      buildUrl(`${modelPath}/:${primaryKey}`),
       withErrors<void, { id: PrimaryKeyType }>((req, res, ctx) => {
         const id = req.params[primaryKey]
-
-        const entity = api.findFirst({
-          strict: true,
-          which: {
-            [primaryKey]: {
-              equals: id,
-            },
+        const which: WeakQuerySelectorWhich<typeof primaryKey> = {
+          [primaryKey]: {
+            equals: id,
           },
-        } as any)
-        return res(ctx.status(200), ctx.json(entity))
+        }
+        const entity = model.findFirst({
+          strict: true,
+          which: which as any,
+        })
+
+        return res(ctx.json(entity))
       }),
     ),
     rest.post(
-      normalizeUrl(modelPath, baseUri),
+      buildUrl(modelPath),
       withErrors<EntityInstance<Dictionary, ModelName>>((req, res, ctx) => {
-        const payload = req.body
-        const createdEntity = api.create(payload)
-        return res(ctx.status(201), ctx.json(createdEntity))
-      }),
-    ),
-    rest.post(
-      normalizeUrl(modelPath, baseUri),
-      withErrors<EntityInstance<Dictionary, ModelName>>((req, res, ctx) => {
-        const payload = req.body
-        const createdEntity = api.create(payload)
+        const createdEntity = model.create(req.body)
         return res(ctx.status(201), ctx.json(createdEntity))
       }),
     ),
     rest.put(
-      normalizeUrl(`${modelPath}/:${primaryKey}`, baseUri),
+      buildUrl(`${modelPath}/:${primaryKey}`),
       withErrors<EntityInstance<Dictionary, ModelName>, { id: PrimaryKeyType }>(
         (req, res, ctx) => {
-          const payload = req.body
           const id = req.params[primaryKey]
-          const updatedEntity = api.update({
-            strict: true,
-            which: {
-              [primaryKey]: {
-                equals: id,
-              },
+          const which: WeakQuerySelectorWhich<typeof primaryKey> = {
+            [primaryKey]: {
+              equals: id,
             },
-            data: payload,
-          } as any)
-          return res(ctx.status(200), ctx.json(updatedEntity))
+          }
+          const updatedEntity = model.update({
+            strict: true,
+            which: which as any,
+            data: req.body,
+          })
+
+          return res(ctx.json(updatedEntity))
+        },
+      ),
+    ),
+    rest.delete(
+      buildUrl(`${modelPath}/:${primaryKey}`),
+      withErrors<EntityInstance<Dictionary, ModelName>, { id: PrimaryKeyType }>(
+        (req, res, ctx) => {
+          const id = req.params[primaryKey]
+          const which: WeakQuerySelectorWhich<typeof primaryKey> = {
+            [primaryKey]: {
+              equals: id,
+            },
+          }
+          const deletedEntity = model.delete({
+            strict: true,
+            which: which as any,
+          })
+
+          return res(ctx.json(deletedEntity))
         },
       ),
     ),

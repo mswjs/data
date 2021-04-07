@@ -14,6 +14,7 @@ import { updateEntity } from './model/updateEntity'
 import { OperationError, OperationErrorType } from './errors/OperationError'
 import { Database } from './db/Database'
 import { generateHandlers } from './model/generateHandlers'
+import { findPrimaryKey } from './utils/findPrimaryKey'
 
 /**
  * Create a database with the given models.
@@ -41,7 +42,7 @@ function createModelApi<
   declaration: ModelDeclaration,
   db: Database<Dictionary>,
 ) {
-  let modelPrimaryKey: PrimaryKeyType
+  const primaryKey = findPrimaryKey(declaration)
 
   const api: ModelAPI<Dictionary, ModelName> = {
     create(initialValues = {}) {
@@ -57,7 +58,6 @@ function createModelApi<
         relations,
         db,
       )
-      modelPrimaryKey = entity.__primaryKey
       const entityPrimaryKey = entity[entity.__primaryKey] as string
 
       // Prevent creation of multiple entities with the same primary key value.
@@ -76,11 +76,11 @@ function createModelApi<
         return db.count(modelName)
       }
 
-      const results = executeQuery(modelName, modelPrimaryKey, query, db)
+      const results = executeQuery(modelName, primaryKey, query, db)
       return results.length
     },
     findFirst(query) {
-      const results = executeQuery(modelName, modelPrimaryKey, query, db)
+      const results = executeQuery(modelName, primaryKey, query, db)
       const firstResult = first(results)
 
       invariant(
@@ -94,7 +94,7 @@ function createModelApi<
       return firstResult
     },
     findMany(query) {
-      const results = executeQuery(modelName, modelPrimaryKey, query, db)
+      const results = executeQuery(modelName, primaryKey, query, db)
 
       invariant(
         query.strict && results.length === 0,
@@ -131,7 +131,7 @@ function createModelApi<
           db.has(modelName, nextRecord[record.__primaryKey]),
           `Failed to execute "update" on the "${modelName}" model: the entity with a primary key "${
             nextRecord[record.__primaryKey]
-          }" ("${modelPrimaryKey}") already exists.`,
+          }" ("${primaryKey}") already exists.`,
           new OperationError(OperationErrorType.DuplicatePrimaryKey),
         )
 
@@ -227,8 +227,8 @@ function createModelApi<
 
       return records
     },
-    toHandlers(baseUri) {
-      return generateHandlers(modelName, modelPrimaryKey, api, baseUri)
+    toHandlers(baseUrl) {
+      return generateHandlers(modelName, primaryKey, api, baseUrl)
     },
   }
 

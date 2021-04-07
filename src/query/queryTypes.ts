@@ -1,14 +1,12 @@
 import { PrimaryKeyType, Value } from '../glossary'
 
-export interface QuerySelector<EntityType extends Record<string, any>>
-  extends QueryOptions {
-  which: {
-    [K in keyof EntityType]?: Partial<GetQueryFor<EntityType[K]>>
-  }
+export interface QuerySelector<EntityType extends Record<string, any>> {
+  strict?: boolean
+  which: QuerySelectorWhich<EntityType>
 }
 
-interface QueryOptions {
-  strict?: boolean
+export type QuerySelectorWhich<EntityType extends Record<string, any>> = {
+  [K in keyof EntityType]?: Partial<GetQueryFor<EntityType[K]>>
 }
 
 interface BulkQueryBaseOptions {
