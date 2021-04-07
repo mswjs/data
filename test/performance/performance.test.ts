@@ -17,7 +17,7 @@ test('creates a 1000 records in under 100ms', async () => {
     repeat(db.user.create, 1000)
   })
 
-  expect(createPerformance.duration).toBeLessThanOrEqual(300)
+  expect(createPerformance.duration).toBeLessThanOrEqual(350)
 })
 
 test('queries through a 1000 records in under 100ms', async () => {
@@ -42,7 +42,7 @@ test('queries through a 1000 records in under 100ms', async () => {
     })
   })
 
-  expect(findManyPerformance.duration).toBeLessThanOrEqual(300)
+  expect(findManyPerformance.duration).toBeLessThanOrEqual(350)
 })
 
 test('updates a single record under 100ms', async () => {
@@ -70,7 +70,7 @@ test('updates a single record under 100ms', async () => {
     })
   })
 
-  expect(updatePerformance.duration).toBeLessThanOrEqual(300)
+  expect(updatePerformance.duration).toBeLessThanOrEqual(350)
 })
 
 test('deletes a single record in under 100ms', async () => {
@@ -96,7 +96,7 @@ test('deletes a single record in under 100ms', async () => {
     })
   })
 
-  expect(deletePerformance.duration).toBeLessThanOrEqual(300)
+  expect(deletePerformance.duration).toBeLessThanOrEqual(350)
 })
 
 test('deletes multiple records in under 100ms', async () => {
@@ -121,5 +121,5 @@ test('deletes multiple records in under 100ms', async () => {
     })
   })
 
-  expect(deleteManyPerformance.duration).toBeLessThanOrEqual(300)
+  expect(deleteManyPerformance.duration).toBeLessThanOrEqual(350)
 })
