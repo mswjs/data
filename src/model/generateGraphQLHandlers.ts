@@ -111,21 +111,15 @@ export function declarationToFields(
       const queryType = getQueryTypeByValueType(valueType)
 
       // Fields describe an entity type.
-      types.fields[key] = {
-        type: valueType,
-      }
+      types.fields[key] = { type: valueType }
 
       // Input fields describe a type that can be used
       // as an input when creating entities (initial values).
-      types.inputFields[key] = {
-        type: valueType,
-      }
+      types.inputFields[key] = { type: valueType }
 
       // Query input fields describe a type that is used
       // as a "which" query, with its comparator function types.
-      types.queryInputFields[key] = {
-        type: queryType,
-      }
+      types.queryInputFields[key] = { type: queryType }
 
       return types
     },
@@ -173,9 +167,7 @@ export function generateGraphQLHandlers<
         [modelName]: {
           type: EntityType,
           args: {
-            which: {
-              type: EntityQueryInputType,
-            },
+            which: { type: EntityQueryInputType },
           },
           resolve(_, args) {
             return model.findFirst({ which: args.which })
@@ -185,9 +177,7 @@ export function generateGraphQLHandlers<
         [pluralize(modelName)]: {
           type: new GraphQLList(EntityType),
           args: {
-            which: {
-              type: EntityQueryInputType,
-            },
+            which: { type: EntityQueryInputType },
           },
           resolve(_, args) {
             return args.which
@@ -204,12 +194,23 @@ export function generateGraphQLHandlers<
         [`create${capitalModelName}`]: {
           type: EntityType,
           args: {
-            input: {
-              type: EntityInputType,
-            },
+            data: { type: EntityInputType },
           },
           resolve(_, args) {
-            return model.create(args.input as any)
+            return model.create(args.data)
+          },
+        },
+        [`update${capitalModelName}`]: {
+          type: EntityType,
+          args: {
+            which: { type: EntityQueryInputType },
+            data: { type: EntityInputType },
+          },
+          resolve(_, args) {
+            return model.update({
+              which: args.which,
+              data: args.data,
+            })
           },
         },
       },
