@@ -167,7 +167,7 @@ it('supports creating a new entity', async () => {
   const res = await executeQuery({
     query: `
       mutation CreateUser($input: UserInput!) {
-        createUser(input: $input) {
+        createUser(data: $input) {
           firstName
           age
         }
@@ -185,6 +185,40 @@ it('supports creating a new entity', async () => {
     data: {
       createUser: {
         age: 27,
+        firstName: 'Kate',
+      },
+    },
+  })
+})
+
+it('supports updating an entity', async () => {
+  server.use(...db.user.toGraphQLHandlers('http://localhost'))
+  db.user.create({ id: 'abc-123', firstName: 'John', age: 16 })
+  db.user.create({ id: 'def-456', firstName: 'Kate', age: 17 })
+
+  const res = await executeQuery({
+    query: `
+      mutation UpdateUser($input: UserInput!) {
+        updateUser(
+          which: { firstName: { equals: "Kate" } }
+          data: $input
+        ) {
+          firstName
+          age
+        }
+      }
+    `,
+    variables: {
+      input: {
+        age: 24,
+      },
+    },
+  })
+
+  expect(res).toEqual({
+    data: {
+      updateUser: {
+        age: 24,
         firstName: 'Kate',
       },
     },
