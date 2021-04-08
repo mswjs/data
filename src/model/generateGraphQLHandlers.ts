@@ -141,6 +141,7 @@ export function generateGraphQLHandlers<
   baseUrl: string = '',
 ): GraphQLHandler[] {
   const target = baseUrl ? graphql.link(baseUrl) : graphql
+  const pluralModelName = pluralize(modelName)
   const capitalModelName = capitalize(modelName)
   const { fields, inputFields, queryInputFields } = declarationToFields(
     declaration,
@@ -174,7 +175,7 @@ export function generateGraphQLHandlers<
           },
         },
         // Get all entities.
-        [pluralize(modelName)]: {
+        [pluralModelName]: {
           type: new GraphQLList(EntityType),
           args: {
             which: { type: EntityQueryInputType },
@@ -208,6 +209,19 @@ export function generateGraphQLHandlers<
           },
           resolve(_, args) {
             return model.update({
+              which: args.which,
+              data: args.data,
+            })
+          },
+        },
+        [`update${capitalize(pluralModelName)}`]: {
+          type: new GraphQLList(EntityType),
+          args: {
+            which: { type: EntityQueryInputType },
+            data: { type: EntityInputType },
+          },
+          resolve(_, args) {
+            return model.updateMany({
               which: args.which,
               data: args.data,
             })
