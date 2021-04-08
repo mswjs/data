@@ -1,9 +1,16 @@
-import { GraphQLID, GraphQLInt, GraphQLString } from 'graphql'
+import {
+  GraphQLBoolean,
+  GraphQLFloat,
+  GraphQLID,
+  GraphQLInt,
+  GraphQLString,
+} from 'graphql'
 import { primaryKey } from '../../src'
 import {
+  comparatorTypes,
   getGraphQLType,
-  declarationToObjectType,
-  declarationToInputObjectType,
+  getQueryTypeByValueType,
+  declarationToFields,
 } from '../../src/model/generateGraphQLHandlers'
 
 describe('getGraphQLType', () => {
@@ -14,53 +21,61 @@ describe('getGraphQLType', () => {
   })
 })
 
-describe('declarationToObjectType', () => {
-  it('derives GraphQL object type from a model declaration', () => {
-    expect(
-      declarationToObjectType({
-        id: primaryKey(String),
-        firstName: String,
-        age: Number,
-        createdAt: Date,
-      }),
-    ).toEqual({
-      id: {
-        type: GraphQLID,
-      },
-      firstName: {
-        type: GraphQLString,
-      },
-      age: {
-        type: GraphQLInt,
-      },
-      createdAt: {
-        type: GraphQLString,
-      },
-    })
+describe('getQueryTypeByValueType', () => {
+  it('returns ID query type given GraphQLID value type', () => {
+    expect(getQueryTypeByValueType(GraphQLID)).toEqual(
+      comparatorTypes.IdQueryType,
+    )
+  })
+
+  it('returns Int query type given GraphQLInt value type', () => {
+    expect(getQueryTypeByValueType(GraphQLInt)).toEqual(
+      comparatorTypes.IntQueryType,
+    )
+  })
+
+  it('returns Boolean query type given GraphQLBoolean value type', () => {
+    expect(getQueryTypeByValueType(GraphQLBoolean)).toEqual(
+      comparatorTypes.BooleanQueryType,
+    )
+  })
+
+  it('returns String query type given GraphQLString value type', () => {
+    expect(getQueryTypeByValueType(GraphQLString)).toEqual(
+      comparatorTypes.StringQueryType,
+    )
+  })
+
+  it('returns String query type given an unknown GraphQLScalar type', () => {
+    expect(getQueryTypeByValueType(GraphQLFloat)).toEqual(
+      comparatorTypes.StringQueryType,
+    )
   })
 })
 
-describe('declarationToInputObjectType', () => {
-  it('derives GraphQL input object type from a model declaration', () => {
+describe('declarationToFields', () => {
+  it('derives fields, input fields, and query input fields from a model declaration', () => {
     expect(
-      declarationToInputObjectType({
+      declarationToFields({
         id: primaryKey(String),
         firstName: String,
         age: Number,
-        createdAt: Date,
       }),
     ).toEqual({
-      id: {
-        type: GraphQLID,
+      fields: {
+        id: { type: GraphQLID },
+        firstName: { type: GraphQLString },
+        age: { type: GraphQLInt },
       },
-      firstName: {
-        type: GraphQLString,
+      inputFields: {
+        id: { type: GraphQLID },
+        firstName: { type: GraphQLString },
+        age: { type: GraphQLInt },
       },
-      age: {
-        type: GraphQLInt,
-      },
-      createdAt: {
-        type: GraphQLString,
+      queryInputFields: {
+        id: { type: comparatorTypes.IdQueryType },
+        firstName: { type: comparatorTypes.StringQueryType },
+        age: { type: comparatorTypes.IntQueryType },
       },
     })
   })

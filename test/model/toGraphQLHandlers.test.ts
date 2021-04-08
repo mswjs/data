@@ -41,7 +41,7 @@ async function executeQuery(args: {
   return res.json()
 }
 
-it('handles the "users" query', async () => {
+it('supports querying all the users', async () => {
   server.use(...db.user.toGraphQLHandlers('http://localhost'))
   db.user.create({ firstName: 'John' })
   db.user.create({ firstName: 'Kate' })
@@ -74,7 +74,37 @@ it('handles the "users" query', async () => {
   })
 })
 
-it('handles the "user" query', async () => {
+it('supports querying all the users by a field', async () => {
+  server.use(...db.user.toGraphQLHandlers('http://localhost'))
+  db.user.create({ firstName: 'John', age: 22 })
+  db.user.create({ firstName: 'Kate', age: 16 })
+  db.user.create({ firstName: 'Joseph', age: 38 })
+
+  const res = await executeQuery({
+    query: `
+      query GetAdults {
+        users(which: { age: { gte: 18 } }) {
+          firstName
+        }
+      }
+    `,
+  })
+
+  expect(res).toEqual({
+    data: {
+      users: [
+        {
+          firstName: 'John',
+        },
+        {
+          firstName: 'Joseph',
+        },
+      ],
+    },
+  })
+})
+
+it('supports querying an entity by the primary key', async () => {
   server.use(...db.user.toGraphQLHandlers('http://localhost'))
   db.user.create({ id: 'abc-123', firstName: 'John' })
   db.user.create({ id: 'def-456', firstName: 'Kate' })
@@ -83,7 +113,7 @@ it('handles the "user" query', async () => {
   const res = await executeQuery({
     query: `
       query GetUser($id: ID!) {
-        user(id: $id) {
+        user(which: { id: { equals: $id } }) {
           id
           firstName
         }
@@ -104,7 +134,34 @@ it('handles the "user" query', async () => {
   })
 })
 
-it('handles the "createUser" mutation', async () => {
+it('supports querying an entity by any field', async () => {
+  server.use(...db.user.toGraphQLHandlers('http://localhost'))
+  db.user.create({ id: 'abc-123', firstName: 'John', age: 16 })
+  db.user.create({ id: 'def-456', firstName: 'Kate', age: 17 })
+  db.user.create({ id: 'ghi-789', firstName: 'Joseph', age: 22 })
+
+  const res = await executeQuery({
+    query: `
+      query GetAdult {
+        user(which: { age: { gte: 22 } }) {
+          id
+          firstName
+        }
+      }
+    `,
+  })
+
+  expect(res).toEqual({
+    data: {
+      user: {
+        id: 'ghi-789',
+        firstName: 'Joseph',
+      },
+    },
+  })
+})
+
+it('supports creating a new entity', async () => {
   server.use(...db.user.toGraphQLHandlers('http://localhost'))
 
   const res = await executeQuery({

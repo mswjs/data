@@ -10,73 +10,130 @@ import {
   GraphQLFieldConfigMap,
   GraphQLInputObjectType,
   GraphQLInputFieldConfigMap,
+  GraphQLBoolean,
+  GraphQLInputType,
+  GraphQLScalarType,
 } from 'graphql'
 import { GraphQLHandler, graphql } from 'msw'
-import {
-  ModelAPI,
-  ModelDeclaration,
-  ModelDictionary,
-  PrimaryKeyType,
-} from '../glossary'
+import { ModelAPI, ModelDeclaration, ModelDictionary } from '../glossary'
 import { capitalize } from '../utils/capitalize'
-import { WeakQuerySelectorWhich } from '../query/queryTypes'
+import { QueryToComparator } from '../query/queryTypes'
+import { booleanComparators } from '../comparators/boolean'
+import { stringComparators } from '../comparators/string'
+import { numberComparators } from '../comparators/number'
+
+interface GraphQLFieldsMap {
+  fields: GraphQLFieldConfigMap<any, any>
+  inputFields: GraphQLInputFieldConfigMap
+  queryInputFields: GraphQLInputFieldConfigMap
+}
 
 /**
- * Derive a GraphQL field type from a variable.
+ * Derive a GraphQL scalar type from a variable.
  */
 export function getGraphQLType(value: any) {
   const resolvedValue = typeof value === 'function' ? value() : value
   switch (resolvedValue.constructor.name) {
     case 'Number':
       return GraphQLInt
+    case 'Boolean':
+      return GraphQLBoolean
     default:
       return GraphQLString
   }
 }
 
 /**
- * Derive a GraphQL object type from a model declaration.
+ * Create a GraphQLInputObjectType from a given comparator function.
  */
-export function declarationToObjectType(
-  declaration: ModelDeclaration,
-): GraphQLFieldConfigMap<any, any> {
-  return Object.entries(declaration).reduce<GraphQLFieldConfigMap<any, any>>(
-    (fields, [key, value]) => {
-      fields[key] =
-        'isPrimaryKey' in value
-          ? {
-              type: GraphQLID,
-            }
-          : {
-              type: getGraphQLType(value),
-            }
-
-      return fields
-    },
-    {},
-  )
+function createComparatorGraphQLInputType(
+  name: string,
+  comparators: QueryToComparator<any>,
+  type: GraphQLInputType,
+) {
+  return new GraphQLInputObjectType({
+    name,
+    fields: Object.keys(comparators).reduce<GraphQLInputFieldConfigMap>(
+      (fields, comparatorFn) => {
+        fields[comparatorFn] = { type }
+        return fields
+      },
+      {},
+    ),
+  })
 }
 
-/**
- * Derive a GraphQL input object type from a model declaration.
- */
-export function declarationToInputObjectType(
-  declaration: ModelDeclaration,
-): GraphQLInputFieldConfigMap {
-  return Object.entries(declaration).reduce<GraphQLInputFieldConfigMap>(
-    (fields, [key, value]) => {
-      fields[key] =
-        'isPrimaryKey' in value
-          ? {
-              type: GraphQLID,
-            }
-          : {
-              type: getGraphQLType(value),
-            }
+export const comparatorTypes = {
+  IdQueryType: createComparatorGraphQLInputType(
+    'IdQueryType',
+    stringComparators,
+    GraphQLID,
+  ),
+  StringQueryType: createComparatorGraphQLInputType(
+    'StringQueryType',
+    stringComparators,
+    GraphQLString,
+  ),
+  IntQueryType: createComparatorGraphQLInputType(
+    'IntQueryType',
+    numberComparators,
+    GraphQLInt,
+  ),
+  BooleanQueryType: createComparatorGraphQLInputType(
+    'BooleanQueryType',
+    booleanComparators,
+    GraphQLBoolean,
+  ),
+}
 
-      return fields
+export function getQueryTypeByValueType(
+  valueType: GraphQLScalarType,
+): GraphQLInputObjectType {
+  switch (valueType.name) {
+    case 'ID':
+      return comparatorTypes.IdQueryType
+    case 'Int':
+      return comparatorTypes.IntQueryType
+    case 'Boolean':
+      return comparatorTypes.BooleanQueryType
+    default:
+      return comparatorTypes.StringQueryType
+  }
+}
+
+export function declarationToFields(
+  declaration: ModelDeclaration,
+): GraphQLFieldsMap {
+  return Object.entries(declaration).reduce<GraphQLFieldsMap>(
+    (types, [key, value]) => {
+      const isPrimaryKey = 'isPrimaryKey' in value
+      const valueType = isPrimaryKey ? GraphQLID : getGraphQLType(value)
+      const queryType = getQueryTypeByValueType(valueType)
+
+      // Fields describe an entity type.
+      types.fields[key] = {
+        type: valueType,
+      }
+
+      // Input fields describe a type that can be used
+      // as an input when creating entities (initial values).
+      types.inputFields[key] = {
+        type: valueType,
+      }
+
+      // Query input fields describe a type that is used
+      // as a "which" query, with its comparator function types.
+      types.queryInputFields[key] = {
+        type: queryType,
+      }
+
+      return types
     },
-    {},
+    {
+      fields: {},
+      inputFields: {},
+      queryInputFields: {},
+    } as GraphQLFieldsMap,
   )
 }
 
@@ -85,21 +142,27 @@ export function generateGraphQLHandlers<
   ModelName extends string
 >(
   modelName: ModelName,
-  primaryKey: PrimaryKeyType,
   declaration: ModelDeclaration,
   model: ModelAPI<Dictionary, ModelName>,
   baseUrl: string = '',
 ): GraphQLHandler[] {
   const target = baseUrl ? graphql.link(baseUrl) : graphql
   const capitalModelName = capitalize(modelName)
+  const { fields, inputFields, queryInputFields } = declarationToFields(
+    declaration,
+  )
 
   const EntityType = new GraphQLObjectType({
     name: capitalModelName,
-    fields: declarationToObjectType(declaration),
+    fields,
   })
   const EntityInputType = new GraphQLInputObjectType({
     name: `${capitalModelName}Input`,
-    fields: declarationToInputObjectType(declaration),
+    fields: inputFields,
+  })
+  const EntityQueryInputType = new GraphQLInputObjectType({
+    name: `${capitalModelName}QueryInput`,
+    fields: queryInputFields,
   })
 
   const objectSchema = new GraphQLSchema({
@@ -110,24 +173,26 @@ export function generateGraphQLHandlers<
         [modelName]: {
           type: EntityType,
           args: {
-            [primaryKey]: {
-              type: GraphQLID,
+            which: {
+              type: EntityQueryInputType,
             },
           },
           resolve(_, args) {
-            const which: WeakQuerySelectorWhich<typeof primaryKey> = {
-              [primaryKey]: {
-                equals: args[primaryKey],
-              },
-            }
-            return model.findFirst({ which: which as any })
+            return model.findFirst({ which: args.which })
           },
         },
         // Get all entities.
         [pluralize(modelName)]: {
           type: new GraphQLList(EntityType),
-          resolve() {
-            return model.getAll()
+          args: {
+            which: {
+              type: EntityQueryInputType,
+            },
+          },
+          resolve(_, args) {
+            return args.which
+              ? model.findMany({ which: args.which })
+              : model.getAll()
           },
         },
       },
