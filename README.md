@@ -39,6 +39,8 @@ export const db = factory({
 
 > See the [Recipes](#recipes) for more tips and tricks on data modeling.
 
+Throughout this document native JavaScript constructors (i.e. String, Number) will be used as values getters for the models, as they both create a value and define its type. In practice, you may consider using value generators or tools like [faker](#usage-with-faker) for value getters.
+
 #### Using the primary key
 
 Each model **must have a primary key**. That is a single key that can be used to reference an entity of that model. Think of it as an ID column for a particular table in a database.
@@ -445,35 +447,128 @@ db.user.findFirst({
 
 ### Models relation
 
-#### One-to-one
+- [One-to-One](#one-to-one)
+- [One-to-Many](#one-to-many)
+- [Many-to-One](#many-to-one)
+- [Unique relations](#unique-relations)
+
+Defining relations is a way for one model to reference another. Models are flat by design, so if you wish to have a property that equals an object or an array, you create a relation of the proper type to another existing model.
+
+#### One-to-One
 
 ```js
 import { factory, primaryKey, oneOf } from '@mswjs/data'
 
 const db = factory({
   user: {
-    id: primaryKey(String)
+    id: primaryKey(String),
+    firstName: String,
   },
   post: {
-    id: String
-    title: String
-    // The `post` model has the `author` property
-    // that references to the `user` entity.
-    author: oneOf('user')
-  }
+    id: primaryKey(String),
+    title: String,
+    // The "post.author" references a "user" model.
+    author: oneOf('user'),
+  },
 })
 
-const user = db.user.create()
-db.post.create({
+const user = db.user.create({ firstName: 'John' })
+const post = db.post.create({
   title: 'My journey',
-  // Set the existing `user` as the author of this post.
+  // Use a "user" entity as an actual value of this post's author.
   author: user,
 })
+
+post.author.firstName // "John"
+```
+
+#### One-to-Many
+
+```js
+import { factory, primaryKey, manyOf } from '@mswjs/data'
+
+const db = factory({
+  user: {
+    id: primaryKey(String),
+    // "user.posts" is a list of the "post" entities.
+    posts: manyOf('post'),
+  },
+  post: {
+    id: primaryKey(String),
+    title: String,
+  },
+})
+
+const posts = [
+  db.post.create({ title: 'First' }),
+  db.post.create({ title: 'Second' }),
+]
+
+const user = db.user.create({
+  // Assign the list of existing posts to this user.
+  posts,
+})
+
+user.posts // [{ title: "First" }, { title: "Second" }]
+```
+
+#### Many-to-One
+
+```js
+import { factory, primaryKey, oneOf } from '@mswjs/data'
+
+const db = factory({
+  country: {
+    name: primaryKey(String),
+  },
+  user: {
+    id: primaryKey(String),
+    country: oneOf('country'),
+  },
+  car: {
+    serialNumber: primaryKey(String),
+    country: oneOf('country'),
+  },
+})
+
+const usa = db.country.create({ name: 'The United States of America' })
+
+// Create a "user" and a "car" with the same country.
+db.user.create({ country: usa })
+db.car.create({ country: usa })
+```
+
+#### Unique relations
+
+Both `oneOf` and `manyOf` relations may be marked as unique. A unique relation is such where a referenced entity cannot be assigned to another entity more than once.
+
+In the example below we defined the "user" and "invitation" models, and design their relation so that one invitation cannot be assigned to multiple users.
+
+```js
+import { factory, primaryKey, oneOf } from '@mswjs/data'
+
+const db = factory({
+  user: {
+    id: primaryKey(String),
+    invitation: oneOf('invitation', { unique: true }),
+  },
+  invitation: {
+    id: primaryKey(String),
+  },
+})
+
+const invitation = db.invitation.create()
+
+const john = db.user.create({ invitation })
+
+// Assigning the invitation already used by "john"
+// will throw an exception when creating this entity.
+const karl = db.user.create({ invitation })
 ```
 
 ### Pagination
 
-This library supports _offset-based_ and _cursor-based_ pagination of the `findMany` query results.
+This library supports _offset-based_ and _cursor-based_ pagination of the `findMany` method results.
 
 #### Offset-based pagination
 
@@ -536,12 +631,13 @@ const secondPage = db.post.findMany({
 
 #### `drop`
 
+Drops the given database, deleting all its entities.
+
 ```js
 import { factory, drop } from '@mswjs/data'
 
 const db = factory({...})
 
-// Deletes all entities in the database.
 drop(db)
 ```
 
