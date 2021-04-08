@@ -42,7 +42,7 @@ async function executeQuery(args: {
 }
 
 it('supports querying all the users', async () => {
-  server.use(...db.user.toGraphQLHandlers('http://localhost'))
+  server.use(...db.user.toHandlers('graphql', 'http://localhost'))
   db.user.create({ firstName: 'John' })
   db.user.create({ firstName: 'Kate' })
   db.user.create({ firstName: 'Joseph' })
@@ -74,8 +74,67 @@ it('supports querying all the users', async () => {
   })
 })
 
-it('supports querying all the users by a field', async () => {
-  server.use(...db.user.toGraphQLHandlers('http://localhost'))
+it('supports offset pagination when querying all users', async () => {
+  server.use(...db.user.toHandlers('graphql', 'http://localhost'))
+  db.user.create({ firstName: 'John' })
+  db.user.create({ firstName: 'Kate' })
+  db.user.create({ firstName: 'Joseph' })
+  db.user.create({ firstName: 'Eva' })
+
+  const res = await executeQuery({
+    query: `
+      query GetUsers {
+        users(skip: 1, take: 2) {
+          firstName
+        }
+      }
+    `,
+  })
+
+  expect(res).toEqual({
+    data: {
+      users: [
+        {
+          firstName: 'Kate',
+        },
+        {
+          firstName: 'Joseph',
+        },
+      ],
+    },
+  })
+})
+
+it('supports cursor pagination when querying all users', async () => {
+  server.use(...db.user.toHandlers('graphql', 'http://localhost'))
+  db.user.create({ id: 'abc-123', firstName: 'John' })
+  db.user.create({ id: 'def-456', firstName: 'Kate' })
+  db.user.create({ id: 'ghi-789', firstName: 'Joseph' })
+  db.user.create({ id: 'xyz-321', firstName: 'Eva' })
+
+  const res = await executeQuery({
+    query: `
+      query GetUsers {
+        users(cursor: "ghi-789", take: 2) {
+          firstName
+        }
+      }
+    `,
+  })
+
+  expect(res).toEqual({
+    data: {
+      users: [
+        {
+          firstName: 'Eva',
+        },
+      ],
+    },
+  })
+})
+
+it('supports querying all users by a field', async () => {
+  server.use(...db.user.toHandlers('graphql', 'http://localhost'))
   db.user.create({ firstName: 'John', age: 22 })
   db.user.create({ firstName: 'Kate', age: 16 })
   db.user.create({ firstName: 'Joseph', age: 38 })
@@ -104,8 +163,8 @@ it('supports querying all the users by a field', async () => {
   })
 })
 
-it('supports querying an entity by the primary key', async () => {
-  server.use(...db.user.toGraphQLHandlers('http://localhost'))
+it('supports querying a user by the primary key', async () => {
+  server.use(...db.user.toHandlers('graphql', 'http://localhost'))
   db.user.create({ id: 'abc-123', firstName: 'John' })
   db.user.create({ id: 'def-456', firstName: 'Kate' })
   db.user.create({ id: 'ghi-789', firstName: 'Joseph' })
@@ -134,8 +193,8 @@ it('supports querying an entity by the primary key', async () => {
   })
 })
 
-it('supports querying an entity by any field', async () => {
-  server.use(...db.user.toGraphQLHandlers('http://localhost'))
+it('supports querying a user by any field', async () => {
+  server.use(...db.user.toHandlers('graphql', 'http://localhost'))
   db.user.create({ id: 'abc-123', firstName: 'John', age: 16 })
   db.user.create({ id: 'def-456', firstName: 'Kate', age: 17 })
   db.user.create({ id: 'ghi-789', firstName: 'Joseph', age: 22 })
@@ -161,8 +220,8 @@ it('supports querying an entity by any field', async () => {
   })
 })
 
-it('supports creating a new entity', async () => {
-  server.use(...db.user.toGraphQLHandlers('http://localhost'))
+it('supports creating a new user', async () => {
+  server.use(...db.user.toHandlers('graphql', 'http://localhost'))
 
   const res = await executeQuery({
     query: `
@@ -191,8 +250,8 @@ it('supports creating a new entity', async () => {
   })
 })
 
-it('supports updating an entity', async () => {
-  server.use(...db.user.toGraphQLHandlers('http://localhost'))
+it('supports updating a user', async () => {
+  server.use(...db.user.toHandlers('graphql', 'http://localhost'))
   db.user.create({ id: 'abc-123', firstName: 'John', age: 16 })
   db.user.create({ id: 'def-456', firstName: 'Kate', age: 17 })
 
@@ -225,8 +284,8 @@ it('supports updating an entity', async () => {
   })
 })
 
-it('supports updating multiple entities', async () => {
-  server.use(...db.user.toGraphQLHandlers('http://localhost'))
+it('supports updating multiple users', async () => {
+  server.use(...db.user.toHandlers('graphql', 'http://localhost'))
   db.user.create({ id: 'abc-123', firstName: 'John', age: 17 })
   db.user.create({ id: 'def-456', firstName: 'Kate', age: 24 })
   db.user.create({ id: 'ghi-789', firstName: 'Joseph', age: 14 })
@@ -269,8 +328,8 @@ it('supports updating multiple entities', async () => {
   })
 })
 
-it('supports deleting an entity by the primary key', async () => {
-  server.use(...db.user.toGraphQLHandlers('http://localhost'))
+it('supports deleting a user by the primary key', async () => {
+  server.use(...db.user.toHandlers('graphql', 'http://localhost'))
   db.user.create({ id: 'abc-123', firstName: 'John' })
   db.user.create({ id: 'def-456', firstName: 'Kate' })
   db.user.create({ id: 'ghi-789', firstName: 'Joseph' })
@@ -298,8 +357,8 @@ it('supports deleting an entity by the primary key', async () => {
   })
 })
 
-it('supports deleting an entity by any field', async () => {
-  server.use(...db.user.toGraphQLHandlers('http://localhost'))
+it('supports deleting a user by any field', async () => {
+  server.use(...db.user.toHandlers('graphql', 'http://localhost'))
   db.user.create({ id: 'abc-123', firstName: 'John' })
   db.user.create({ id: 'def-456', firstName: 'Kate' })
   db.user.create({ id: 'ghi-789', firstName: 'Joseph' })
@@ -328,7 +387,7 @@ it('supports deleting an entity by any field', async () => {
 })
 
 it('supports deleting multiple users', async () => {
-  server.use(...db.user.toGraphQLHandlers('http://localhost'))
+  server.use(...db.user.toHandlers('graphql', 'http://localhost'))
   db.user.create({ id: 'abc-123', firstName: 'John', age: 17 })
   db.user.create({ id: 'def-456', firstName: 'Kate', age: 24 })
   db.user.create({ id: 'ghi-789', firstName: 'Joseph', age: 14 })

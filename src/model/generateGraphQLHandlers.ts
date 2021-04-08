@@ -13,6 +13,7 @@ import {
   GraphQLBoolean,
   GraphQLInputType,
   GraphQLScalarType,
+  GraphQLFieldConfigArgumentMap,
 } from 'graphql'
 import { GraphQLHandler, graphql } from 'msw'
 import { ModelAPI, ModelDeclaration, ModelDictionary } from '../glossary'
@@ -160,6 +161,12 @@ export function generateGraphQLHandlers<
     fields: queryInputFields,
   })
 
+  const paginationArgs: GraphQLFieldConfigArgumentMap = {
+    take: { type: GraphQLInt },
+    skip: { type: GraphQLInt },
+    cursor: { type: GraphQLID },
+  }
+
   const objectSchema = new GraphQLSchema({
     query: new GraphQLObjectType({
       name: 'Query',
@@ -178,11 +185,19 @@ export function generateGraphQLHandlers<
         [pluralModelName]: {
           type: new GraphQLList(EntityType),
           args: {
+            ...paginationArgs,
             which: { type: EntityQueryInputType },
           },
           resolve(_, args) {
-            return args.which
-              ? model.findMany({ which: args.which })
+            const shouldQuery = Object.keys(args).length > 0
+
+            return shouldQuery
+              ? model.findMany({
+                  which: args.which,
+                  skip: args.skip,
+                  take: args.take,
+                  cursor: args.cursor,
+                })
               : model.getAll()
           },
         },

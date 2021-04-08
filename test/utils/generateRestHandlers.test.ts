@@ -7,7 +7,7 @@ import {
   createUrlBuilder,
   getResponseStatusByErrorType,
   withErrors,
-} from '../../src/model/generateHandlers'
+} from '../../src/model/generateRestHandlers'
 
 describe('createUrlBuilder', () => {
   it('builds a relative URL given no base URL', () => {

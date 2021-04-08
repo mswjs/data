@@ -26,7 +26,7 @@ afterAll(() => {
 })
 
 it('generates CRUD request handlers for the model', () => {
-  const userHandlers = db.user.toHandlers()
+  const userHandlers = db.user.toHandlers('rest')
   const displayRoutes = userHandlers.map((handler) => handler.info.header)
 
   expect(displayRoutes).toEqual([
@@ -40,7 +40,7 @@ it('generates CRUD request handlers for the model', () => {
 
 describe('GET /users', () => {
   it('handles a GET request to get all entities', async () => {
-    server.use(...db.user.toHandlers('http://localhost'))
+    server.use(...db.user.toHandlers('rest', 'http://localhost'))
     db.user.create({
       id: 'abc-123',
       firstName: 'John',
@@ -67,7 +67,7 @@ describe('GET /users', () => {
   })
 
   it('returns offset paginated entities', async () => {
-    server.use(...db.user.toHandlers('http://localhost'))
+    server.use(...db.user.toHandlers('rest', 'http://localhost'))
     db.user.create({
       id: 'abc-123',
       firstName: 'John',
@@ -101,7 +101,7 @@ describe('GET /users', () => {
   })
 
   it('returns cursor paginated entities', async () => {
-    server.use(...db.user.toHandlers('http://localhost'))
+    server.use(...db.user.toHandlers('rest', 'http://localhost'))
     db.user.create({
       id: 'abc-123',
       firstName: 'John',
@@ -137,7 +137,7 @@ describe('GET /users', () => {
 
 describe('GET /users/:id', () => {
   it('handles a GET request to get a single entity', async () => {
-    server.use(...db.user.toHandlers('http://localhost'))
+    server.use(...db.user.toHandlers('rest', 'http://localhost'))
     db.user.create({
       id: 'abc-123',
       firstName: 'John',
@@ -158,7 +158,7 @@ describe('GET /users/:id', () => {
   })
 
   it('returns a 404 response when getting a non-existing entity', async () => {
-    server.use(...db.user.toHandlers('http://localhost'))
+    server.use(...db.user.toHandlers('rest', 'http://localhost'))
     db.user.create({
       id: 'abc-123',
       firstName: 'John',
@@ -177,7 +177,7 @@ describe('GET /users/:id', () => {
 
 describe('POST /users', () => {
   it('handles a POST request to create a new entity', async () => {
-    server.use(...db.user.toHandlers('http://localhost'))
+    server.use(...db.user.toHandlers('rest', 'http://localhost'))
 
     const res = await fetch('http://localhost/users', {
       method: 'POST',
@@ -199,7 +199,7 @@ describe('POST /users', () => {
   })
 
   it('returns a 409 response when creating a user with the same id', async () => {
-    server.use(...db.user.toHandlers('http://localhost'))
+    server.use(...db.user.toHandlers('rest', 'http://localhost'))
     db.user.create({
       id: 'abc-123',
     })
@@ -226,7 +226,7 @@ describe('POST /users', () => {
 
 describe('PUT /users/:id', () => {
   it('handles a PUT request to update an entity', async () => {
-    server.use(...db.user.toHandlers('http://localhost'))
+    server.use(...db.user.toHandlers('rest', 'http://localhost'))
     db.user.create({
       id: 'abc-123',
       firstName: 'John',
@@ -251,7 +251,7 @@ describe('PUT /users/:id', () => {
   })
 
   it('returns a 404 response when updating a non-existing entity', async () => {
-    server.use(...db.user.toHandlers('http://localhost'))
+    server.use(...db.user.toHandlers('rest', 'http://localhost'))
 
     const res = await fetch('http://localhost/users/abc-123', {
       method: 'PUT',
@@ -272,7 +272,7 @@ describe('PUT /users/:id', () => {
   })
 
   it('returns a 409 response when updating an entity with primary key of another entity', async () => {
-    server.use(...db.user.toHandlers('http://localhost'))
+    server.use(...db.user.toHandlers('rest', 'http://localhost'))
     db.user.create({
       id: 'abc-123',
       firstName: 'John',
@@ -304,7 +304,7 @@ describe('PUT /users/:id', () => {
 
 describe('DELETE /users/:id', () => {
   it('handles a DELETE request to delete an entity', async () => {
-    server.use(...db.user.toHandlers('http://localhost'))
+    server.use(...db.user.toHandlers('rest', 'http://localhost'))
     db.user.create({
       id: 'abc-123',
       firstName: 'John',
@@ -336,7 +336,7 @@ describe('DELETE /users/:id', () => {
   })
 
   it('returns a 404 response when deleting a non-existing entity', async () => {
-    server.use(...db.user.toHandlers('http://localhost'))
+    server.use(...db.user.toHandlers('rest', 'http://localhost'))
 
     const res = await fetch('http://localhost/users/def-456', {
       method: 'DELETE',
