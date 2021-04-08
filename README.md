@@ -263,7 +263,9 @@ const deletedUsers = db.user.deleteMany({
 
 #### `toHandlers`
 
-Generate CRUD request handlers for the given model to use with [Mock Service Worker](https://github.com/mswjs/msw).
+Generates request handlers for the given model to use with [Mock Service Worker](https://github.com/mswjs/msw). All generated handlers are automatically connected to the respective [model methods](#model-methods), enabling you to perform CRUD operations against your mocked database.
+
+##### REST handlers
 
 ```js
 import { factory, primaryKey } from '@mswjs/data'
@@ -276,18 +278,49 @@ const db = factory({
   },
 })
 
-const worker = setupWorker(...db.user.toHandlers())
+const worker = setupWorker(...db.user.toHandlers('rest'))
 
 worker.start()
 ```
 
-This generates the following request handlers that automatically perform respective database operations:
+The following request handlers are generated and connected to the respective database operations:
 
 - `GET /users`, returns all users (supports [pagination](#pagination)).
 - `GET /users/:id` (where "id" is your model's primary key), returns a user by primary key.
 - `POST /users`, creates a new user.
 - `PUT /users/:id`, updates an existing user by primary key.
 - `DELETE /users/:id`, deletes an existing user by primary key.
+
+The "/user" part of the route derives from your model name. For example, if you have a "post" model defined in your `factory`, then the generated handlers will be `/posts`, `/posts/:id`, etc.
+
+##### GraphQL handlers
+
+```js
+setupWorker(...db.user.toHandlers('graphql'))
+```
+
+The following GraphQL queries and mutations are generated:
+
+- `user(which: UserQueryInput): User`, returns a user matching the query.
+- `users(which: UserQueryInput, cursor: ID, skip: Int, take: Int): [User!]`, returns all users matching the query (supports [pagination](#pagination)).
+- `createUser(data: UserInput!): User!`, creates a new user.
+- `updateUser(which: UserQueryInput!, data: UserInput!): User!`, updates a user.
+- `updateUsers(which: UserQueryInput!, data: UserInput!): [User!]`, updates multiple users.
+- `deleteUser(which: UserQueryInput!): User!`, deletes a user.
+- `deleteUsers(which: UserQueryInput!): [User!]`, deletes multiple users.
+
+> Notice how some operation names contain the plural model name to emphasize that they work on a collection of entities.
+
+The "User" part of operation names derives from your model name. For example, if you have a "post" model defined in your `factory`, then the generated handlers will have operations like `post`, `createPost`, `updatePosts`, etc.
+
+##### Scoping handlers
+
+The `.toHandlers()` method supports an optional second `baseUrl` argument to scope the generated handlers to a given endpoint:
+
+```js
+db.user.toHandlers('rest', 'https://example.com')
+db.user.toHandlers('graphql', 'https://example.com/graphql')
+```
 
 ### Querying data
 
