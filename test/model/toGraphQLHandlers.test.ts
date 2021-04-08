@@ -7,6 +7,7 @@ const db = factory({
   user: {
     id: primaryKey(random.uuid),
     firstName: String,
+    age: Number,
   },
 })
 
@@ -40,7 +41,7 @@ async function executeQuery(args: {
   return res.json()
 }
 
-it('handles GetUsers query', async () => {
+it('handles the "users" query', async () => {
   server.use(...db.user.toGraphQLHandlers('http://localhost'))
   db.user.create({ firstName: 'John' })
   db.user.create({ firstName: 'Kate' })
@@ -73,7 +74,7 @@ it('handles GetUsers query', async () => {
   })
 })
 
-it('handler GetUser query', async () => {
+it('handles the "user" query', async () => {
   server.use(...db.user.toGraphQLHandlers('http://localhost'))
   db.user.create({ id: 'abc-123', firstName: 'John' })
   db.user.create({ id: 'def-456', firstName: 'Kate' })
@@ -97,6 +98,36 @@ it('handler GetUser query', async () => {
     data: {
       user: {
         id: 'def-456',
+        firstName: 'Kate',
+      },
+    },
+  })
+})
+
+it('handles the "createUser" mutation', async () => {
+  server.use(...db.user.toGraphQLHandlers('http://localhost'))
+
+  const res = await executeQuery({
+    query: `
+      mutation CreateUser($input: UserInput!) {
+        createUser(input: $input) {
+          firstName
+          age
+        }
+      }
+    `,
+    variables: {
+      input: {
+        firstName: 'Kate',
+        age: 27,
+      },
+    },
+  })
+
+  expect(res).toEqual({
+    data: {
+      createUser: {
+        age: 27,
         firstName: 'Kate',
       },
     },

@@ -250,7 +250,13 @@ function createModelApi<
       return generateHandlers(modelName, primaryKey, api, baseUrl)
     },
     toGraphQLHandlers(baseUrl) {
-      return generateGraphQLHandlers(modelName, primaryKey, api, baseUrl)
+      return generateGraphQLHandlers(
+        modelName,
+        primaryKey,
+        declaration,
+        api,
+        baseUrl,
+      )
     },
   }
 
