@@ -224,3 +224,47 @@ it('supports updating an entity', async () => {
     },
   })
 })
+
+it('supports updating multiple entities', async () => {
+  server.use(...db.user.toGraphQLHandlers('http://localhost'))
+  db.user.create({ id: 'abc-123', firstName: 'John', age: 17 })
+  db.user.create({ id: 'def-456', firstName: 'Kate', age: 24 })
+  db.user.create({ id: 'ghi-789', firstName: 'Joseph', age: 14 })
+
+  const res = await executeQuery({
+    query: `
+      mutation UpdateUser($input: UserInput!) {
+        updateUsers(
+          which: { age: { lt: 18 } }
+          data: $input
+        ) {
+          id
+          firstName
+          age
+        }
+      }
+    `,
+    variables: {
+      input: {
+        firstName: 'Mr. Clone',
+      },
+    },
+  })
+
+  expect(res).toEqual({
+    data: {
+      updateUsers: [
+        {
+          id: 'abc-123',
+          age: 17,
+          firstName: 'Mr. Clone',
+        },
+        {
+          id: 'ghi-789',
+          age: 14,
+          firstName: 'Mr. Clone',
+        },
+      ],
+    },
+  })
+})
