@@ -1,12 +1,12 @@
 import { EntityInstance } from '../glossary'
-import { BulkQueryOptions, QuerySelector } from './queryTypes'
+import { BulkQueryOptions, WeakQuerySelector } from './queryTypes'
 
 function getEndIndex(start: number, end?: number) {
   return end ? start + end : undefined
 }
 
 export function paginateResults(
-  query: QuerySelector<any> & BulkQueryOptions,
+  query: WeakQuerySelector<any> & BulkQueryOptions,
   data: EntityInstance<any, any>[],
 ): EntityInstance<any, any>[] {
   if (query.cursor) {

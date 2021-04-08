@@ -13,8 +13,8 @@ import { invariant } from './utils/invariant'
 import { updateEntity } from './model/updateEntity'
 import { OperationError, OperationErrorType } from './errors/OperationError'
 import { Database } from './db/Database'
-import { generateHandlers } from './model/generateHandlers'
 import { findPrimaryKey } from './utils/findPrimaryKey'
+import { generateRestHandlers } from './model/generateRestHandlers'
 import { generateGraphQLHandlers } from './model/generateGraphQLHandlers'
 
 /**
@@ -246,11 +246,12 @@ function createModelApi<
 
       return records
     },
-    toHandlers(baseUrl) {
-      return generateHandlers(modelName, primaryKey, api, baseUrl)
-    },
-    toGraphQLHandlers(baseUrl) {
-      return generateGraphQLHandlers(modelName, declaration, api, baseUrl)
+    toHandlers(type, baseUrl): any {
+      if (type === 'graphql') {
+        return generateGraphQLHandlers(modelName, declaration, api, baseUrl)
+      }
+
+      return generateRestHandlers(modelName, primaryKey, api, baseUrl)
     },
   }
 

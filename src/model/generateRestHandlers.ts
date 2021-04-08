@@ -59,7 +59,7 @@ export function withErrors<RequestBodyType = any, RequestParamsType = any>(
   }
 }
 
-export function generateHandlers<
+export function generateRestHandlers<
   Dictionary extends ModelDictionary,
   ModelName extends string
 >(
