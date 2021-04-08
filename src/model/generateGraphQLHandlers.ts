@@ -201,6 +201,7 @@ export function generateGraphQLHandlers<
             return model.create(args.data)
           },
         },
+        // Update an single entity.
         [`update${capitalModelName}`]: {
           type: EntityType,
           args: {
@@ -214,6 +215,7 @@ export function generateGraphQLHandlers<
             })
           },
         },
+        // Update multiple existing entities.
         [`update${capitalize(pluralModelName)}`]: {
           type: new GraphQLList(EntityType),
           args: {
@@ -225,6 +227,26 @@ export function generateGraphQLHandlers<
               which: args.which,
               data: args.data,
             })
+          },
+        },
+        // Delete a single entity.
+        [`delete${capitalModelName}`]: {
+          type: EntityType,
+          args: {
+            which: { type: EntityQueryInputType },
+          },
+          resolve(_, args) {
+            return model.delete({ which: args.which })
+          },
+        },
+        // Delete multiple entities.
+        [`delete${capitalize(pluralModelName)}`]: {
+          type: new GraphQLList(EntityType),
+          args: {
+            which: { type: EntityQueryInputType },
+          },
+          resolve(_, args) {
+            return model.deleteMany({ which: args.which })
           },
         },
       },

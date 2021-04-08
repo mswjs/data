@@ -268,3 +268,99 @@ it('supports updating multiple entities', async () => {
     },
   })
 })
+
+it('supports deleting an entity by the primary key', async () => {
+  server.use(...db.user.toGraphQLHandlers('http://localhost'))
+  db.user.create({ id: 'abc-123', firstName: 'John' })
+  db.user.create({ id: 'def-456', firstName: 'Kate' })
+  db.user.create({ id: 'ghi-789', firstName: 'Joseph' })
+
+  const res = await executeQuery({
+    query: `
+      mutation DeleteUser {
+        deleteUser(
+          which: { id: { equals: "def-456" } }
+        ) {
+          id
+          firstName
+        }
+      }
+    `,
+  })
+
+  expect(res).toEqual({
+    data: {
+      deleteUser: {
+        id: 'def-456',
+        firstName: 'Kate',
+      },
+    },
+  })
+})
+
+it('supports deleting an entity by any field', async () => {
+  server.use(...db.user.toGraphQLHandlers('http://localhost'))
+  db.user.create({ id: 'abc-123', firstName: 'John' })
+  db.user.create({ id: 'def-456', firstName: 'Kate' })
+  db.user.create({ id: 'ghi-789', firstName: 'Joseph' })
+
+  const res = await executeQuery({
+    query: `
+      mutation DeleteUser {
+        deleteUser(
+          which: { firstName: { equals: "John" } }
+        ) {
+          id
+          firstName
+        }
+      }
+    `,
+  })
+
+  expect(res).toEqual({
+    data: {
+      deleteUser: {
+        id: 'abc-123',
+        firstName: 'John',
+      },
+    },
+  })
+})
+
+it('supports deleting multiple users', async () => {
+  server.use(...db.user.toGraphQLHandlers('http://localhost'))
+  db.user.create({ id: 'abc-123', firstName: 'John', age: 17 })
+  db.user.create({ id: 'def-456', firstName: 'Kate', age: 24 })
+  db.user.create({ id: 'ghi-789', firstName: 'Joseph', age: 14 })
+
+  const res = await executeQuery({
+    query: `
+      mutation DeleteUsers {
+        deleteUsers(
+          which: { age: { lt: 18 } }
+        ) {
+          id
+          firstName
+          age
+        }
+      }
+    `,
+  })
+
+  expect(res).toEqual({
+    data: {
+      deleteUsers: [
+        {
+          id: 'abc-123',
+          firstName: 'John',
+          age: 17,
+        },
+        {
+          id: 'ghi-789',
+          firstName: 'Joseph',
+          age: 14,
+        },
+      ],
+    },
+  })
+})
