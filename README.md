@@ -293,6 +293,22 @@ The following request handlers are generated and connected to the respective dat
 
 The "/user" part of the route derives from your model name. For example, if you have a "post" model defined in your `factory`, then the generated handlers will be `/posts`, `/posts/:id`, etc.
 
+With the handlers generated and MSW configured, you can start querying the database:
+
+```js
+// Create a new user in the database.
+fetch('/users', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    id: 'abc-123',
+    firstName: 'John',
+  }),
+})
+```
+
 ##### GraphQL handlers
 
 ```js
@@ -312,6 +328,30 @@ The following GraphQL queries and mutations are generated:
 > Notice how some operation names contain the plural model name to emphasize that they work on a collection of entities.
 
 The "User" part of operation names derives from your model name. For example, if you have a "post" model defined in your `factory`, then the generated handlers will have operations like `post`, `createPost`, `updatePosts`, etc.
+
+With the handlers generated and MSW configured, you can start querying the database:
+
+```js
+import { gql, useQuery } from '@apollo/client'
+
+const CREATE_USER = gql`
+  query CreateUser($initialValues: UserInput!) {
+    createUser(data: $initialValues) {
+      firstName
+    }
+  }
+`
+
+useQuery(CREATE_USER, {
+  variables: {
+    initialValues: {
+      firstName: 'John',
+    },
+  },
+})
+```
+
+> Note that GraphQL queries **must be named** in order to be intercepted.
 
 ##### Scoping handlers
 
@@ -501,7 +541,7 @@ import { factory, drop } from '@mswjs/data'
 
 const db = factory({...})
 
-// Deletes all records in the database.
+// Deletes all entities in the database.
 drop(db)
 ```
 
@@ -513,8 +553,8 @@ Libraries like [`faker`](https://github.com/Marak/Faker.js) can help you generat
 import { seed, random, name } from 'faker'
 import { factory, primaryKey } from '@mswjs/data'
 
-// Seed `faker` to ensure reproducible random values
-// of model properties.
+// (Optional) Seed `faker` to ensure reproducible
+// random values of model properties.
 seed(123)
 
 factory({
