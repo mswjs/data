@@ -5,6 +5,10 @@ export interface QuerySelector<EntityType extends Record<string, any>> {
   which: QuerySelectorWhich<EntityType>
 }
 
+export type WeakQuerySelector<EntityType extends Record<string, any>> = Partial<
+  QuerySelector<EntityType>
+>
+
 export type QuerySelectorWhich<EntityType extends Record<string, any>> = {
   [K in keyof EntityType]?: Partial<GetQueryFor<EntityType[K]>>
 }

@@ -1,7 +1,11 @@
 import { debug } from 'debug'
 import { EntityInstance } from '../glossary'
 import { compileQuery } from './compileQuery'
-import { BulkQueryOptions, QuerySelector } from './queryTypes'
+import {
+  BulkQueryOptions,
+  QuerySelector,
+  WeakQuerySelector,
+} from './queryTypes'
 import * as iteratorUtils from '../utils/iteratorUtils'
 import { paginateResults } from './paginateResults'
 import { Database } from '../db/Database'
@@ -29,14 +33,15 @@ function queryByPrimaryKey(
 export function executeQuery(
   modelName: string,
   primaryKey: string,
-  query: QuerySelector<any> & BulkQueryOptions,
+  query: WeakQuerySelector<any> & BulkQueryOptions,
   db: Database<any>,
 ): EntityInstance<any, any>[] {
   log(`${JSON.stringify(query)} on "${modelName}"`)
   const records = db.getModel(modelName)
 
   // Reduce the query scope if there's a query by primary key of the model.
-  const { [primaryKey]: primaryKeyComparator, ...restQueries } = query.which
+  const { [primaryKey]: primaryKeyComparator, ...restQueries } =
+    query.which || {}
   log('primary key query', primaryKeyComparator)
 
   const scopedRecords = primaryKeyComparator

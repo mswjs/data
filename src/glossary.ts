@@ -1,5 +1,9 @@
-import { BulkQueryOptions, QuerySelector } from './query/queryTypes'
 import { GraphQLHandler, RestHandler } from 'msw'
+import {
+  BulkQueryOptions,
+  QuerySelector,
+  WeakQuerySelector,
+} from './query/queryTypes'
 
 export type PrimaryKeyType = string
 export type BaseTypes = string | number | boolean | Date
@@ -120,7 +124,7 @@ export interface ModelAPI<
    * Find multiple entities.
    */
   findMany(
-    query: QuerySelector<Value<Dictionary[ModelName], Dictionary>> &
+    query: WeakQuerySelector<Value<Dictionary[ModelName], Dictionary>> &
       BulkQueryOptions,
   ): EntityInstance<Dictionary, ModelName>[]
   /**
@@ -156,11 +160,12 @@ export interface ModelAPI<
     query: QuerySelector<Value<Dictionary[ModelName], Dictionary>>,
   ): EntityInstance<Dictionary, ModelName>[] | null
   /**
-   * Generate handlers from entity
+   * Generate request handlers of the given type based on the model.
    */
-  toHandlers(baseUri?: string): RestHandler[]
-
-  toGraphQLHandlers(baseUri?: string): GraphQLHandler[]
+  toHandlers<HandlerType extends 'rest' | 'graphql'>(
+    type: HandlerType,
+    baseUrl?: string,
+  ): HandlerType extends 'rest' ? RestHandler[] : GraphQLHandler[]
 }
 
 export type UpdateManyValue<
