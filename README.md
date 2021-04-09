@@ -8,7 +8,7 @@ Data modeling and relation library for testing JavaScript applications.
 
 ## Motivation
 
-When testing API interactions you often need to mock data. Instead of keeping a hard-coded set of fixtures, this library provides you with an intuitive interface to model your data, create relations between models, and query it in a way similar to an actual database. A must-have tool for data-driven API mocking.
+When testing API interactions you often need to mock data. Instead of keeping a hard-coded set of fixtures, this library provides you with an intuitive interface to model your data, the ability to create relations between models, and query them in a way similar to an actual database. A must-have tool for data-driven API mocking.
 
 ## Getting started
 
@@ -20,7 +20,7 @@ $ npm install @mswjs/data --save-dev
 
 ### Describe data
 
-With this library, you're modeling data using the `factory` function. That function accepts an object where each key represents a _model name_ and values are _model declarations_. Model declaration, in turn, is also an object where keys stand for model properties and values for value getters.
+With this library, you're modeling data using the `factory` function. That function accepts an object where each key represents a _model name_ and the values are _model declarations_. A model declaration is an object where the keys represent model properties and the values are value getters.
 
 ```js
 // src/mocks/db.js
@@ -105,7 +105,7 @@ setupWorker(
 - [Model methods](#model-methods)
 - [Querying data](#querying-data)
 - [Strict mode](#strict-mode)
-- [Models relation](#models-relation)
+- [Model relationships](#model-relationships)
 - [Pagination](#pagination)
 
 ### Model methods
@@ -220,7 +220,7 @@ const updatedUser = db.user.update({
 Updates multiple entities that match the query.
 
 ```js
-const updatedUser = db.user.updateMany({
+const updatedUsers = db.user.updateMany({
   // Query for the entity to modify.
   which: {
     id: {
@@ -293,7 +293,7 @@ The following request handlers are generated and connected to the respective dat
 - `PUT /users/:id`, updates an existing user by primary key.
 - `DELETE /users/:id`, deletes an existing user by primary key.
 
-The "/user" part of the route derives from your model name. For example, if you have a "post" model defined in your `factory`, then the generated handlers will be `/posts`, `/posts/:id`, etc.
+The "/user" part of the route is derived from your model name. For example, if you have a "post" model defined in your `factory`, then the generated handlers will be `/posts`, `/posts/:id`, etc.
 
 With the handlers generated and MSW configured, you can start querying the database:
 
@@ -329,7 +329,7 @@ The following GraphQL queries and mutations are generated:
 
 > Notice how some operation names contain the plural model name to emphasize that they work on a collection of entities.
 
-The "User" part of operation names derives from your model name. For example, if you have a "post" model defined in your `factory`, then the generated handlers will have operations like `post`, `createPost`, `updatePosts`, etc.
+The "User" part of operation names is derived from your model name. For example, if you have a "post" model defined in your `factory`, then the generated handlers will have operations like `post`, `createPost`, `updatePosts`, etc.
 
 With the handlers generated and MSW configured, you can start querying the database:
 
@@ -366,9 +366,9 @@ db.user.toHandlers('graphql', 'https://example.com/graphql')
 
 ### Querying data
 
-This library supports querying of the seeded data similar to how one would query an SQL database. The data is queried based on its properties. A query you construct depends on the value type you are querying.
+This library supports querying of the seeded data similar to how one would query a SQL database. The data is queried based on its properties. A query you construct depends on the value type you are querying.
 
-#### String queries
+#### String operators
 
 - `equals`
 - `notEquals`
@@ -377,7 +377,7 @@ This library supports querying of the seeded data similar to how one would query
 - `in`
 - `notIn`
 
-#### Number queries
+#### Number operators
 
 - `equals`
 - `notEquals`
@@ -388,7 +388,7 @@ This library supports querying of the seeded data similar to how one would query
 - `between`
 - `notBetween`
 
-#### Boolean queries
+#### Boolean operators
 
 - `equals`
 - `notEquals`
@@ -420,7 +420,7 @@ const popularPosts = db.post.findMany({
 
 ### Strict mode
 
-When querying or updating the entities you can supply the `strict: boolean` property on the query. When supplied, if a query operation fails (i.e. no entity found), the library would throw an exception.
+When querying or updating the entities you can supply the `strict: boolean` property on the query. When supplied, if a query operation fails (i.e. no entity found), the library will throw an exception.
 
 ```js
 import { factory, primaryKey } from '@mswjs/data'
@@ -445,14 +445,14 @@ db.user.findFirst({
 })
 ```
 
-### Models relation
+### Model relationships
 
 - [One-to-One](#one-to-one)
 - [One-to-Many](#one-to-many)
 - [Many-to-One](#many-to-one)
-- [Unique relations](#unique-relations)
+- [Unique relationships](#unique-relationships)
 
-Defining relations is a way for one model to reference another. Models are flat by design, so if you wish to have a property that equals an object or an array, you create a relation of the proper type to another existing model.
+Defining relationships is a way for one model to reference another. Models are flat by design, so if you wish to have a property that equals an object or an array, you create a relationship of the proper type to another existing model.
 
 #### One-to-One
 
@@ -475,7 +475,7 @@ const db = factory({
 const user = db.user.create({ firstName: 'John' })
 const post = db.post.create({
   title: 'My journey',
-  // Use a "user" entity as an actual value of this post's author.
+  // Use a "user" entity as the actual value of this post's author.
   author: user,
 })
 
@@ -538,11 +538,11 @@ db.user.create({ country: usa })
 db.car.create({ country: usa })
 ```
 
-#### Unique relations
+#### Unique relationships
 
-Both `oneOf` and `manyOf` relations may be marked as unique. A unique relation is such where a referenced entity cannot be assigned to another entity more than once.
+Both `oneOf` and `manyOf` relationships may be marked as unique. A unique relationship is where a referenced entity cannot be assigned to another entity more than once.
 
-In the example below we defined the "user" and "invitation" models, and design their relation so that one invitation cannot be assigned to multiple users.
+In the example below we define the "user" and "invitation" models, and design their relationship so that one invitation cannot be assigned to multiple users.
 
 ```js
 import { factory, primaryKey, oneOf } from '@mswjs/data'
