@@ -1,7 +1,7 @@
 {
   "name": "@mswjs/data",
   "description": "Data modeling and relation library for testing JavaScript applications.",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "author": "Artem Zakharchenko",
@@ -11,7 +11,8 @@
     "test": "jest",
     "test:ts": "tsc -p test/typings/tsconfig.json",
     "clean": "rimraf ./lib",
-    "build": "yarn clean && tsc"
+    "build": "yarn clean && tsc",
+    "prepublishOnly": "yarn test && yarn test:ts && yarn build"
   },
   "files": [
     "lib",
