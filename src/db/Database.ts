@@ -1,3 +1,4 @@
+import { StrictEventEmitter } from 'strict-event-emitter'
 import { EntityInstance, ModelDictionary, PrimaryKeyType } from '../glossary'
 
 type Models<Dictionary extends ModelDictionary> = Record<
@@ -5,10 +6,22 @@ type Models<Dictionary extends ModelDictionary> = Record<
   Map<string, EntityInstance<Dictionary, any>>
 >
 
+export type DatabaseMethodToEventFn<Method extends (...args: any[]) => any> = (
+  ...args: Parameters<Method>
+) => void
+
+export interface DatabaseEventsMap {
+  create: DatabaseMethodToEventFn<Database<any>['create']>
+  update: DatabaseMethodToEventFn<Database<any>['update']>
+  delete: DatabaseMethodToEventFn<Database<any>['delete']>
+}
+
 export class Database<Dictionary extends ModelDictionary> {
+  public events: StrictEventEmitter<DatabaseEventsMap>
   private models: Models<ModelDictionary>
 
   constructor(dictionary: Dictionary) {
+    this.events = new StrictEventEmitter()
     this.models = Object.keys(dictionary).reduce<Models<ModelDictionary>>(
       (acc, modelName) => {
         acc[modelName] = new Map<string, EntityInstance<Dictionary, string>>()
@@ -29,6 +42,9 @@ export class Database<Dictionary extends ModelDictionary> {
   ) {
     const primaryKey =
       customPrimaryKey || (entity[entity.__primaryKey] as string)
+
+    this.events.emit('create', modelName, entity, customPrimaryKey)
+
     return this.getModel(modelName).set(primaryKey, entity)
   }
 
@@ -45,6 +61,7 @@ export class Database<Dictionary extends ModelDictionary> {
     }
 
     this.create(modelName, nextEntity, nextPrimaryKey as string)
+    this.events.emit('update', modelName, prevEntity, nextEntity)
   }
 
   has(modelName: string, primaryKey: PrimaryKeyType) {
@@ -57,6 +74,7 @@ export class Database<Dictionary extends ModelDictionary> {
 
   delete(modelName: string, primaryKey: PrimaryKeyType) {
     this.getModel(modelName).delete(primaryKey)
+    this.events.emit('delete', modelName, primaryKey)
   }
 
   listEntities(modelName: string) {
