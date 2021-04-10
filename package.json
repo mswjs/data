@@ -40,6 +40,7 @@
     "date-fns": "^2.20.0",
     "graphql": "^15.5.0",
     "pluralize": "^8.0.0",
+    "strict-event-emitter": "^0.2.0",
     "uuid": "^8.3.1"
   },
   "optionalDependencies": {
