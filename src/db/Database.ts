@@ -12,7 +12,6 @@ export class Database<Dictionary extends ModelDictionary> {
     this.models = Object.keys(dictionary).reduce<Models<ModelDictionary>>(
       (acc, modelName) => {
         acc[modelName] = new Map<string, EntityInstance<Dictionary, string>>()
-
         return acc
       },
       {},
@@ -31,6 +30,21 @@ export class Database<Dictionary extends ModelDictionary> {
     const primaryKey =
       customPrimaryKey || (entity[entity.__primaryKey] as string)
     return this.getModel(modelName).set(primaryKey, entity)
+  }
+
+  update(
+    modelName: string,
+    prevEntity: EntityInstance<Dictionary, any>,
+    nextEntity: EntityInstance<Dictionary, any>,
+  ) {
+    const prevPrimaryKey = prevEntity[prevEntity.__primaryKey]
+    const nextPrimaryKey = nextEntity[prevEntity.__primaryKey]
+
+    if (nextPrimaryKey !== prevPrimaryKey) {
+      this.delete(modelName, prevPrimaryKey as string)
+    }
+
+    this.create(modelName, nextEntity, nextPrimaryKey as string)
   }
 
   has(modelName: string, primaryKey: PrimaryKeyType) {
