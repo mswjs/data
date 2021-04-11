@@ -8,7 +8,11 @@ Data modeling and relation library for testing JavaScript applications.
 
 ## Motivation
 
-When testing API interactions you often need to mock data. Instead of keeping a hard-coded set of fixtures, this library provides you with an intuitive interface to model your data, the ability to create relations between models, and query them in a way similar to an actual database. A must-have tool for data-driven API mocking.
+When testing API interactions you often need to mock data. Instead of keeping a hard-coded set of fixtures, this library provides you with must-have tools for data-driven API mocking:
+
+- An intuitive interface to model data
+- The ability to create relationships between models
+- The ability to query data in a manner similar to an actual database
 
 ## Getting started
 
