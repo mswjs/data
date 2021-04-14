@@ -41,7 +41,7 @@ test('supports querying through a one-to-one relational property', () => {
   const usa = db.country.create({
     name: 'United States of America',
   })
-  const washington = db.capital.create({
+  db.capital.create({
     name: 'Washington',
     country: usa,
   })

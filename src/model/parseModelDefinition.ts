@@ -4,8 +4,10 @@ import {
   RelationKind,
   ModelDefinition,
   PrimaryKeyType,
+  ModelDictionary,
 } from '../glossary'
 import { invariant } from '../utils/invariant'
+import { findPrimaryKey } from '../utils/findPrimaryKey'
 
 const log = debug('parseModelDefinition')
 
@@ -15,7 +17,8 @@ export interface ParsedModelDefinition {
   relations: Record<string, Relation>
 }
 
-export function parseModelDefinition(
+export function parseModelDefinition<Dictionary extends ModelDictionary>(
+  dictionary: Dictionary,
   modelName: string,
   definition: ModelDefinition,
 ): ParsedModelDefinition {
@@ -42,10 +45,14 @@ export function parseModelDefinition(
         'kind' in valueGetter &&
         [RelationKind.OneOf, RelationKind.ManyOf].includes(valueGetter.kind)
       ) {
+        const relationPrimaryKey = findPrimaryKey(
+          dictionary[valueGetter.modelName],
+        )!
         result.relations[property] = {
           kind: valueGetter.kind,
           modelName: valueGetter.modelName,
           unique: valueGetter.unique,
+          primaryKey: relationPrimaryKey,
         }
 
         return result

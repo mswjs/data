@@ -49,8 +49,6 @@ test('synchornizes entity create across multiple clients', async () => {
 
   expect(await secondPage.evaluate(() => window.db.user.getAll())).toEqual([
     {
-      __type: 'user',
-      __primaryKey: 'id',
       id: 'abc-123',
       firstName: 'John',
     },
@@ -87,8 +85,6 @@ test('synchornizes entity update across multiple clients', async () => {
 
   const expectedUsers = [
     {
-      __type: 'user',
-      __primaryKey: 'id',
       id: 'abc-123',
       firstName: 'Kate',
     },
@@ -139,15 +135,11 @@ test('handles events from multiple database instances separately', async () => {
   await runtime.page.bringToFront()
 
   const john = {
-    __type: 'user',
-    __primaryKey: 'id',
     id: 'abc-123',
     firstName: 'John',
   }
 
   const kate = {
-    __type: 'user',
-    __primaryKey: 'id',
     id: 'def-456',
     firstName: 'Kate',
   }
@@ -208,8 +200,6 @@ test('handles events from multiple databases on different hostnames', async () =
     await firstRuntime.page.evaluate(() => window.db.user.getAll()),
   ).toEqual([
     {
-      __type: 'user',
-      __primaryKey: 'id',
       id: 'abc-123',
       firstName: 'John',
     },

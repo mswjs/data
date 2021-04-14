@@ -1,7 +1,7 @@
 import { debug } from 'debug'
 import { Database } from '../db/Database'
 import {
-  EntityInstance,
+  InternalEntityInstance,
   InternalEntityProperties,
   ModelDefinition,
   ModelDictionary,
@@ -21,7 +21,7 @@ export function createModel<
   parsedModel: ParsedModelDefinition,
   initialValues: Partial<Value<Dictionary[ModelName], Dictionary>>,
   db: Database<Dictionary>,
-): EntityInstance<any, any> {
+): InternalEntityInstance<any, any> {
   const { primaryKey, properties, relations } = parsedModel
 
   log(

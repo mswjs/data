@@ -1,6 +1,7 @@
 import { debug } from 'debug'
 import { Database } from '../db/Database'
 import {
+  InternalEntityInstance,
   EntityInstance,
   ModelDictionary,
   Relation,
@@ -13,7 +14,7 @@ import { first } from '../utils/first'
 const log = debug('defineRelationalProperties')
 
 export function defineRelationalProperties(
-  entity: EntityInstance<any, any>,
+  entity: InternalEntityInstance<any, any>,
   initialValues: Partial<Value<any, ModelDictionary>>,
   relations: Record<string, Relation>,
   db: Database<any>,
@@ -23,11 +24,15 @@ export function defineRelationalProperties(
   const properties = Object.entries(relations).reduce<
     Record<
       string,
-      { get(): EntityInstance<any, any> | EntityInstance<any, any>[] }
+      {
+        get():
+          | InternalEntityInstance<any, any>
+          | InternalEntityInstance<any, any>[]
+        enumerable: boolean
+      }
     >
   >((properties, [property, relation]) => {
     log(`defining relational property "${entity.__type}.${property}"`, relation)
-
     // Take the relational entity reference from the initial values.
     const entityRefs: EntityInstance<any, any>[] = [].concat(
       initialValues[property],
@@ -49,7 +54,7 @@ export function defineRelationalProperties(
         {
           where: {
             [property]: {
-              [firstRef.__primaryKey]: {
+              [relation.primaryKey]: {
                 in: entityRefs.map(
                   (entityRef) => entityRef[entity.__primaryKey],
                 ),
@@ -79,19 +84,20 @@ export function defineRelationalProperties(
     }
 
     properties[property] = {
+      enumerable: true,
       get() {
         log(`get "${property}"`, relation)
 
-        const refValue = entityRefs.reduce<EntityInstance<any, any>[]>(
+        const refValue = entityRefs.reduce<InternalEntityInstance<any, any>[]>(
           (list, entityRef) => {
             return list.concat(
               executeQuery(
-                entityRef.__type,
-                entityRef.__primaryKey,
+                relation.modelName,
+                relation.primaryKey,
                 {
                   where: {
-                    [entityRef.__primaryKey]: {
-                      equals: entityRef[entityRef.__primaryKey],
+                    [relation.primaryKey]: {
+                      equals: entityRef[relation.primaryKey],
                     },
                   },
                 },
@@ -101,15 +107,15 @@ export function defineRelationalProperties(
           },
           [],
         )
-
         log(`resolved "${relation.kind}" "${property}" to`, refValue)
 
-        return relation.kind === RelationKind.OneOf ? first(refValue) : refValue
+        return relation.kind === RelationKind.OneOf
+          ? first(refValue)!
+          : refValue
       },
     }
 
     return properties
   }, {})
-
   Object.defineProperties(entity, properties)
 }

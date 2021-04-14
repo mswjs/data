@@ -1,10 +1,14 @@
 import md5 from 'md5'
 import { StrictEventEmitter } from 'strict-event-emitter'
-import { EntityInstance, ModelDictionary, PrimaryKeyType } from '../glossary'
+import {
+  InternalEntityInstance,
+  ModelDictionary,
+  PrimaryKeyType,
+} from '../glossary'
 
 type Models<Dictionary extends ModelDictionary> = Record<
   string,
-  Map<string, EntityInstance<Dictionary, any>>
+  Map<string, InternalEntityInstance<Dictionary, any>>
 >
 
 export type DatabaseMethodToEventFn<Method extends (...args: any[]) => any> = (
@@ -29,7 +33,10 @@ export class Database<Dictionary extends ModelDictionary> {
     this.events = new StrictEventEmitter()
     this.models = Object.keys(dictionary).reduce<Models<Dictionary>>(
       (acc, modelName) => {
-        acc[modelName] = new Map<string, EntityInstance<Dictionary, string>>()
+        acc[modelName] = new Map<
+          string,
+          InternalEntityInstance<Dictionary, string>
+        >()
         return acc
       },
       {},
@@ -57,7 +64,7 @@ export class Database<Dictionary extends ModelDictionary> {
 
   create<ModelName extends string>(
     modelName: ModelName,
-    entity: EntityInstance<Dictionary, any>,
+    entity: InternalEntityInstance<Dictionary, any>,
     customPrimaryKey?: PrimaryKeyType,
   ) {
     const primaryKey =
@@ -70,8 +77,8 @@ export class Database<Dictionary extends ModelDictionary> {
 
   update<ModelName extends string>(
     modelName: ModelName,
-    prevEntity: EntityInstance<Dictionary, ModelName>,
-    nextEntity: EntityInstance<Dictionary, ModelName>,
+    prevEntity: InternalEntityInstance<Dictionary, any>,
+    nextEntity: InternalEntityInstance<Dictionary, any>,
   ) {
     const prevPrimaryKey = prevEntity[prevEntity.__primaryKey]
     const nextPrimaryKey = nextEntity[prevEntity.__primaryKey]
@@ -105,7 +112,7 @@ export class Database<Dictionary extends ModelDictionary> {
 
   listEntities<ModelName extends string>(
     modelName: ModelName,
-  ): EntityInstance<Dictionary, ModelName>[] {
+  ): InternalEntityInstance<Dictionary, ModelName>[] {
     return Array.from(this.getModel(modelName).values())
   }
 }
