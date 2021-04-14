@@ -24,13 +24,13 @@ jobs:
       - name: Install dependencies
         run: yarn install --frozen-lockfile
 
+      # Build
+      - name: Build
+        run: yarn build
+
       # Runs a single command using the runners shell
       - name: Tests
         run: yarn test
 
       - name: Tests (typings)
         run: yarn test:ts
-
-      # Build
-      - name: Build
-        run: yarn build

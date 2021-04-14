@@ -1,4 +1,4 @@
-import { factory, manyOf, oneOf, primaryKey } from '../../src'
+import { factory, manyOf, oneOf, primaryKey } from '@mswjs/data'
 
 test('throws an error when using an already associated "oneOf" unique relation', () => {
   const db = factory({

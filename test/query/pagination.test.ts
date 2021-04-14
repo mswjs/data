@@ -1,5 +1,5 @@
 import { random } from 'faker'
-import { factory, primaryKey } from '../../src'
+import { factory, primaryKey } from '@mswjs/data'
 
 test('supports offset-based pagination', () => {
   const db = factory({

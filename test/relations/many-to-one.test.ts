@@ -1,5 +1,5 @@
 import { random, name } from 'faker'
-import { factory, oneOf, primaryKey } from '../../src'
+import { factory, oneOf, primaryKey } from '@mswjs/data'
 
 test('supports querying against a many-to-one relation', () => {
   const db = factory({

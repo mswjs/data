@@ -1,4 +1,4 @@
-import { drop, factory, identity, primaryKey } from '../../src'
+import { drop, factory, identity, primaryKey } from '@mswjs/data'
 
 test('drops all records in the database', () => {
   const db = factory({

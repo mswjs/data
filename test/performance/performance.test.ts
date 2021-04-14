@@ -1,5 +1,5 @@
 import { random, name } from 'faker'
-import { factory, primaryKey } from '../../src'
+import { factory, primaryKey } from '@mswjs/data'
 import { measurePerformance, repeat } from '../testUtils'
 
 test('creates a 1000 records in under 100ms', async () => {

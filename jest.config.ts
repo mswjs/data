@@ -1,5 +1,6 @@
 export default {
-  transform: {
-    '^.+\\.tsx?$': 'ts-jest',
+  preset: 'ts-jest',
+  moduleNameMapper: {
+    '^@mswjs/data(.*)': '<rootDir>/$1',
   },
 }
