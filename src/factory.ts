@@ -16,6 +16,7 @@ import { Database } from './db/Database'
 import { findPrimaryKey } from './utils/findPrimaryKey'
 import { generateRestHandlers } from './model/generateRestHandlers'
 import { generateGraphQLHandlers } from './model/generateGraphQLHandlers'
+import { sync } from './extensions/sync'
 
 /**
  * Create a database with the given models.
@@ -44,6 +45,8 @@ function createModelApi<
   db: Database<Dictionary>,
 ) {
   const primaryKey = findPrimaryKey(declaration)
+
+  sync(db)
 
   if (typeof primaryKey === 'undefined') {
     throw new OperationError(
