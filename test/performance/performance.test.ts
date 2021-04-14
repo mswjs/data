@@ -34,7 +34,7 @@ test('queries through a 1000 records in under 100ms', async () => {
 
   const findManyPerformance = await measurePerformance('findMany', () => {
     db.user.findMany({
-      which: {
+      where: {
         age: {
           gte: 18,
         },
@@ -59,7 +59,7 @@ test('updates a single record under 100ms', async () => {
 
   const updatePerformance = await measurePerformance('update', () => {
     db.user.update({
-      which: {
+      where: {
         age: {
           lte: 20,
         },
@@ -88,7 +88,7 @@ test('deletes a single record in under 100ms', async () => {
 
   const deletePerformance = await measurePerformance('delete', () => {
     db.user.delete({
-      which: {
+      where: {
         id: {
           equals: 'abc-123',
         },
@@ -113,7 +113,7 @@ test('deletes multiple records in under 100ms', async () => {
 
   const deleteManyPerformance = await measurePerformance('deleteMany', () => {
     db.user.deleteMany({
-      which: {
+      where: {
         age: {
           lte: 18,
         },

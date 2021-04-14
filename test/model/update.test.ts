@@ -18,7 +18,7 @@ test('updates a unique entity that matches the query', () => {
   db.user.create()
 
   const updatedUser = db.user.update({
-    which: {
+    where: {
       id: {
         equals: userId,
       },
@@ -30,7 +30,7 @@ test('updates a unique entity that matches the query', () => {
   expect(updatedUser).toHaveProperty('firstName', 'John')
 
   const userResult = db.user.findFirst({
-    which: {
+    where: {
       id: {
         equals: userId,
       },
@@ -56,7 +56,7 @@ test('updates the first entity when multiple entities match the query', () => {
   })
 
   const updatedUser = db.user.update({
-    which: {
+    where: {
       followersCount: {
         gte: 10,
       },
@@ -68,7 +68,7 @@ test('updates the first entity when multiple entities match the query', () => {
   expect(updatedUser).toHaveProperty('firstName', 'Kate')
 
   const kate = db.user.findFirst({
-    which: {
+    where: {
       firstName: {
         equals: 'Kate',
       },
@@ -89,7 +89,7 @@ test('throws an exception when no model matches the query in strict mode', () =>
 
   const error = getThrownError(() => {
     db.user.update({
-      which: {
+      where: {
         id: {
           equals: 'abc-123',
         },
@@ -121,7 +121,7 @@ test('moves the entity when it updates the primary key', () => {
   })
 
   const updatedUser = db.user.update({
-    which: {
+    where: {
       id: {
         equals: 'abc-123',
       },
@@ -133,7 +133,7 @@ test('moves the entity when it updates the primary key', () => {
   expect(updatedUser).toHaveProperty('id', 'def-456')
 
   const userResult = db.user.findFirst({
-    which: {
+    where: {
       id: {
         equals: 'def-456',
       },
@@ -142,7 +142,7 @@ test('moves the entity when it updates the primary key', () => {
   expect(userResult).toHaveProperty('id', 'def-456')
 
   const oldUser = db.user.findFirst({
-    which: {
+    where: {
       id: {
         equals: 'abc-123',
       },
@@ -162,7 +162,7 @@ test('does nothing when no entity matches the query', () => {
   db.user.create()
 
   const updatedUser = db.user.update({
-    which: {
+    where: {
       id: {
         equals: 'abc-123',
       },
@@ -190,7 +190,7 @@ test('throw an error when trying to update an entity using a key already used', 
 
   const error = getThrownError(() => {
     db.user.update({
-      which: {
+      where: {
         id: {
           equals: '456',
         },
@@ -228,7 +228,7 @@ test('derives next entity values based on the existing ones', () => {
   })
 
   db.user.update({
-    which: {
+    where: {
       role: {
         equals: 'Auditor',
       },
@@ -244,7 +244,7 @@ test('derives next entity values based on the existing ones', () => {
   })
 
   const userResult = db.user.findFirst({
-    which: {
+    where: {
       firstName: {
         equals: 'JOHN',
       },

@@ -35,7 +35,7 @@ export function defineRelationalProperties(
         entity.__type,
         entity.__primaryKey,
         {
-          which: {
+          where: {
             [property]: {
               [firstRef.__primaryKey]: {
                 in: relation.refs.map((ref) => ref.__nodeId),
@@ -75,7 +75,7 @@ export function defineRelationalProperties(
                 entityRef.__type,
                 entityRef.__primaryKey,
                 {
-                  which: {
+                  where: {
                     [entityRef.__primaryKey]: {
                       equals: entityRef.__nodeId,
                     },

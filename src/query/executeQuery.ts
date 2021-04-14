@@ -41,17 +41,17 @@ export function executeQuery(
 
   // Reduce the query scope if there's a query by primary key of the model.
   const { [primaryKey]: primaryKeyComparator, ...restQueries } =
-    query.which || {}
+    query.where || {}
   log('primary key query', primaryKeyComparator)
 
   const scopedRecords = primaryKeyComparator
     ? queryByPrimaryKey(db.getModel(modelName), {
-        which: { [primaryKey]: primaryKeyComparator },
+        where: { [primaryKey]: primaryKeyComparator },
       })
     : records
 
   const result = iteratorUtils.filter((_, record) => {
-    const executeQuery = compileQuery({ which: restQueries })
+    const executeQuery = compileQuery({ where: restQueries })
     return executeQuery(record)
   }, scopedRecords)
 

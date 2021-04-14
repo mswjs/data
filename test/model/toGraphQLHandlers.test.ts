@@ -142,7 +142,7 @@ it('supports querying all users by a field', async () => {
   const res = await executeQuery({
     query: `
       query GetAdults {
-        users(which: { age: { gte: 18 } }) {
+        users(where: { age: { gte: 18 } }) {
           firstName
         }
       }
@@ -172,7 +172,7 @@ it('supports querying a user by the primary key', async () => {
   const res = await executeQuery({
     query: `
       query GetUser($id: ID!) {
-        user(which: { id: { equals: $id } }) {
+        user(where: { id: { equals: $id } }) {
           id
           firstName
         }
@@ -202,7 +202,7 @@ it('supports querying a user by any field', async () => {
   const res = await executeQuery({
     query: `
       query GetAdult {
-        user(which: { age: { gte: 22 } }) {
+        user(where: { age: { gte: 22 } }) {
           id
           firstName
         }
@@ -259,7 +259,7 @@ it('supports updating a user', async () => {
     query: `
       mutation UpdateUser($input: UserInput!) {
         updateUser(
-          which: { firstName: { equals: "Kate" } }
+          where: { firstName: { equals: "Kate" } }
           data: $input
         ) {
           firstName
@@ -294,7 +294,7 @@ it('supports updating multiple users', async () => {
     query: `
       mutation UpdateUser($input: UserInput!) {
         updateUsers(
-          which: { age: { lt: 18 } }
+          where: { age: { lt: 18 } }
           data: $input
         ) {
           id
@@ -338,7 +338,7 @@ it('supports deleting a user by the primary key', async () => {
     query: `
       mutation DeleteUser {
         deleteUser(
-          which: { id: { equals: "def-456" } }
+          where: { id: { equals: "def-456" } }
         ) {
           id
           firstName
@@ -367,7 +367,7 @@ it('supports deleting a user by any field', async () => {
     query: `
       mutation DeleteUser {
         deleteUser(
-          which: { firstName: { equals: "John" } }
+          where: { firstName: { equals: "John" } }
         ) {
           id
           firstName
@@ -396,7 +396,7 @@ it('supports deleting multiple users', async () => {
     query: `
       mutation DeleteUsers {
         deleteUsers(
-          which: { age: { lt: 18 } }
+          where: { age: { lt: 18 } }
         ) {
           id
           firstName

@@ -24,11 +24,11 @@ const setup = () => {
   return db
 }
 
-test('queries entity which property equals a string', () => {
+test('queries entity where property equals a string', () => {
   const db = setup()
 
   const firstPizza = db.recipe.findFirst({
-    which: {
+    where: {
       category: {
         equals: 'pizza',
       },
@@ -37,7 +37,7 @@ test('queries entity which property equals a string', () => {
   expect(firstPizza).toHaveProperty('title', 'New York Pizza')
 
   const allPizza = db.recipe.findMany({
-    which: {
+    where: {
       category: {
         equals: 'pizza',
       },
@@ -48,11 +48,11 @@ test('queries entity which property equals a string', () => {
   expect(titles).toEqual(['New York Pizza', 'Pizza Mozzarrela'])
 })
 
-test('queries entities which property contains a string', () => {
+test('queries entities where property contains a string', () => {
   const db = setup()
 
   const firstPizza = db.recipe.findFirst({
-    which: {
+    where: {
       title: {
         contains: 'Pizza',
       },
@@ -61,7 +61,7 @@ test('queries entities which property contains a string', () => {
   expect(firstPizza).toHaveProperty('title', 'New York Pizza')
 
   const allPizzas = db.recipe.findMany({
-    which: {
+    where: {
       title: {
         contains: 'Pizza',
       },
@@ -72,11 +72,11 @@ test('queries entities which property contains a string', () => {
   expect(pizzaTitles).toEqual(['New York Pizza', 'Pizza Mozzarrela'])
 })
 
-test('queries entities which property not contains a string', () => {
+test('queries entities where property not contains a string', () => {
   const db = setup()
 
   const chocolateCake = db.recipe.findFirst({
-    which: {
+    where: {
       title: {
         notContains: 'Pizza',
       },
@@ -85,11 +85,11 @@ test('queries entities which property not contains a string', () => {
   expect(chocolateCake).toHaveProperty('title', 'Chocolate Cake')
 })
 
-test('queries entities which property is not equals to a string', () => {
+test('queries entities where property is not equals to a string', () => {
   const db = setup()
 
   const chocolateCake = db.recipe.findFirst({
-    which: {
+    where: {
       title: {
         notEquals: 'New York Pizza',
       },
@@ -98,11 +98,11 @@ test('queries entities which property is not equals to a string', () => {
   expect(chocolateCake).toHaveProperty('title', 'Chocolate Cake')
 })
 
-test('queries entities which property is not contained into the array', () => {
+test('queries entities where property is not contained into the array', () => {
   const db = setup()
 
   const chocolateCake = db.recipe.findFirst({
-    which: {
+    where: {
       title: {
         notIn: ['New York Pizza'],
       },
@@ -111,11 +111,11 @@ test('queries entities which property is not contained into the array', () => {
   expect(chocolateCake).toHaveProperty('title', 'Chocolate Cake')
 })
 
-test('queries entities which property is contained into the array', () => {
+test('queries entities where property is contained into the array', () => {
   const db = setup()
 
   const chocolateCake = db.recipe.findFirst({
-    which: {
+    where: {
       title: {
         in: ['New York Pizza'],
       },

@@ -88,7 +88,7 @@ setupWorker(
   // Retrieve a single user from the database by ID.
   rest.get('/user/:userId', (req, res, ctx) => {
     const user = db.user.findFirst({
-      which: {
+      where: {
         id: {
           equals: req.params.userId,
         },
@@ -141,7 +141,7 @@ Returns the first entity that satisfies the given query.
 
 ```js
 const user = db.user.findFirst({
-  which: {
+  where: {
     id: {
       equals: 'abc-123',
     },
@@ -155,7 +155,7 @@ Returns all the entities that satisfy the given query.
 
 ```js
 const users = db.user.findMany({
-  which: {
+  where: {
     followersCount: {
       gte: 1000,
     },
@@ -178,7 +178,7 @@ Can accept an optional query argument to filter the records before counting them
 
 ```js
 db.user.count({
-  which: {
+  where: {
     role: {
       equals: 'reader',
     },
@@ -201,7 +201,7 @@ Updates the first entity that matches the query.
 ```js
 const updatedUser = db.user.update({
   // Query for the entity to modify.
-  which: {
+  where: {
     id: {
       equals: 'abc-123',
     },
@@ -226,7 +226,7 @@ Updates multiple entities that match the query.
 ```js
 const updatedUsers = db.user.updateMany({
   // Query for the entity to modify.
-  which: {
+  where: {
     id: {
       in: ['abc-123', 'def-456'],
     },
@@ -245,7 +245,7 @@ Deletes the entity that satisfies the given query.
 
 ```js
 const deletedUser = db.user.delete({
-  which: {
+  where: {
     followersCount: {
       equals: 0,
     },
@@ -259,7 +259,7 @@ Deletes multiple entities that match the query.
 
 ```js
 const deletedUsers = db.user.deleteMany({
-  which: {
+  where: {
     followersCount: {
       lt: 10,
     },
@@ -323,13 +323,13 @@ setupWorker(...db.user.toHandlers('graphql'))
 
 The following GraphQL queries and mutations are generated:
 
-- `user(which: UserQueryInput): User`, returns a user matching the query.
-- `users(which: UserQueryInput, cursor: ID, skip: Int, take: Int): [User!]`, returns all users matching the query (supports [pagination](#pagination)).
+- `user(where: UserQueryInput): User`, returns a user matching the query.
+- `users(where: UserQueryInput, cursor: ID, skip: Int, take: Int): [User!]`, returns all users matching the query (supports [pagination](#pagination)).
 - `createUser(data: UserInput!): User!`, creates a new user.
-- `updateUser(which: UserQueryInput!, data: UserInput!): User!`, updates a user.
-- `updateUsers(which: UserQueryInput!, data: UserInput!): [User!]`, updates multiple users.
-- `deleteUser(which: UserQueryInput!): User!`, deletes a user.
-- `deleteUsers(which: UserQueryInput!): [User!]`, deletes multiple users.
+- `updateUser(where: UserQueryInput!, data: UserInput!): User!`, updates a user.
+- `updateUsers(where: UserQueryInput!, data: UserInput!): [User!]`, updates multiple users.
+- `deleteUser(where: UserQueryInput!): User!`, deletes a user.
+- `deleteUsers(where: UserQueryInput!): [User!]`, deletes multiple users.
 
 > Notice how some operation names contain the plural model name to emphasize that they work on a collection of entities.
 
@@ -411,7 +411,7 @@ const db = factory({
 // Returns the list of `post` entities
 // that satisfy the given query.
 const popularPosts = db.post.findMany({
-  which: {
+  where: {
     likes: {
       gte: 1000,
     },
@@ -440,7 +440,7 @@ db.user.create({ id: 'abc-123' })
 // This will throw an exception, because there are
 // no "user" entities matching this query.
 db.user.findFirst({
-  which: {
+  where: {
     id: {
       equals: 'def-456',
     },
@@ -585,7 +585,7 @@ const db = factory({
 })
 
 db.post.findMany({
-  which: {
+  where: {
     category: {
       equals: 'Science',
     },
@@ -609,7 +609,7 @@ const db = factory({
 })
 
 const firstPage = db.post.findMany({
-  which: {
+  where: {
     category: {
       equals: 'Science',
     },
@@ -619,7 +619,7 @@ const firstPage = db.post.findMany({
 })
 
 const secondPage = db.post.findMany({
-  which: {
+  where: {
     category: {
       equals: 'Science',
     },

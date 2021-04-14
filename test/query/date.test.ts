@@ -28,7 +28,7 @@ test('queries entities that equal a date', () => {
   const db = setup()
 
   const userResults = db.user.findMany({
-    which: {
+    where: {
       createdAt: {
         equals: new Date('1980-04-12'),
       },
@@ -44,7 +44,7 @@ test('queries entities that do not equal a date', () => {
   const db = setup()
 
   const userResults = db.user.findMany({
-    which: {
+    where: {
       createdAt: {
         notEquals: new Date('1980-04-12'),
       },
@@ -60,7 +60,7 @@ test('queries entities that are older than a date', () => {
   const db = setup()
 
   const userResults = db.user.findMany({
-    which: {
+    where: {
       createdAt: {
         lt: new Date('1980-04-14'),
       },
@@ -76,7 +76,7 @@ test('queries entities that are older or equal a date', () => {
   const db = setup()
 
   const userResults = db.user.findMany({
-    which: {
+    where: {
       createdAt: {
         lte: new Date('1980-04-14'),
       },
@@ -92,7 +92,7 @@ test('queries entities that are newer than a date', () => {
   const db = setup()
 
   const userResults = db.user.findMany({
-    which: {
+    where: {
       createdAt: {
         gt: new Date('1980-04-14'),
       },
@@ -108,7 +108,7 @@ test('queries entities that are newer or equal to a date', () => {
   const db = setup()
 
   const userResults = db.user.findMany({
-    which: {
+    where: {
       createdAt: {
         gte: new Date('1980-04-14'),
       },

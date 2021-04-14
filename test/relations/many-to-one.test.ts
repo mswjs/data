@@ -29,7 +29,7 @@ test('supports querying against a many-to-one relation', () => {
   })
 
   const userPosts = db.post.findMany({
-    which: {
+    where: {
       author: {
         id: {
           equals: user.id,
@@ -97,7 +97,7 @@ test('supports querying through nested relational properties', () => {
   })
 
   const result = db.post.findMany({
-    which: {
+    where: {
       author: {
         role: {
           title: {

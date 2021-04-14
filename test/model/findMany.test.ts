@@ -16,7 +16,7 @@ test('returns all matching entities', () => {
   db.user.create({ followersCount: 15 })
 
   const users = db.user.findMany({
-    which: {
+    where: {
       followersCount: {
         gt: 10,
       },
@@ -38,7 +38,7 @@ test('throws an exception when no results in strict mode', () => {
 
   const error = getThrownError(() => {
     db.user.findMany({
-      which: {
+      where: {
         id: {
           in: ['abc-123', 'def-456'],
         },
@@ -68,7 +68,7 @@ test('returns an empty array when not found matching entities', () => {
   db.user.create({ followersCount: 15 })
 
   const users = db.user.findMany({
-    which: {
+    where: {
       followersCount: {
         gte: 1000,
       },

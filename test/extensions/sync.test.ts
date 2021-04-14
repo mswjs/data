@@ -74,7 +74,7 @@ test('synchornizes entity update across multiple clients', async () => {
 
   await secondPage.evaluate(() => {
     return window.db.user.update({
-      which: {
+      where: {
         id: {
           equals: 'abc-123',
         },
@@ -118,7 +118,7 @@ test('synchronizes entity delete across multiple clients', async () => {
 
   await secondPage.evaluate(() => {
     window.db.user.delete({
-      which: {
+      where: {
         id: {
           equals: 'abc-123',
         },

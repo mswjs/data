@@ -25,11 +25,11 @@ const setup = () => {
   return db
 }
 
-test('queries entities which property equals to a number', () => {
+test('queries entities where property equals to a number', () => {
   const db = setup()
 
   const firstAdult = db.user.findFirst({
-    which: {
+    where: {
       age: {
         gte: 18,
       },
@@ -38,7 +38,7 @@ test('queries entities which property equals to a number', () => {
   expect(firstAdult).toHaveProperty('firstName', 'Alice')
 
   const allAdults = db.user.findMany({
-    which: {
+    where: {
       age: {
         gte: 18,
       },
@@ -49,11 +49,11 @@ test('queries entities which property equals to a number', () => {
   expect(adultsNames).toEqual(['Alice', 'Kate'])
 })
 
-test('queries entities which property is not equals to a number', () => {
+test('queries entities where property is not equals to a number', () => {
   const db = setup()
 
   const users = db.user.findMany({
-    which: {
+    where: {
       age: {
         notEquals: 24,
       },
@@ -64,11 +64,11 @@ test('queries entities which property is not equals to a number', () => {
   expect(names).toEqual(['John', 'Kate'])
 })
 
-test('queries entities which property is within a number range', () => {
+test('queries entities where property is within a number range', () => {
   const db = setup()
 
   const john = db.user.findFirst({
-    which: {
+    where: {
       age: {
         between: [16, 34],
       },
@@ -77,7 +77,7 @@ test('queries entities which property is within a number range', () => {
   expect(john).toHaveProperty('firstName', 'John')
 
   const usersInAge = db.user.findMany({
-    which: {
+    where: {
       age: {
         between: [16, 34],
       },
@@ -88,11 +88,11 @@ test('queries entities which property is within a number range', () => {
   expect(names).toEqual(['John', 'Alice'])
 })
 
-test('queries entities which property is not within a number range', () => {
+test('queries entities where property is not within a number range', () => {
   const db = setup()
 
   const users = db.user.findMany({
-    which: {
+    where: {
       age: {
         notBetween: [16, 34],
       },
@@ -107,7 +107,7 @@ test('queries entities that are older than a number', () => {
   const db = setup()
 
   const users = db.user.findMany({
-    which: {
+    where: {
       age: {
         gt: 23,
       },
@@ -122,7 +122,7 @@ test('queries entities that are older or equal a number', () => {
   const db = setup()
 
   const users = db.user.findMany({
-    which: {
+    where: {
       age: {
         gte: 24,
       },
@@ -137,7 +137,7 @@ test('queries entities that are younger then a number', () => {
   const db = setup()
 
   const users = db.user.findMany({
-    which: {
+    where: {
       age: {
         lt: 24,
       },
@@ -152,7 +152,7 @@ test('queries entities that are younger or equal a number', () => {
   const db = setup()
 
   const users = db.user.findMany({
-    which: {
+    where: {
       age: {
         lte: 24,
       },

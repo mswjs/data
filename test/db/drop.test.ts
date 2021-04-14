@@ -23,7 +23,7 @@ test('does nothing when the database is already empty', () => {
 
   db.user.create()
   db.user.delete({
-    which: {
+    where: {
       id: {
         equals: 'abc-123',
       },

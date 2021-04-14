@@ -41,7 +41,7 @@ test('counts the amount of records that match the query', () => {
   db.book.create({ pagesCount: 750 })
 
   const longBooks = db.book.count({
-    which: {
+    where: {
       pagesCount: {
         gte: 300,
       },
@@ -62,7 +62,7 @@ test('returns 0 when no records match the query', () => {
   db.book.create({ pagesCount: 750 })
 
   const longBooks = db.book.count({
-    which: {
+    where: {
       pagesCount: {
         gte: 1000,
       },
