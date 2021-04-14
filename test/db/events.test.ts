@@ -4,11 +4,14 @@ import { createModel } from '../../src/model/createModel'
 import { parseModelDefinition } from '../../src/model/parseModelDefinition'
 
 test('emits the "create" event when a new entity is created', (done) => {
-  const userDefinition = {
-    id: primaryKey(String),
+  const dictionary = {
+    user: {
+      id: primaryKey(String),
+    },
   }
+
   const db = new Database({
-    user: userDefinition,
+    user: dictionary.user,
   })
 
   db.events.on('create', (id, modelName, entity, primaryKey) => {
@@ -27,8 +30,8 @@ test('emits the "create" event when a new entity is created', (done) => {
     'user',
     createModel(
       'user',
-      userDefinition,
-      parseModelDefinition('user', userDefinition),
+      dictionary.user,
+      parseModelDefinition(dictionary, 'user', dictionary.user),
       {
         id: 'abc-123',
       },
@@ -38,12 +41,15 @@ test('emits the "create" event when a new entity is created', (done) => {
 })
 
 test('emits the "update" event when an existing entity is updated', (done) => {
-  const userDefinition = {
-    id: primaryKey(String),
-    firstName: String,
+  const dictionary = {
+    user: {
+      id: primaryKey(String),
+      firstName: String,
+    },
   }
+
   const db = new Database({
-    user: userDefinition,
+    user: dictionary.user,
   })
 
   db.events.on('update', (id, modelName, prevEntity, nextEntity) => {
@@ -68,8 +74,8 @@ test('emits the "update" event when an existing entity is updated', (done) => {
     'user',
     createModel(
       'user',
-      userDefinition,
-      parseModelDefinition('user', userDefinition),
+      dictionary.user,
+      parseModelDefinition(dictionary, 'user', dictionary.user),
       { id: 'abc-123', firstName: 'John' },
       db,
     ),
@@ -79,8 +85,8 @@ test('emits the "update" event when an existing entity is updated', (done) => {
     db.getModel('user').get('abc-123')!,
     createModel(
       'user',
-      userDefinition,
-      parseModelDefinition('user', userDefinition),
+      dictionary.user,
+      parseModelDefinition(dictionary, 'user', dictionary.user),
       { id: 'def-456', firstName: 'Kate' },
       db,
     ),
@@ -88,12 +94,15 @@ test('emits the "update" event when an existing entity is updated', (done) => {
 })
 
 test('emits the "delete" event when an existing entity is deleted', (done) => {
-  const userDefinition = {
-    id: primaryKey(String),
-    firstName: String,
+  const dictionary = {
+    user: {
+      id: primaryKey(String),
+      firstName: String,
+    },
   }
+
   const db = new Database({
-    user: userDefinition,
+    user: dictionary.user,
   })
 
   db.events.on('delete', (id, modelName, primaryKey) => {
@@ -107,8 +116,8 @@ test('emits the "delete" event when an existing entity is deleted', (done) => {
     'user',
     createModel(
       'user',
-      userDefinition,
-      parseModelDefinition('user', userDefinition),
+      dictionary.user,
+      parseModelDefinition(dictionary, 'user', dictionary.user),
       { id: 'abc-123', firstName: 'John' },
       db,
     ),

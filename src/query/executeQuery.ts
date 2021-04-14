@@ -1,5 +1,5 @@
 import { debug } from 'debug'
-import { EntityInstance } from '../glossary'
+import { InternalEntityInstance } from '../glossary'
 import { compileQuery } from './compileQuery'
 import {
   BulkQueryOptions,
@@ -13,7 +13,7 @@ import { Database } from '../db/Database'
 const log = debug('executeQuery')
 
 function queryByPrimaryKey(
-  records: Map<string, EntityInstance<any, any>>,
+  records: Map<string, InternalEntityInstance<any, any>>,
   query: QuerySelector<any>,
 ) {
   log('querying by primary key')
@@ -35,7 +35,7 @@ export function executeQuery(
   primaryKey: string,
   query: WeakQuerySelector<any> & BulkQueryOptions,
   db: Database<any>,
-): EntityInstance<any, any>[] {
+): InternalEntityInstance<any, any>[] {
   log(`${JSON.stringify(query)} on "${modelName}"`)
   const records = db.getModel(modelName)
 

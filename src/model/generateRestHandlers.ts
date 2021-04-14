@@ -8,7 +8,6 @@ import {
 } from '../glossary'
 import { GetQueryFor } from '../query/queryTypes'
 import { OperationErrorType, OperationError } from '../errors/OperationError'
-import { removeInternalProperties } from '../utils/removeInternalProperties'
 
 interface WeakQuerySelectorWhere<KeyType extends PrimaryKeyType> {
   [key: string]: Partial<GetQueryFor<KeyType>>
@@ -93,7 +92,7 @@ export function generateRestHandlers<
 
         const records = model.findMany(options)
 
-        return res(ctx.json(records.map(removeInternalProperties)))
+        return res(ctx.json(records))
       }),
     ),
     rest.get(
@@ -113,17 +112,14 @@ export function generateRestHandlers<
           where: where as any,
         })
 
-        return res(ctx.json(removeInternalProperties(entity)))
+        return res(ctx.json(entity))
       }),
     ),
     rest.post(
       buildUrl(modelPath),
       withErrors<EntityInstance<Dictionary, ModelName>>((req, res, ctx) => {
         const createdEntity = model.create(req.body)
-        return res(
-          ctx.status(201),
-          ctx.json(removeInternalProperties(createdEntity)),
-        )
+        return res(ctx.status(201), ctx.json(createdEntity))
       }),
     ),
     rest.put(
@@ -144,7 +140,7 @@ export function generateRestHandlers<
           data: req.body,
         })!
 
-        return res(ctx.json(removeInternalProperties(updatedEntity)))
+        return res(ctx.json(updatedEntity))
       }),
     ),
     rest.delete(
@@ -164,7 +160,7 @@ export function generateRestHandlers<
           where: where as any,
         })!
 
-        return res(ctx.json(removeInternalProperties(deletedEntity)))
+        return res(ctx.json(deletedEntity))
       }),
     ),
   ]

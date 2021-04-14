@@ -36,6 +36,7 @@ export interface Relation {
   kind: RelationKind
   modelName: string
   unique: boolean
+  primaryKey: PrimaryKeyType
 }
 
 /**
@@ -79,8 +80,12 @@ export interface InternalEntityProperties<ModelName extends KeyType> {
 export type EntityInstance<
   Dictionary extends Record<string, any>,
   ModelName extends keyof Dictionary
-> = InternalEntityProperties<ModelName> &
-  Value<Dictionary[ModelName], Dictionary>
+> = Value<Dictionary[ModelName], Dictionary>
+
+export type InternalEntityInstance<
+  Dictionary extends Record<string, any>,
+  ModelName extends keyof Dictionary
+> = InternalEntityProperties<ModelName> & EntityInstance<Dictionary, ModelName>
 
 export type ModelDictionary = Limit<Record<string, Record<string, any>>>
 
@@ -118,7 +123,7 @@ export interface ModelAPI<
    */
   findFirst(
     query: QuerySelector<Value<Dictionary[ModelName], Dictionary>>,
-  ): EntityInstance<Dictionary, ModelName>
+  ): EntityInstance<Dictionary, ModelName> | null
   /**
    * Find multiple entities.
    */
@@ -145,7 +150,7 @@ export interface ModelAPI<
     query: QuerySelector<Value<Dictionary[ModelName], Dictionary>> & {
       data: Partial<UpdateManyValue<Dictionary[ModelName], Dictionary>>
     },
-  ): Value<Dictionary[ModelName], Dictionary>[] | null
+  ): EntityInstance<Dictionary, ModelName>[] | null
   /**
    * Delete a single entity.
    */
