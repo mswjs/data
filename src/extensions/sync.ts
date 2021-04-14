@@ -40,7 +40,13 @@ export function sync(db: Database<any>) {
     'message',
     (event: MessageEvent<DatabaseMessageEventData<any>>) => {
       const { operationType, payload } = event.data
-      console.warn('[sync]', operationType, payload)
+      const [sourceId, ...args] = payload
+
+      // Ignore messages originating from unrelated databases.
+      // Useful in case of multiple databases on the same page.
+      if (db.id !== sourceId) {
+        return
+      }
 
       // Remove database event listener for the signaled operation
       // to prevent an infinite loop when applying this operation.
@@ -49,7 +55,7 @@ export function sync(db: Database<any>) {
       // Apply the database operation signaled from another client
       // to the current database instance.
       // @ts-ignore
-      db[operationType](...payload)
+      db[operationType](...args)
 
       // Re-attach database event listeners.
       restoreListeners()
