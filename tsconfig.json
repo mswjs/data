@@ -6,7 +6,11 @@
     "declaration": true,
     "moduleResolution": "node",
     "downlevelIteration": true,
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "baseUrl": ".",
+    "paths": {
+      "@mswjs/data": ["."]
+    }
   },
   "include": ["src/**/*.ts"],
   "exclude": ["node_modules"]

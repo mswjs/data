@@ -1,5 +1,5 @@
 import { random } from 'faker'
-import { factory, primaryKey } from '../../src'
+import { factory, primaryKey } from '@mswjs/data'
 import { identity } from '../../src/utils/identity'
 
 test('creates a new entity', () => {

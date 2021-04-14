@@ -1,7 +1,7 @@
 import fetch from 'node-fetch'
 import { random } from 'faker'
 import { setupServer } from 'msw/node'
-import { factory, primaryKey, drop } from '../../src'
+import { factory, primaryKey, drop } from '@mswjs/data'
 
 const db = factory({
   user: {

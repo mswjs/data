@@ -1,4 +1,4 @@
-import { primaryKey } from '../../src'
+import { primaryKey } from '@mswjs/data'
 import { Database } from '../../src/db/Database'
 import { createModel } from '../../src/model/createModel'
 

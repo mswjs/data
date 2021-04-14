@@ -7,12 +7,13 @@
   "author": "Artem Zakharchenko",
   "license": "MIT",
   "scripts": {
+    "start": "tsc -w",
     "format": "prettier src/**/*.ts --write",
     "test": "jest",
     "test:ts": "tsc -p test/typings/tsconfig.json",
     "clean": "rimraf ./lib",
     "build": "yarn clean && tsc",
-    "prepublishOnly": "yarn test && yarn test:ts && yarn build"
+    "prepublishOnly": "yarn build && yarn test:ts && yarn test"
   },
   "files": [
     "lib",
