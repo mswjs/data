@@ -1,3 +1,4 @@
+import { isBrowser, supports } from 'src/utils/env'
 import { Database, DatabaseEventsMap } from '../db/Database'
 
 interface DatabaseMessageEventData<
@@ -27,10 +28,7 @@ function removeListeners<Event extends keyof DatabaseEventsMap>(
  * Synchronizes database operations across multiple clients.
  */
 export function sync(db: Database<any>) {
-  const IS_BROWSER = typeof window !== 'undefined'
-  const SUPPORTS_BROADCAST_CHANNEL = typeof BroadcastChannel !== 'undefined'
-
-  if (!IS_BROWSER || !SUPPORTS_BROADCAST_CHANNEL) {
+  if (!isBrowser() || !supports.broadcastChannel()) {
     return
   }
 
