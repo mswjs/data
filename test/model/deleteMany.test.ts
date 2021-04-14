@@ -30,7 +30,7 @@ test('deletes all entites that match the query', () => {
   })
 
   const deletedUsers = db.user.deleteMany({
-    which: {
+    where: {
       followersCount: {
         between: [11, 20],
       },
@@ -42,7 +42,7 @@ test('deletes all entites that match the query', () => {
   expect(deletedUserNames).toEqual(['Kate', 'Alice'])
 
   const queriedDeletedUsers = db.user.findMany({
-    which: {
+    where: {
       followersCount: {
         between: [11, 20],
       },
@@ -68,7 +68,7 @@ test('throws an exception when no entities match the query in a strict mode', ()
 
   const error = getThrownError(() => {
     db.user.deleteMany({
-      which: {
+      where: {
         id: {
           in: ['abc-123', 'def-456'],
         },
@@ -104,7 +104,7 @@ test('does nothing when no entities match the query', () => {
   })
 
   const deletedUsers = db.user.deleteMany({
-    which: {
+    where: {
       followersCount: {
         gte: 1000,
       },

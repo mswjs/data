@@ -41,7 +41,7 @@ db.user.create({
 })
 
 db.user.findFirst({
-  which: {
+  where: {
     // @ts-expect-error Unknown model property.
     unknownField: {
       equals: 2,
@@ -50,7 +50,7 @@ db.user.findFirst({
 })
 
 db.user.findFirst({
-  which: {
+  where: {
     id: {
       equals: 'abc-123',
       // @ts-expect-error Only string-based comparators are available.
@@ -60,7 +60,7 @@ db.user.findFirst({
 })
 
 db.user.update({
-  which: {
+  where: {
     id: {
       equals: 'abc-123',
     },
@@ -73,7 +73,7 @@ db.user.update({
 })
 
 db.user.update({
-  which: {
+  where: {
     id: {
       equals: 'abc-123',
     },

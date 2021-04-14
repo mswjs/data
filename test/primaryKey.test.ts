@@ -22,7 +22,7 @@ test('supports querying by the primary key', () => {
   db.user.create()
 
   const userResult = db.user.findFirst({
-    which: {
+    where: {
       id: {
         equals: user.id,
       },
@@ -53,7 +53,7 @@ test('supports querying by the range of primary keys', () => {
   db.user.create()
 
   const results = db.user.findMany({
-    which: {
+    where: {
       id: {
         in: ['abc-123', 'def-456'],
       },
@@ -94,7 +94,7 @@ test('supports querying by the primary key and additional properties', () => {
   })
 
   const results = db.user.findMany({
-    which: {
+    where: {
       id: {
         in: ['abc-123', 'def-456'],
       },

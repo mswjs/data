@@ -17,7 +17,7 @@ test('deletes a unique entity that matches the query', () => {
   db.user.create({ firstName: 'Alice' })
 
   const deletedUser = db.user.delete({
-    which: {
+    where: {
       id: {
         equals: userId,
       },
@@ -45,7 +45,7 @@ test('deletes the first entity that matches the query', () => {
   db.user.create({ firstName: 'Alice', followersCount: 15 })
 
   const deletedUser = db.user.delete({
-    which: {
+    where: {
       followersCount: {
         gt: 10,
       },
@@ -54,7 +54,7 @@ test('deletes the first entity that matches the query', () => {
   expect(deletedUser).toHaveProperty('firstName', 'Kate')
 
   const deletedUserSearch = db.user.findFirst({
-    which: {
+    where: {
       firstName: {
         equals: 'Kate',
       },
@@ -78,7 +78,7 @@ test('throws an exception when no entities matches the query in strict mode', ()
 
   const error = getThrownError(() => {
     db.user.delete({
-      which: {
+      where: {
         id: {
           equals: 'abc-123',
         },
@@ -107,7 +107,7 @@ test('does nothing when no entity matches the query', () => {
   db.user.create({ firstName: 'John' })
 
   const deletedUser = db.user.delete({
-    which: {
+    where: {
       id: {
         equals: 'abc-123',
       },

@@ -14,7 +14,7 @@ export function compileQuery<Data extends Record<string, any>>(
   log(JSON.stringify(query))
 
   return (data: Data): boolean => {
-    return Object.entries(query.which)
+    return Object.entries(query.where)
       .map<boolean>(([propName, queryChunk]) => {
         const actualValue = data[propName]
 
@@ -44,14 +44,14 @@ export function compileQuery<Data extends Record<string, any>>(
                * @fixme Can assume `some`? Why not `every`?
                */
               return actualValue.some((value) => {
-                return compileQuery({ which: queryChunk })(value)
+                return compileQuery({ where: queryChunk })(value)
               })
             }
 
             // When the actual value is a resolved relational property reference,
             // execute the current query chunk on the referenced entity.
             if (actualValue.__type) {
-              return compileQuery({ which: queryChunk })(actualValue)
+              return compileQuery({ where: queryChunk })(actualValue)
             }
 
             const comparatorSet = getComparatorsForValue(actualValue)

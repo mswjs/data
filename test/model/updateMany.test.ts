@@ -25,7 +25,7 @@ test('derives updated value from the existing value', () => {
   })
 
   const updateMultiUsers = db.user.updateMany({
-    which: {
+    where: {
       role: {
         equals: 'Auditor',
       },
@@ -47,7 +47,7 @@ test('derives updated value from the existing value', () => {
   expect(roles).toEqual(['Auditor', 'Writer'])
 
   const userResult = db.user.findMany({
-    which: {
+    where: {
       role: {
         equals: 'Auditor',
       },
@@ -69,7 +69,7 @@ test('moves entities when they update primary keys', () => {
   db.user.create({ id: 'c' })
 
   db.user.updateMany({
-    which: {
+    where: {
       id: {
         in: ['a', 'b'],
       },
@@ -80,7 +80,7 @@ test('moves entities when they update primary keys', () => {
   })
 
   const updatedUsers = db.user.findMany({
-    which: {
+    where: {
       id: {
         in: ['a1', 'b1'],
       },
@@ -91,7 +91,7 @@ test('moves entities when they update primary keys', () => {
   expect(updatedUserIds).toEqual(['a1', 'b1'])
 
   const oldUsers = db.user.findMany({
-    which: {
+    where: {
       id: {
         in: ['a', 'b'],
       },
@@ -100,7 +100,7 @@ test('moves entities when they update primary keys', () => {
   expect(oldUsers).toHaveLength(0)
 
   const intactUser = db.user.findFirst({
-    which: {
+    where: {
       id: { equals: 'c' },
     },
   })
@@ -119,7 +119,7 @@ test('throws an exception when no entity matches the query in strict mode', () =
 
   const error = getThrownError(() => {
     db.user.updateMany({
-      which: {
+      where: {
         id: {
           in: ['abc-123', 'def-456'],
         },
@@ -163,7 +163,7 @@ test('should update many entities with primitive values', () => {
   })
 
   const updateMultiUsers = db.user.updateMany({
-    which: {
+    where: {
       role: {
         equals: 'Auditor',
       },
@@ -201,7 +201,7 @@ test('throw an error when trying entities using a key already used', () => {
 
   const error = getThrownError(() => {
     db.user.update({
-      which: {
+      where: {
         role: {
           equals: 'Auditor',
         },

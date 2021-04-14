@@ -2,18 +2,18 @@ import { PrimaryKeyType, Value } from '../glossary'
 
 export interface QuerySelector<EntityType extends Record<string, any>> {
   strict?: boolean
-  which: QuerySelectorWhich<EntityType>
+  where: QuerySelectorWhere<EntityType>
 }
 
 export type WeakQuerySelector<EntityType extends Record<string, any>> = Partial<
   QuerySelector<EntityType>
 >
 
-export type QuerySelectorWhich<EntityType extends Record<string, any>> = {
+export type QuerySelectorWhere<EntityType extends Record<string, any>> = {
   [K in keyof EntityType]?: Partial<GetQueryFor<EntityType[K]>>
 }
 
-export interface WeakQuerySelectorWhich<KeyType extends PrimaryKeyType> {
+export interface WeakQuerySelectorWhere<KeyType extends PrimaryKeyType> {
   [key: string]: Partial<GetQueryFor<KeyType>>
 }
 
@@ -58,13 +58,13 @@ export type GetQueryFor<
   : T extends Date
   ? DateQuery
   : T extends Array<infer U>
-  ? QuerySelector<U>['which']
+  ? QuerySelector<U>['where']
   : /**
    * Relational `oneOf`/`manyOf` invocation
    * resolves to the `Value` type.
    */
   T extends Value<any, any>
-  ? QuerySelector<T>['which']
+  ? QuerySelector<T>['where']
   : never
 
 export interface StringQuery {

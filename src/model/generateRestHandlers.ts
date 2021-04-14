@@ -10,7 +10,7 @@ import { GetQueryFor } from '../query/queryTypes'
 import { OperationErrorType, OperationError } from '../errors/OperationError'
 import { removeInternalProperties } from '../utils/removeInternalProperties'
 
-interface WeakQuerySelectorWhich<KeyType extends PrimaryKeyType> {
+interface WeakQuerySelectorWhere<KeyType extends PrimaryKeyType> {
   [key: string]: Partial<GetQueryFor<KeyType>>
 }
 
@@ -82,7 +82,7 @@ export function generateRestHandlers<
         const skip = parseInt(rawSkip ?? '0', 10)
         const take = rawTake == null ? rawTake : parseInt(rawTake, 10)
 
-        let options = { which: {} }
+        let options = { where: {} }
 
         if (take && !isNaN(take) && !isNaN(skip)) {
           options = Object.assign(options, { take, skip })
@@ -103,14 +103,14 @@ export function generateRestHandlers<
         RequestParams<PrimaryKeyType>
       >((req, res, ctx) => {
         const id = req.params[primaryKey]
-        const which: WeakQuerySelectorWhich<typeof primaryKey> = {
+        const where: WeakQuerySelectorWhere<typeof primaryKey> = {
           [primaryKey]: {
             equals: id,
           },
         }
         const entity = model.findFirst({
           strict: true,
-          which: which as any,
+          where: where as any,
         })
 
         return res(ctx.json(removeInternalProperties(entity)))
@@ -133,14 +133,14 @@ export function generateRestHandlers<
         RequestParams<PrimaryKeyType>
       >((req, res, ctx) => {
         const id = req.params[primaryKey]
-        const which: WeakQuerySelectorWhich<typeof primaryKey> = {
+        const where: WeakQuerySelectorWhere<typeof primaryKey> = {
           [primaryKey]: {
             equals: id,
           },
         }
         const updatedEntity = model.update({
           strict: true,
-          which: which as any,
+          where: where as any,
           data: req.body,
         })!
 
@@ -154,14 +154,14 @@ export function generateRestHandlers<
         RequestParams<PrimaryKeyType>
       >((req, res, ctx) => {
         const id = req.params[primaryKey]
-        const which: WeakQuerySelectorWhich<typeof primaryKey> = {
+        const where: WeakQuerySelectorWhere<typeof primaryKey> = {
           [primaryKey]: {
             equals: id,
           },
         }
         const deletedEntity = model.delete({
           strict: true,
-          which: which as any,
+          where: where as any,
         })!
 
         return res(ctx.json(removeInternalProperties(deletedEntity)))

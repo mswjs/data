@@ -15,7 +15,7 @@ test('returns the only matching entity', () => {
   db.user.create()
 
   const user = db.user.findFirst({
-    which: {
+    where: {
       id: {
         equals: userId,
       },
@@ -37,7 +37,7 @@ test('returns the first entity among multiple matching entities', () => {
   db.user.create({ followersCount: 15 })
 
   const user = db.user.findFirst({
-    which: {
+    where: {
       followersCount: {
         gt: 10,
       },
@@ -56,7 +56,7 @@ test('throws an exception when no results in strict mode', () => {
 
   const error = getThrownError(() => {
     db.user.findFirst({
-      which: {
+      where: {
         id: {
           equals: 'abc-123',
         },
@@ -82,7 +82,7 @@ test('returns null when found no matching entities', () => {
   db.user.create()
 
   const user = db.user.findFirst({
-    which: {
+    where: {
       id: {
         equals: 'abc-123',
       },

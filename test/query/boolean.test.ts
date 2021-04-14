@@ -28,7 +28,7 @@ test('queries entities based on a boolean value', () => {
   })
 
   const firstPublished = db.book.findFirst({
-    which: {
+    where: {
       published: {
         equals: true,
       },
@@ -37,7 +37,7 @@ test('queries entities based on a boolean value', () => {
   expect(firstPublished).toHaveProperty('title', 'New Spring')
 
   const allUnpublished = db.book.findMany({
-    which: {
+    where: {
       published: {
         notEquals: true,
       },

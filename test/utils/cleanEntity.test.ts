@@ -16,7 +16,7 @@ beforeAll(() => {
 })
 
 it('removes internal properties from an entity', () => {
-  const user = db.user.findFirst({ which: { id: { equals: 'abc-123' } } })
+  const user = db.user.findFirst({ where: { id: { equals: 'abc-123' } } })
   expect(removeInternalProperties(user)).toEqual({
     id: 'abc-123',
     firstName: 'John',

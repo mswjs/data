@@ -108,7 +108,7 @@ function createModelApi<
       invariant(
         query.strict && !firstResult,
         `Failed to execute "findFirst" on the "${modelName}" model: no entity found matching the query "${JSON.stringify(
-          query.which,
+          query.where,
         )}".`,
         new OperationError(OperationErrorType.EntityNotFound),
       )
@@ -121,7 +121,7 @@ function createModelApi<
       invariant(
         query.strict && results.length === 0,
         `Failed to execute "findMany" on the "${modelName}" model: no entities found matching the query "${JSON.stringify(
-          query.which,
+          query.where,
         )}".`,
         new OperationError(OperationErrorType.EntityNotFound),
       )
@@ -138,7 +138,7 @@ function createModelApi<
         invariant(
           strict,
           `Failed to execute "update" on the "${modelName}" model: no entity found matching the query "${JSON.stringify(
-            query.which,
+            query.where,
           )}".`,
           new OperationError(OperationErrorType.EntityNotFound),
         )
@@ -173,7 +173,7 @@ function createModelApi<
         invariant(
           strict,
           `Failed to execute "updateMany" on the "${modelName}" model: no entities found matching the query "${JSON.stringify(
-            query.which,
+            query.where,
           )}".`,
           new OperationError(OperationErrorType.EntityNotFound),
         )
@@ -191,7 +191,7 @@ function createModelApi<
           invariant(
             db.has(modelName, nextRecord[prevRecord.__primaryKey]),
             `Failed to execute "updateMany" on the "${modelName}" model: no entities found matching the query "${JSON.stringify(
-              query.which,
+              query.where,
             )}".`,
             new OperationError(OperationErrorType.EntityNotFound),
           )
@@ -210,7 +210,7 @@ function createModelApi<
         invariant(
           strict,
           `Failed to execute "delete" on the "${modelName}" model: no entity found matching the query "${JSON.stringify(
-            query.which,
+            query.where,
           )}".`,
           new OperationError(OperationErrorType.EntityNotFound),
         )
@@ -228,7 +228,7 @@ function createModelApi<
         invariant(
           strict,
           `Failed to execute "deleteMany" on the "${modelName}" model: no entities found matching the query "${JSON.stringify(
-            query.which,
+            query.where,
           )}".`,
           new OperationError(OperationErrorType.EntityNotFound),
         )

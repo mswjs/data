@@ -63,7 +63,7 @@ test('supports querying through one-to-many relation', () => {
   })
 
   const users = db.user.findMany({
-    which: {
+    where: {
       posts: {
         title: {
           in: ['First post', 'Second post'],

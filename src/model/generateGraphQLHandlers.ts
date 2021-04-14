@@ -119,7 +119,7 @@ export function declarationToFields(
       types.inputFields[key] = { type: valueType }
 
       // Query input fields describe a type that is used
-      // as a "which" query, with its comparator function types.
+      // as a "where" query, with its comparator function types.
       types.queryInputFields[key] = { type: queryType }
 
       return types
@@ -175,10 +175,10 @@ export function generateGraphQLHandlers<
         [modelName]: {
           type: EntityType,
           args: {
-            which: { type: EntityQueryInputType },
+            where: { type: EntityQueryInputType },
           },
           resolve(_, args) {
-            return model.findFirst({ which: args.which })
+            return model.findFirst({ where: args.where })
           },
         },
         // Get all entities.
@@ -186,14 +186,14 @@ export function generateGraphQLHandlers<
           type: new GraphQLList(EntityType),
           args: {
             ...paginationArgs,
-            which: { type: EntityQueryInputType },
+            where: { type: EntityQueryInputType },
           },
           resolve(_, args) {
             const shouldQuery = Object.keys(args).length > 0
 
             return shouldQuery
               ? model.findMany({
-                  which: args.which,
+                  where: args.where,
                   skip: args.skip,
                   take: args.take,
                   cursor: args.cursor,
@@ -220,12 +220,12 @@ export function generateGraphQLHandlers<
         [`update${capitalModelName}`]: {
           type: EntityType,
           args: {
-            which: { type: EntityQueryInputType },
+            where: { type: EntityQueryInputType },
             data: { type: EntityInputType },
           },
           resolve(_, args) {
             return model.update({
-              which: args.which,
+              where: args.where,
               data: args.data,
             })
           },
@@ -234,12 +234,12 @@ export function generateGraphQLHandlers<
         [`update${capitalize(pluralModelName)}`]: {
           type: new GraphQLList(EntityType),
           args: {
-            which: { type: EntityQueryInputType },
+            where: { type: EntityQueryInputType },
             data: { type: EntityInputType },
           },
           resolve(_, args) {
             return model.updateMany({
-              which: args.which,
+              where: args.where,
               data: args.data,
             })
           },
@@ -248,20 +248,20 @@ export function generateGraphQLHandlers<
         [`delete${capitalModelName}`]: {
           type: EntityType,
           args: {
-            which: { type: EntityQueryInputType },
+            where: { type: EntityQueryInputType },
           },
           resolve(_, args) {
-            return model.delete({ which: args.which })
+            return model.delete({ where: args.where })
           },
         },
         // Delete multiple entities.
         [`delete${capitalize(pluralModelName)}`]: {
           type: new GraphQLList(EntityType),
           args: {
-            which: { type: EntityQueryInputType },
+            where: { type: EntityQueryInputType },
           },
           resolve(_, args) {
-            return model.deleteMany({ which: args.which })
+            return model.deleteMany({ where: args.where })
           },
         },
       },

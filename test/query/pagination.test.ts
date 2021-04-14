@@ -19,7 +19,7 @@ test('supports offset-based pagination', () => {
   db.book.create({ title: 'Irrelevant Book #3', category: 'Science' })
 
   const firstPage = db.book.findMany({
-    which: { category: { equals: 'Fantasy' } },
+    where: { category: { equals: 'Fantasy' } },
     take: 2,
   })
   expect(firstPage).toHaveLength(2)
@@ -27,7 +27,7 @@ test('supports offset-based pagination', () => {
   expect(firstPageBooks).toEqual(['Magician', 'The Lord of the Rings'])
 
   const secondPage = db.book.findMany({
-    which: { category: { equals: 'Fantasy' } },
+    where: { category: { equals: 'Fantasy' } },
     skip: 2,
     take: 2,
   })
@@ -57,7 +57,7 @@ test('supports cursor-based pagination', () => {
   db.book.create({ title: 'Irrelevant Book #3', category: 'Science' })
 
   const firstPage = db.book.findMany({
-    which: { category: { equals: 'Fantasy' } },
+    where: { category: { equals: 'Fantasy' } },
     take: 2,
     cursor: null,
   })
@@ -66,7 +66,7 @@ test('supports cursor-based pagination', () => {
   expect(firstPageBooks).toEqual(['Magician', 'The Lord of the Rings'])
 
   const secondPage = db.book.findMany({
-    which: { category: { equals: 'Fantasy' } },
+    where: { category: { equals: 'Fantasy' } },
     take: 2,
     cursor: firstPage[firstPage.length - 1].id,
   })
@@ -93,7 +93,7 @@ test('returns an empty list given invalid cursor', () => {
   db.book.create({ title: 'Irrelevant Book #2', category: 'Science' })
 
   const firstPage = db.book.findMany({
-    which: { category: { equals: 'Fantasy' } },
+    where: { category: { equals: 'Fantasy' } },
     take: 2,
     cursor: 'abc-invalid-cursor',
   })

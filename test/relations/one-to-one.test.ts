@@ -47,7 +47,7 @@ test('supports querying through a one-to-one relational property', () => {
   })
 
   const capital = db.capital.findFirst({
-    which: {
+    where: {
       country: {
         name: {
           equals: 'United States of America',
