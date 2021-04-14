@@ -9,7 +9,8 @@ test('emits the "create" event when a new entity is created', (done) => {
     },
   })
 
-  db.events.on('create', (modelName, entity, primaryKey) => {
+  db.events.on('create', (id, modelName, entity, primaryKey) => {
+    expect(id).toEqual(db.id)
     expect(modelName).toEqual('user')
     expect(entity).toEqual({
       __type: 'user',
@@ -31,7 +32,8 @@ test('emits the "update" event when an existing entity is updated', (done) => {
     },
   })
 
-  db.events.on('update', (modelName, prevEntity, nextEntity) => {
+  db.events.on('update', (id, modelName, prevEntity, nextEntity) => {
+    expect(id).toEqual(db.id)
     expect(modelName).toEqual('user')
     expect(prevEntity).toEqual({
       __type: 'user',
@@ -67,7 +69,8 @@ test('emits the "delete" event when an existing entity is deleted', (done) => {
     },
   })
 
-  db.events.on('delete', (modelName, primaryKey) => {
+  db.events.on('delete', (id, modelName, primaryKey) => {
+    expect(id).toEqual(db.id)
     expect(modelName).toEqual('user')
     expect(primaryKey).toEqual('abc-123')
     done()

@@ -1,3 +1,4 @@
+import md5 from 'md5'
 import { StrictEventEmitter } from 'strict-event-emitter'
 import { EntityInstance, ModelDictionary, PrimaryKeyType } from '../glossary'
 
@@ -7,6 +8,7 @@ type Models<Dictionary extends ModelDictionary> = Record<
 >
 
 export type DatabaseMethodToEventFn<Method extends (...args: any[]) => any> = (
+  id: string,
   ...args: Parameters<Method>
 ) => void
 
@@ -16,7 +18,10 @@ export interface DatabaseEventsMap {
   delete: DatabaseMethodToEventFn<Database<any>['delete']>
 }
 
+let callOrder = 0
+
 export class Database<Dictionary extends ModelDictionary> {
+  public id: string
   public events: StrictEventEmitter<DatabaseEventsMap>
   private models: Models<ModelDictionary>
 
@@ -29,6 +34,21 @@ export class Database<Dictionary extends ModelDictionary> {
       },
       {},
     )
+
+    callOrder++
+    this.id = this.generateId()
+  }
+
+  /**
+   * Generates a unique MD5 hash based on the database
+   * module location and invocation order. Used to reproducibly
+   * identify a database instance among sibling instances.
+   */
+  private generateId() {
+    const { stack } = new Error()
+    const callFrame = stack?.split('\n')[4]
+    const salt = `${callOrder}-${callFrame?.trim()}`
+    return md5(salt)
   }
 
   getModel(name: string) {
@@ -43,7 +63,7 @@ export class Database<Dictionary extends ModelDictionary> {
     const primaryKey =
       customPrimaryKey || (entity[entity.__primaryKey] as string)
 
-    this.events.emit('create', modelName, entity, customPrimaryKey)
+    this.events.emit('create', this.id, modelName, entity, customPrimaryKey)
 
     return this.getModel(modelName).set(primaryKey, entity)
   }
@@ -61,7 +81,7 @@ export class Database<Dictionary extends ModelDictionary> {
     }
 
     this.create(modelName, nextEntity, nextPrimaryKey as string)
-    this.events.emit('update', modelName, prevEntity, nextEntity)
+    this.events.emit('update', this.id, modelName, prevEntity, nextEntity)
   }
 
   has(modelName: string, primaryKey: PrimaryKeyType) {
@@ -74,7 +94,7 @@ export class Database<Dictionary extends ModelDictionary> {
 
   delete(modelName: string, primaryKey: PrimaryKeyType) {
     this.getModel(modelName).delete(primaryKey)
-    this.events.emit('delete', modelName, primaryKey)
+    this.events.emit('delete', this.id, modelName, primaryKey)
   }
 
   listEntities(modelName: string) {
