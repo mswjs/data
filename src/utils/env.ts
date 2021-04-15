@@ -3,6 +3,9 @@ export function isBrowser() {
 }
 
 export const supports = {
+  sessionStorage() {
+    return typeof sessionStorage !== 'undefined'
+  },
   broadcastChannel() {
     return typeof BroadcastChannel !== 'undefined'
   },

@@ -17,6 +17,7 @@ import { generateRestHandlers } from './model/generateRestHandlers'
 import { generateGraphQLHandlers } from './model/generateGraphQLHandlers'
 import { sync } from './extensions/sync'
 import { removeInternalProperties } from './utils/removeInternalProperties'
+import { persist } from './extensions/persist'
 
 /**
  * Create a database with the given models.
@@ -45,6 +46,7 @@ function createModelApi<
   const { primaryKey } = parsedModel
 
   sync(db)
+  persist(db)
 
   if (typeof primaryKey === 'undefined') {
     throw new OperationError(

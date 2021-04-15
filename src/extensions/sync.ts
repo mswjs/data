@@ -1,5 +1,5 @@
-import { isBrowser, supports } from 'src/utils/env'
 import { Database, DatabaseEventsMap } from '../db/Database'
+import { isBrowser, supports } from '../utils/env'
 
 interface DatabaseMessageEventData<
   OperationType extends keyof DatabaseEventsMap
