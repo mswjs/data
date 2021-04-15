@@ -7,6 +7,7 @@ const db = factory({
   user: {
     id: primaryKey(datatype.uuid),
     firstName: name.firstName,
+    lastName: name.lastName,
   },
 })
 
@@ -44,10 +45,12 @@ describe('GET /users', () => {
     db.user.create({
       id: 'abc-123',
       firstName: 'John',
+      lastName: 'White',
     })
     db.user.create({
       id: 'def-456',
       firstName: 'Kate',
+      lastName: 'Moen',
     })
 
     const res = await fetch('http://localhost/users')
@@ -58,10 +61,12 @@ describe('GET /users', () => {
       {
         id: 'abc-123',
         firstName: 'John',
+        lastName: 'White',
       },
       {
         id: 'def-456',
         firstName: 'Kate',
+        lastName: 'Moen',
       },
     ])
   })
@@ -71,18 +76,22 @@ describe('GET /users', () => {
     db.user.create({
       id: 'abc-123',
       firstName: 'John',
+      lastName: 'White',
     })
     db.user.create({
       id: 'def-456',
       firstName: 'Kate',
+      lastName: 'Moen',
     })
     db.user.create({
       id: 'ghi-789',
       firstName: 'Joseph',
+      lastName: 'Sipes',
     })
     db.user.create({
       id: 'xyz-321',
       firstName: 'Eva',
+      lastName: 'Grant',
     })
 
     const res = await fetch('http://localhost/users?skip=1&take=2')
@@ -92,10 +101,12 @@ describe('GET /users', () => {
       {
         id: 'def-456',
         firstName: 'Kate',
+        lastName: 'Moen',
       },
       {
         id: 'ghi-789',
         firstName: 'Joseph',
+        lastName: 'Sipes',
       },
     ])
   })
@@ -105,18 +116,22 @@ describe('GET /users', () => {
     db.user.create({
       id: 'abc-123',
       firstName: 'John',
+      lastName: 'White',
     })
     db.user.create({
       id: 'def-456',
       firstName: 'Kate',
+      lastName: 'Moen',
     })
     db.user.create({
       id: 'ghi-789',
       firstName: 'Joseph',
+      lastName: 'Sipes',
     })
     db.user.create({
       id: 'xyz-321',
       firstName: 'Eva',
+      lastName: 'Grant',
     })
 
     const res = await fetch('http://localhost/users?cursor=def-456&take=2')
@@ -126,10 +141,72 @@ describe('GET /users', () => {
       {
         id: 'ghi-789',
         firstName: 'Joseph',
+        lastName: 'Sipes',
       },
       {
         id: 'xyz-321',
         firstName: 'Eva',
+        lastName: 'Grant',
+      },
+    ])
+  })
+
+  it('return filtered entities', async () => {
+    server.use(...db.user.toHandlers('rest', 'http://localhost'))
+    db.user.create({
+      id: 'abc-123',
+      firstName: 'John',
+      lastName: 'White',
+    })
+    db.user.create({
+      id: 'def-456',
+      firstName: 'Kate',
+      lastName: 'Moen',
+    })
+    db.user.create({
+      id: 'def-789',
+      firstName: 'Kate',
+      lastName: 'Hilll',
+    })
+    const res = await fetch(
+      'http://localhost/users?firstName=Kate&lastName=Moen',
+    )
+    const users = await res.json()
+
+    expect(users).toEqual([
+      {
+        id: 'def-456',
+        firstName: 'Kate',
+        lastName: 'Moen',
+      },
+    ])
+  })
+
+  it('return all entities when wrong filter param is provided', async () => {
+    server.use(...db.user.toHandlers('rest', 'http://localhost'))
+    db.user.create({
+      id: 'abc-123',
+      firstName: 'John',
+      lastName: 'White',
+    })
+    db.user.create({
+      id: 'def-456',
+      firstName: 'Kate',
+      lastName: 'Moen',
+    })
+    const res = await fetch('http://localhost/users?surname=Kate')
+    const users = await res.json()
+
+    expect(users).toEqual([
+      {
+        id: 'abc-123',
+        firstName: 'John',
+        lastName: 'White',
+      },
+      {
+        id: 'def-456',
+        firstName: 'Kate',
+        lastName: 'Moen',
       },
     ])
   })
@@ -141,10 +218,12 @@ describe('GET /users/:id', () => {
     db.user.create({
       id: 'abc-123',
       firstName: 'John',
+      lastName: 'White',
     })
     db.user.create({
       id: 'def-456',
       firstName: 'Kate',
+      lastName: 'Moen',
     })
 
     const res = await fetch('http://localhost/users/def-456')
@@ -154,6 +233,7 @@ describe('GET /users/:id', () => {
     expect(user).toEqual({
       id: 'def-456',
       firstName: 'Kate',
+      lastName: 'Moen',
     })
   })
 
@@ -162,6 +242,7 @@ describe('GET /users/:id', () => {
     db.user.create({
       id: 'abc-123',
       firstName: 'John',
+      lastName: 'White',
     })
 
     const res = await fetch('http://localhost/users/xyz-321')
@@ -187,6 +268,7 @@ describe('POST /users', () => {
       body: JSON.stringify({
         id: 'abc-123',
         firstName: 'Joseph',
+        lastName: 'Sipes',
       }),
     })
     const user = await res.json()
@@ -195,6 +277,7 @@ describe('POST /users', () => {
     expect(user).toEqual({
       id: 'abc-123',
       firstName: 'Joseph',
+      lastName: 'Sipes',
     })
   })
 
@@ -230,6 +313,7 @@ describe('PUT /users/:id', () => {
     db.user.create({
       id: 'abc-123',
       firstName: 'John',
+      lastName: 'White',
     })
 
     const res = await fetch('http://localhost/users/abc-123', {
@@ -247,6 +331,7 @@ describe('PUT /users/:id', () => {
     expect(user).toEqual({
       id: 'abc-123',
       firstName: 'Joseph',
+      lastName: 'White',
     })
   })
 
@@ -276,10 +361,12 @@ describe('PUT /users/:id', () => {
     db.user.create({
       id: 'abc-123',
       firstName: 'John',
+      lastName: 'White',
     })
     db.user.create({
       id: 'def-456',
       firstName: 'Kate',
+      lastName: 'Moen',
     })
 
     const res = await fetch('http://localhost/users/abc-123', {
@@ -290,6 +377,7 @@ describe('PUT /users/:id', () => {
       body: JSON.stringify({
         id: 'def-456',
         firstName: 'Joseph',
+        lastName: 'Sipes',
       }),
     })
     const json = await res.json()
@@ -308,10 +396,12 @@ describe('DELETE /users/:id', () => {
     db.user.create({
       id: 'abc-123',
       firstName: 'John',
+      lastName: 'White',
     })
     db.user.create({
       id: 'def-456',
       firstName: 'Kate',
+      lastName: 'Moen',
     })
 
     const res = await fetch('http://localhost/users/def-456', {
@@ -322,6 +412,7 @@ describe('DELETE /users/:id', () => {
     expect(user).toEqual({
       id: 'def-456',
       firstName: 'Kate',
+      lastName: 'Moen',
     })
 
     const allUsers = await fetch('http://localhost/users').then((res) =>
@@ -331,6 +422,7 @@ describe('DELETE /users/:id', () => {
       {
         id: 'abc-123',
         firstName: 'John',
+        lastName: 'White',
       },
     ])
   })
