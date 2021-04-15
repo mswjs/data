@@ -1,8 +1,15 @@
 import pluralize from 'pluralize'
 import { RestContext, RestRequest, ResponseResolver, rest } from 'msw'
-import { Entity, ModelDictionary, ModelAPI, PrimaryKeyType } from '../glossary'
-import { GetQueryFor } from '../query/queryTypes'
+import {
+  Entity,
+  ModelDictionary,
+  ModelAPI,
+  PrimaryKeyType,
+  ModelDefinition,
+} from '../glossary'
+import { GetQueryFor, QuerySelectorWhere } from '../query/queryTypes'
 import { OperationErrorType, OperationError } from '../errors/OperationError'
+import { findPrimaryKey } from '../utils/findPrimaryKey'
 
 interface WeakQuerySelectorWhere<KeyType extends PrimaryKeyType> {
   [key: string]: Partial<GetQueryFor<KeyType>>
@@ -53,15 +60,31 @@ export function withErrors<RequestBodyType = any, RequestParamsType = any>(
   }
 }
 
+function getFilters(
+  searchParams: URLSearchParams,
+  definition: ModelDefinition,
+): QuerySelectorWhere<any> {
+  const filters: QuerySelectorWhere<any> = {}
+  searchParams.forEach((value, key) => {
+    if (definition[key]) {
+      filters[key] = {
+        equals: value,
+      }
+    }
+  })
+  return filters
+}
+
 export function generateRestHandlers<
   Dictionary extends ModelDictionary,
   ModelName extends string
 >(
   modelName: ModelName,
-  primaryKey: PrimaryKeyType,
+  modelDefinition: ModelDefinition,
   model: ModelAPI<Dictionary, ModelName>,
   baseUrl: string = '',
 ) {
+  const primaryKey = findPrimaryKey(modelDefinition)!
   const modelPath = pluralize(modelName)
   const buildUrl = createUrlBuilder(baseUrl)
 
@@ -72,12 +95,12 @@ export function generateRestHandlers<
         const cursor = req.url.searchParams.get('cursor')
         const rawSkip = req.url.searchParams.get('skip')
         const rawTake = req.url.searchParams.get('take')
+        const filters = getFilters(req.url.searchParams, modelDefinition)
 
         const skip = parseInt(rawSkip ?? '0', 10)
         const take = rawTake == null ? rawTake : parseInt(rawTake, 10)
 
-        let options = { where: {} }
-
+        let options = { where: filters }
         if (take && !isNaN(take) && !isNaN(skip)) {
           options = Object.assign(options, { take, skip })
         }
