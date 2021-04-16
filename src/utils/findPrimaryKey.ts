@@ -1,16 +1,16 @@
-import { ModelDeclaration, PrimaryKeyType } from '../glossary'
+import { ModelDefinition, PrimaryKeyType } from '../glossary'
 
 /**
- * Returns a primary key property name of the given model declaration.
+ * Returns a primary key property name of the given model definition.
  */
 export function findPrimaryKey(
-  declaration: ModelDeclaration,
+  definition: ModelDefinition,
 ): PrimaryKeyType | undefined {
-  for (const propName in declaration) {
-    const props = declaration[propName]
+  for (const propertyName in definition) {
+    const values = definition[propertyName]
 
-    if ('isPrimaryKey' in props) {
-      return propName
+    if ('isPrimaryKey' in values) {
+      return propertyName
     }
   }
 }

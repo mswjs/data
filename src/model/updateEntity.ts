@@ -11,7 +11,7 @@ export function updateEntity(
   return Object.entries(data).reduce<EntityInstance<any, any>>(
     (acc, [key, value]) => {
       // Ignore attempts to update entity with properties
-      // that were not specified in the model declaration.
+      // that were not specified in the model definition.
       if (!entity.hasOwnProperty(key)) {
         return acc
       }

@@ -5,35 +5,35 @@ import {
   RelationDefinition,
   ModelDictionary,
   Value,
-  ModelDeclaration,
+  ModelDefinition,
   PrimaryKeyType,
   EntityInstance,
 } from '../glossary'
 import { invariant } from '../utils/invariant'
 
-const log = debug('parseModelDeclaration')
+const log = debug('parseModelDefinition')
 
-interface ParsedModelDeclaration {
+interface ParsedModelDefinition {
   primaryKey?: PrimaryKeyType
   properties: Value<any, any>
   relations: Record<string, Relation<string>>
 }
 
-export function parseModelDeclaration<
+export function parseModelDefinition<
   Dictionary extends ModelDictionary,
   ModelName extends string
 >(
   modelName: ModelName,
-  declaration: ModelDeclaration,
+  definition: ModelDefinition,
   initialValues?: Partial<Value<Dictionary[ModelName], Dictionary>>,
-): ParsedModelDeclaration {
+): ParsedModelDefinition {
   log(
-    `parsing model declaration for "${modelName}" entity`,
-    declaration,
+    `parsing model definition for "${modelName}" entity`,
+    definition,
     initialValues,
   )
 
-  const result = Object.entries(declaration).reduce<ParsedModelDeclaration>(
+  const result = Object.entries(definition).reduce<ParsedModelDefinition>(
     (acc, [key, valueGetter]) => {
       const exactValue = initialValues?.[key]
       log(`initial value for key "${modelName}.${key}"`, exactValue)
@@ -41,7 +41,7 @@ export function parseModelDeclaration<
       if ('isPrimaryKey' in valueGetter) {
         invariant(
           !!acc.primaryKey,
-          `Failed to parse model declaration for "${modelName}": cannot specify more than one primary key for a model.`,
+          `Failed to parse model definition for "${modelName}": cannot specify more than one primary key for a model.`,
         )
 
         log(`using "${key}" as the primary key for "${modelName}"`)
@@ -66,7 +66,7 @@ export function parseModelDeclaration<
         return acc
       }
 
-      const relationDefinition = declaration[key] as RelationDefinition<
+      const relationDefinition = definition[key] as RelationDefinition<
         RelationKind.OneOf,
         ModelName
       >
@@ -136,7 +136,7 @@ export function parseModelDeclaration<
       )
 
       // When initial value is not provided, use the value getter function
-      // specified in the model declaration.
+      // specified in the model definition.
       acc.properties[key] = valueGetter()
       return acc
     },
@@ -147,10 +147,10 @@ export function parseModelDeclaration<
     },
   )
 
-  // Primary key is required on each model declaration.
+  // Primary key is required on each model definition.
   if (result.primaryKey == null) {
     throw new Error(
-      `Failed to parse model declaration for "${modelName}": primary key not found.`,
+      `Failed to parse model definition for "${modelName}": primary key not found.`,
     )
   }
 

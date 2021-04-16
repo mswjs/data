@@ -2,12 +2,12 @@ import {
   EntityInstance,
   FactoryAPI,
   ModelAPI,
-  ModelDeclaration,
+  ModelDefinition,
   ModelDictionary,
 } from './glossary'
 import { first } from './utils/first'
 import { executeQuery } from './query/executeQuery'
-import { parseModelDeclaration } from './model/parseModelDeclaration'
+import { parseModelDefinition } from './model/parseModelDefinition'
 import { createModel } from './model/createModel'
 import { invariant } from './utils/invariant'
 import { updateEntity } from './model/updateEntity'
@@ -39,12 +39,8 @@ export function factory<Dictionary extends ModelDictionary>(
 function createModelApi<
   Dictionary extends ModelDictionary,
   ModelName extends string
->(
-  modelName: ModelName,
-  declaration: ModelDeclaration,
-  db: Database<Dictionary>,
-) {
-  const primaryKey = findPrimaryKey(declaration)
+>(modelName: ModelName, definition: ModelDefinition, db: Database<Dictionary>) {
+  const primaryKey = findPrimaryKey(definition)
 
   sync(db)
 
@@ -52,23 +48,23 @@ function createModelApi<
     throw new OperationError(
       OperationErrorType.MissingPrimaryKey,
       `Failed to create a "${modelName}" model: none of the listed properties is marked as a primary key (${Object.keys(
-        declaration,
+        definition,
       ).join()}).`,
     )
   }
 
   const api: ModelAPI<Dictionary, ModelName> = {
     create(initialValues = {}) {
-      const { primaryKey, properties, relations } = parseModelDeclaration<
+      const { primaryKey, properties, relations } = parseModelDefinition<
         Dictionary,
         ModelName
-      >(modelName, declaration, initialValues)
+      >(modelName, definition, initialValues)
 
       if (typeof primaryKey === 'undefined') {
         throw new OperationError(
           OperationErrorType.MissingPrimaryKey,
           `Failed to create a "${modelName}" model: none of the listed properties is marked as a primary key (${Object.keys(
-            declaration,
+            definition,
           ).join()}).`,
         )
       }
@@ -244,7 +240,7 @@ function createModelApi<
     },
     toHandlers(type, baseUrl): any {
       if (type === 'graphql') {
-        return generateGraphQLHandlers(modelName, declaration, api, baseUrl)
+        return generateGraphQLHandlers(modelName, definition, api, baseUrl)
       }
 
       return generateRestHandlers(modelName, primaryKey, api, baseUrl)
