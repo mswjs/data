@@ -10,7 +10,7 @@ import {
   comparatorTypes,
   getGraphQLType,
   getQueryTypeByValueType,
-  declarationToFields,
+  definitionToFields,
 } from '../../src/model/generateGraphQLHandlers'
 
 describe('getGraphQLType', () => {
@@ -53,10 +53,10 @@ describe('getQueryTypeByValueType', () => {
   })
 })
 
-describe('declarationToFields', () => {
-  it('derives fields, input fields, and query input fields from a model declaration', () => {
+describe('definitionToFields', () => {
+  it('derives fields, input fields, and query input fields from a model definition', () => {
     expect(
-      declarationToFields({
+      definitionToFields({
         id: primaryKey(String),
         firstName: String,
         age: Number,

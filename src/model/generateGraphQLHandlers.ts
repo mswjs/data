@@ -16,7 +16,7 @@ import {
   GraphQLFieldConfigArgumentMap,
 } from 'graphql'
 import { GraphQLHandler, graphql } from 'msw'
-import { ModelAPI, ModelDeclaration, ModelDictionary } from '../glossary'
+import { ModelAPI, ModelDefinition, ModelDictionary } from '../glossary'
 import { capitalize } from '../utils/capitalize'
 import { QueryToComparator } from '../query/queryTypes'
 import { booleanComparators } from '../comparators/boolean'
@@ -102,10 +102,10 @@ export function getQueryTypeByValueType(
   }
 }
 
-export function declarationToFields(
-  declaration: ModelDeclaration,
+export function definitionToFields(
+  definition: ModelDefinition,
 ): GraphQLFieldsMap {
-  return Object.entries(declaration).reduce<GraphQLFieldsMap>(
+  return Object.entries(definition).reduce<GraphQLFieldsMap>(
     (types, [key, value]) => {
       const isPrimaryKey = 'isPrimaryKey' in value
       const valueType = isPrimaryKey ? GraphQLID : getGraphQLType(value)
@@ -137,15 +137,15 @@ export function generateGraphQLHandlers<
   ModelName extends string
 >(
   modelName: ModelName,
-  declaration: ModelDeclaration,
+  definition: ModelDefinition,
   model: ModelAPI<Dictionary, ModelName>,
   baseUrl: string = '',
 ): GraphQLHandler[] {
   const target = baseUrl ? graphql.link(baseUrl) : graphql
   const pluralModelName = pluralize(modelName)
   const capitalModelName = capitalize(modelName)
-  const { fields, inputFields, queryInputFields } = declarationToFields(
-    declaration,
+  const { fields, inputFields, queryInputFields } = definitionToFields(
+    definition,
   )
 
   const EntityType = new GraphQLObjectType({

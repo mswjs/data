@@ -24,7 +24,7 @@ $ npm install @mswjs/data --save-dev
 
 ### Describe data
 
-With this library, you're modeling data using the `factory` function. That function accepts an object where each key represents a _model name_ and the values are _model declarations_. A model declaration is an object where the keys represent model properties and the values are value getters.
+With this library, you're modeling data using the `factory` function. That function accepts an object where each key represents a _model name_ and the values are _model definitions_. A model definition is an object where the keys represent model properties and the values are value getters.
 
 ```js
 // src/mocks/db.js

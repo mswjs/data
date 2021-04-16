@@ -63,7 +63,7 @@ export type ManyOf<ModelName extends KeyType> = RelationDefinition<
   ModelName
 >
 
-export type ModelDeclaration = Record<
+export type ModelDefinition = Record<
   string,
   (() => BaseTypes) | OneOf<any> | ManyOf<any> | PrimaryKeyDeclaration
 >
