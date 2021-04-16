@@ -26,8 +26,16 @@ db.user.create({
 
 db.user.create({
   // @ts-expect-error Relational properties must reference
-  // a valida entity of that model.
+  // a valid entity of that model.
   country: 'Exact string',
+})
+
+db.user.create({
+  // @ts-expect-error Relational property must reference
+  // a valid entity, not a compatible non-entity object.
+  country: {
+    name: 'Not an actual entity',
+  },
 })
 
 db.user.create({
