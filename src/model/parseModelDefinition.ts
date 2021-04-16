@@ -126,7 +126,7 @@ export function parseModelDefinition<
 
       if ('kind' in valueGetter) {
         throw new Error(
-          `Failed to set "${modelName}.${key}" as its a relational property with no value.`,
+          `Failed to set "${modelName}.${key}" as it's a relational property with no value.`,
         )
       }
 
