@@ -11,6 +11,19 @@ import { GetQueryFor, QuerySelectorWhere } from '../query/queryTypes'
 import { OperationErrorType, OperationError } from '../errors/OperationError'
 import { findPrimaryKey } from '../utils/findPrimaryKey'
 
+enum HTTPErrorType {
+  BadRequest,
+}
+
+const ErrorType = { ...HTTPErrorType, ...OperationErrorType }
+
+class HTTPError extends OperationError<HTTPErrorType> {
+  constructor(type: HTTPErrorType, message?: string) {
+    super(type, message)
+    this.name = 'HTTPError'
+  }
+}
+
 interface WeakQuerySelectorWhere<KeyType extends PrimaryKeyType> {
   [key: string]: Partial<GetQueryFor<KeyType>>
 }
@@ -26,12 +39,16 @@ export function createUrlBuilder(baseUrl?: string) {
   }
 }
 
-export function getResponseStatusByErrorType(error: OperationError): number {
+export function getResponseStatusByErrorType(
+  error: OperationError | HTTPError,
+): number {
   switch (error.type) {
-    case OperationErrorType.EntityNotFound:
+    case ErrorType.EntityNotFound:
       return 404
-    case OperationErrorType.DuplicatePrimaryKey:
+    case ErrorType.DuplicatePrimaryKey:
       return 409
+    case ErrorType.BadRequest:
+      return 400
     default:
       return 500
   }
@@ -60,16 +77,27 @@ export function withErrors<RequestBodyType = any, RequestParamsType = any>(
   }
 }
 
-function getFilters(
-  searchParams: URLSearchParams,
+function getFilters<ModelName extends string>(
+  modelName: ModelName,
   definition: ModelDefinition,
+  searchParams: URLSearchParams,
 ): QuerySelectorWhere<any> {
+  const paginationKeys = ['cursor', 'skip', 'take']
   const filters: QuerySelectorWhere<any> = {}
   searchParams.forEach((value, key) => {
+    if (paginationKeys.includes(key)) {
+      return
+    }
+
     if (definition[key]) {
       filters[key] = {
         equals: value,
       }
+    } else {
+      throw new HTTPError(
+        HTTPErrorType.BadRequest,
+        `Failed to query the "${modelName}" model: unknown property "${key}".`,
+      )
     }
   })
   return filters
@@ -95,7 +123,11 @@ export function generateRestHandlers<
         const cursor = req.url.searchParams.get('cursor')
         const rawSkip = req.url.searchParams.get('skip')
         const rawTake = req.url.searchParams.get('take')
-        const filters = getFilters(req.url.searchParams, modelDefinition)
+        const filters = getFilters(
+          modelName,
+          modelDefinition,
+          req.url.searchParams,
+        )
 
         const skip = parseInt(rawSkip ?? '0', 10)
         const take = rawTake == null ? rawTake : parseInt(rawTake, 10)

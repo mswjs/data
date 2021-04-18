@@ -4,10 +4,10 @@ export enum OperationErrorType {
   EntityNotFound = 'EntityNotFound',
 }
 
-export class OperationError extends Error {
-  public type: OperationErrorType
+export class OperationError<T = OperationErrorType> extends Error {
+  public type: T
 
-  constructor(type: OperationErrorType, message?: string) {
+  constructor(type: T, message?: string) {
     super(message)
     this.name = 'OperationError'
     this.type = type
