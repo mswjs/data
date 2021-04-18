@@ -195,20 +195,13 @@ describe('GET /users', () => {
       lastName: 'Moen',
     })
     const res = await fetch('http://localhost/users?surname=Kate')
-    const users = await res.json()
 
-    expect(users).toEqual([
-      {
-        id: 'abc-123',
-        firstName: 'John',
-        lastName: 'White',
-      },
-      {
-        id: 'def-456',
-        firstName: 'Kate',
-        lastName: 'Moen',
-      },
-    ])
+    const json = await res.json()
+
+    expect(res.status).toEqual(400)
+    expect(json).toEqual({
+      message: 'Failed to query the "user" model: unknown property "surname".',
+    })
   })
 })
 
