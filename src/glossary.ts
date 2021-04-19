@@ -129,7 +129,7 @@ export interface ModelAPI<
   /**
    * Return all entities of the current model.
    */
-  getAll(): EntityInstance<Limit<Record<string, Record<string, any>>>, any>[]
+  getAll(): EntityInstance<Dictionary, ModelName>[]
   /**
    * Update a single entity with the next data.
    */
