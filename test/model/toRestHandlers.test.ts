@@ -219,7 +219,7 @@ describe('POST /users', () => {
     expect(res.status).toEqual(409)
     expect(json).toEqual({
       message:
-        'Failed to create "user": entity with the primary key "abc-123" ("id") already exists.',
+        'Failed to create a "user" entity: an entity with the same primary key "abc-123" ("id") already exists.',
     })
   })
 })

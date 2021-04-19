@@ -1,12 +1,14 @@
 import { primaryKey } from '@mswjs/data'
 import { Database } from '../../src/db/Database'
 import { createModel } from '../../src/model/createModel'
+import { parseModelDefinition } from '../../src/model/parseModelDefinition'
 
 test('emits the "create" event when a new entity is created', (done) => {
+  const userDefinition = {
+    id: primaryKey(String),
+  }
   const db = new Database({
-    user: {
-      id: primaryKey(String),
-    },
+    user: userDefinition,
   })
 
   db.events.on('create', (id, modelName, entity, primaryKey) => {
@@ -21,15 +23,27 @@ test('emits the "create" event when a new entity is created', (done) => {
     done()
   })
 
-  db.create('user', createModel('user', 'id', { id: 'abc-123' }, {}, db))
+  db.create(
+    'user',
+    createModel(
+      'user',
+      userDefinition,
+      parseModelDefinition('user', userDefinition),
+      {
+        id: 'abc-123',
+      },
+      db,
+    ),
+  )
 })
 
 test('emits the "update" event when an existing entity is updated', (done) => {
+  const userDefinition = {
+    id: primaryKey(String),
+    firstName: String,
+  }
   const db = new Database({
-    user: {
-      id: primaryKey(String),
-      firstName: String,
-    },
+    user: userDefinition,
   })
 
   db.events.on('update', (id, modelName, prevEntity, nextEntity) => {
@@ -52,21 +66,34 @@ test('emits the "update" event when an existing entity is updated', (done) => {
 
   db.create(
     'user',
-    createModel('user', 'id', { id: 'abc-123', firstName: 'John' }, {}, db),
+    createModel(
+      'user',
+      userDefinition,
+      parseModelDefinition('user', userDefinition),
+      { id: 'abc-123', firstName: 'John' },
+      db,
+    ),
   )
   db.update(
     'user',
     db.getModel('user').get('abc-123')!,
-    createModel('user', 'id', { id: 'def-456', firstName: 'Kate' }, {}, db),
+    createModel(
+      'user',
+      userDefinition,
+      parseModelDefinition('user', userDefinition),
+      { id: 'def-456', firstName: 'Kate' },
+      db,
+    ),
   )
 })
 
 test('emits the "delete" event when an existing entity is deleted', (done) => {
+  const userDefinition = {
+    id: primaryKey(String),
+    firstName: String,
+  }
   const db = new Database({
-    user: {
-      id: primaryKey(String),
-      firstName: String,
-    },
+    user: userDefinition,
   })
 
   db.events.on('delete', (id, modelName, primaryKey) => {
@@ -78,7 +105,13 @@ test('emits the "delete" event when an existing entity is deleted', (done) => {
 
   db.create(
     'user',
-    createModel('user', 'id', { id: 'abc-123', firstName: 'John' }, {}, db),
+    createModel(
+      'user',
+      userDefinition,
+      parseModelDefinition('user', userDefinition),
+      { id: 'abc-123', firstName: 'John' },
+      db,
+    ),
   )
   db.delete('user', 'abc-123')
 })

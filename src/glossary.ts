@@ -32,11 +32,10 @@ export interface RelationDefinition<
   modelName: ModelName
 }
 
-export interface Relation<ModelName extends string> {
+export interface Relation {
   kind: RelationKind
   modelName: string
   unique: boolean
-  refs: RelationRef<ModelName>[]
 }
 
 /**
