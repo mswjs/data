@@ -1,7 +1,7 @@
 import { random } from 'faker'
 import { factory, primaryKey, oneOf } from '@mswjs/data'
 
-test('supports one-to-one relation', () => {
+test.only('supports one-to-one relation', () => {
   const db = factory({
     country: {
       id: primaryKey(random.uuid),

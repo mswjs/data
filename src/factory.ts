@@ -40,7 +40,8 @@ function createModelApi<
   Dictionary extends ModelDictionary,
   ModelName extends string
 >(modelName: ModelName, definition: ModelDefinition, db: Database<Dictionary>) {
-  const primaryKey = findPrimaryKey(definition)
+  const parsedModel = parseModelDefinition(modelName, definition)
+  const { primaryKey } = parsedModel
 
   sync(db)
 
@@ -55,33 +56,26 @@ function createModelApi<
 
   const api: ModelAPI<Dictionary, ModelName> = {
     create(initialValues = {}) {
-      const { primaryKey, properties, relations } = parseModelDefinition<
-        Dictionary,
-        ModelName
-      >(modelName, definition, initialValues)
-
-      if (typeof primaryKey === 'undefined') {
-        throw new OperationError(
-          OperationErrorType.MissingPrimaryKey,
-          `Failed to create a "${modelName}" model: none of the listed properties is marked as a primary key (${Object.keys(
-            definition,
-          ).join()}).`,
-        )
-      }
-
       const entity = createModel<Dictionary, ModelName>(
         modelName,
-        primaryKey,
-        properties,
-        relations,
+        definition,
+        parsedModel,
+        initialValues,
         db,
       )
-      const entityPrimaryKey = entity[entity.__primaryKey] as string
+
+      const entityId = entity[entity.__primaryKey] as string
+
+      invariant(
+        !entityId,
+        `Failed to create a "${modelName}" entity: expected the primary key "${primaryKey}" to have a value, but got: ${entityId}`,
+        new OperationError(OperationErrorType.MissingPrimaryKey),
+      )
 
       // Prevent creation of multiple entities with the same primary key value.
       invariant(
-        db.has(modelName, entityPrimaryKey),
-        `Failed to create "${modelName}": entity with the primary key "${entityPrimaryKey}" ("${entity.__primaryKey}") already exists.`,
+        db.has(modelName, entityId),
+        `Failed to create a "${modelName}" entity: an entity with the same primary key "${entityId}" ("${entity.__primaryKey}") already exists.`,
         new OperationError(OperationErrorType.DuplicatePrimaryKey),
       )
 

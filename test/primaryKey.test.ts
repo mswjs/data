@@ -123,7 +123,7 @@ test('throws an exception when creating entity with existing primary key', () =>
   }).toThrowError(
     new OperationError(
       OperationErrorType.DuplicatePrimaryKey,
-      'Failed to create "user": entity with the primary key "abc-123" ("id") already exists.',
+      'Failed to create a "user" entity: an entity with the same primary key "abc-123" ("id") already exists.',
     ),
   )
 })

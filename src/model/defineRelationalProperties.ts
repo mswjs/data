@@ -1,6 +1,12 @@
 import { debug } from 'debug'
 import { Database } from '../db/Database'
-import { EntityInstance, Relation, RelationKind } from '../glossary'
+import {
+  EntityInstance,
+  ModelDictionary,
+  Relation,
+  RelationKind,
+  Value,
+} from '../glossary'
 import { executeQuery } from '../query/executeQuery'
 import { first } from '../utils/first'
 
@@ -8,17 +14,23 @@ const log = debug('defineRelationalProperties')
 
 export function defineRelationalProperties(
   entity: EntityInstance<any, any>,
-  relations: Record<string, Relation<any>>,
+  initialValues: Partial<Value<any, ModelDictionary>>,
+  relations: Record<string, Relation>,
   db: Database<any>,
 ): void {
-  log('setting relations', relations)
+  log('setting relations', relations, entity)
 
   const properties = Object.entries(relations).reduce<
-    Record<string, { get(): any }>
-  >((acc, [property, relation]) => {
-    log(
-      `defining relation for property "${entity.__type}.${property}"`,
-      relation,
+    Record<
+      string,
+      { get(): EntityInstance<any, any> | EntityInstance<any, any>[] }
+    >
+  >((properties, [property, relation]) => {
+    log(`defining relational property "${entity.__type}.${property}"`, relation)
+
+    // Take the relational entity reference from the initial values.
+    const entityRefs: EntityInstance<any, any>[] = [].concat(
+      initialValues[property],
     )
 
     if (relation.unique) {
@@ -27,7 +39,7 @@ export function defineRelationalProperties(
       /**
        * @fixme Is it safe to assume the first reference?
        */
-      const firstRef = relation.refs[0]
+      const firstRef = entityRefs[0]
 
       // Trying to look up an entity of the same type
       // that references the same relational entity.
@@ -38,7 +50,9 @@ export function defineRelationalProperties(
           where: {
             [property]: {
               [firstRef.__primaryKey]: {
-                in: relation.refs.map((ref) => ref.__nodeId),
+                in: entityRefs.map(
+                  (entityRef) => entityRef[entity.__primaryKey],
+                ),
               },
             },
           },
@@ -64,11 +78,11 @@ export function defineRelationalProperties(
       }
     }
 
-    acc[property] = {
+    properties[property] = {
       get() {
         log(`get "${property}"`, relation)
 
-        const refValue = relation.refs.reduce<EntityInstance<any, any>[]>(
+        const refValue = entityRefs.reduce<EntityInstance<any, any>[]>(
           (list, entityRef) => {
             return list.concat(
               executeQuery(
@@ -77,7 +91,7 @@ export function defineRelationalProperties(
                 {
                   where: {
                     [entityRef.__primaryKey]: {
-                      equals: entityRef.__nodeId,
+                      equals: entityRef[entityRef.__primaryKey],
                     },
                   },
                 },
@@ -94,7 +108,7 @@ export function defineRelationalProperties(
       },
     }
 
-    return acc
+    return properties
   }, {})
 
   Object.defineProperties(entity, properties)
