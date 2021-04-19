@@ -98,3 +98,12 @@ db.user.update({
     },
   },
 })
+
+db.user.getAll().map((user) => {
+  user.id
+  user.firstName
+  user.country
+
+  // @ts-expect-error Unknown property "foo" on the "user" model.
+  user.foo
+})

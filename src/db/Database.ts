@@ -23,11 +23,11 @@ let callOrder = 0
 export class Database<Dictionary extends ModelDictionary> {
   public id: string
   public events: StrictEventEmitter<DatabaseEventsMap>
-  private models: Models<ModelDictionary>
+  private models: Models<Dictionary>
 
   constructor(dictionary: Dictionary) {
     this.events = new StrictEventEmitter()
-    this.models = Object.keys(dictionary).reduce<Models<ModelDictionary>>(
+    this.models = Object.keys(dictionary).reduce<Models<Dictionary>>(
       (acc, modelName) => {
         acc[modelName] = new Map<string, EntityInstance<Dictionary, string>>()
         return acc
@@ -51,12 +51,12 @@ export class Database<Dictionary extends ModelDictionary> {
     return md5(salt)
   }
 
-  getModel(name: string) {
+  getModel<ModelName extends string>(name: ModelName) {
     return this.models[name]
   }
 
-  create(
-    modelName: string,
+  create<ModelName extends string>(
+    modelName: ModelName,
     entity: EntityInstance<Dictionary, any>,
     customPrimaryKey?: PrimaryKeyType,
   ) {
@@ -68,10 +68,10 @@ export class Database<Dictionary extends ModelDictionary> {
     return this.getModel(modelName).set(primaryKey, entity)
   }
 
-  update(
-    modelName: string,
-    prevEntity: EntityInstance<Dictionary, any>,
-    nextEntity: EntityInstance<Dictionary, any>,
+  update<ModelName extends string>(
+    modelName: ModelName,
+    prevEntity: EntityInstance<Dictionary, ModelName>,
+    nextEntity: EntityInstance<Dictionary, ModelName>,
   ) {
     const prevPrimaryKey = prevEntity[prevEntity.__primaryKey]
     const nextPrimaryKey = nextEntity[prevEntity.__primaryKey]
@@ -84,20 +84,28 @@ export class Database<Dictionary extends ModelDictionary> {
     this.events.emit('update', this.id, modelName, prevEntity, nextEntity)
   }
 
-  has(modelName: string, primaryKey: PrimaryKeyType) {
+  has<ModelName extends string>(
+    modelName: ModelName,
+    primaryKey: PrimaryKeyType,
+  ) {
     return this.getModel(modelName).has(primaryKey)
   }
 
-  count(modelName: string) {
+  count<ModelName extends string>(modelName: ModelName) {
     return this.getModel(modelName).size
   }
 
-  delete(modelName: string, primaryKey: PrimaryKeyType) {
+  delete<ModelName extends string>(
+    modelName: ModelName,
+    primaryKey: PrimaryKeyType,
+  ) {
     this.getModel(modelName).delete(primaryKey)
     this.events.emit('delete', this.id, modelName, primaryKey)
   }
 
-  listEntities(modelName: string) {
+  listEntities<ModelName extends string>(
+    modelName: ModelName,
+  ): EntityInstance<Dictionary, ModelName>[] {
     return Array.from(this.getModel(modelName).values())
   }
 }
