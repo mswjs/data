@@ -9,7 +9,7 @@
     "esModuleInterop": true,
     "baseUrl": ".",
     "paths": {
-      "@mswjs/data": ["."]
+      "@mswjs/data": ["./lib"]
     }
   },
   "include": ["src/**/*.ts"],
