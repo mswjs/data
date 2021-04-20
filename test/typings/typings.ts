@@ -32,14 +32,6 @@ db.user.create({
 
 db.user.create({
   // @ts-expect-error Relational property must reference
-  // a valid entity, not a compatible non-entity object.
-  country: {
-    name: 'Not an actual entity',
-  },
-})
-
-db.user.create({
-  // @ts-expect-error Relational property must reference
   // the exact model type ("country").
   country: db.post.create(),
 })
