@@ -1,4 +1,4 @@
-import { datatype, seed } from 'faker'
+import { datatype } from 'faker'
 import { factory, oneOf, primaryKey } from '@mswjs/data'
 import { OperationErrorType } from '../../src/errors/OperationError'
 import { identity } from '../../src/utils/identity'
