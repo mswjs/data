@@ -1,5 +1,5 @@
 import { debug } from 'debug'
-import { InternalEntity } from '../glossary'
+import { InternalEntity, InternalEntityProperty } from '../glossary'
 import { compileQuery } from './compileQuery'
 import {
   BulkQueryOptions,
@@ -21,7 +21,7 @@ function queryByPrimaryKey(
 
   return iteratorUtils.filter((id, value) => {
     return matchPrimaryKey({
-      [value.__primaryKey]: id,
+      [value[InternalEntityProperty.primaryKey]]: id,
     })
   }, records)
 }

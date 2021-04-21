@@ -1,4 +1,4 @@
-import { InternalEntity } from '../glossary'
+import { InternalEntity, InternalEntityProperty } from '../glossary'
 import { BulkQueryOptions, WeakQuerySelector } from './queryTypes'
 
 function getEndIndex(start: number, end?: number) {
@@ -11,7 +11,7 @@ export function paginateResults(
 ): InternalEntity<any, any>[] {
   if (query.cursor) {
     const cursorIndex = data.findIndex((entity) => {
-      return entity[entity.__primaryKey] === query.cursor
+      return entity[entity[InternalEntityProperty.primaryKey]] === query.cursor
     })
 
     if (cursorIndex === -1) {

@@ -3,6 +3,7 @@ import { Database } from '../db/Database'
 import {
   Entity,
   InternalEntity,
+  InternalEntityProperty,
   ModelDictionary,
   Relation,
   RelationKind,
@@ -49,14 +50,15 @@ export function defineRelationalProperties(
         // Trying to look up an entity of the same type
         // that references the same relational entity.
         const existingEntities = executeQuery(
-          entity.__type,
-          entity.__primaryKey,
+          entity[InternalEntityProperty.type],
+          entity[InternalEntityProperty.primaryKey],
           {
             where: {
               [property]: {
                 [relation.primaryKey]: {
                   in: entityRefs.map(
-                    (entityRef) => entityRef[entity.__primaryKey],
+                    (entityRef) =>
+                      entityRef[entity[InternalEntityProperty.primaryKey]],
                   ),
                 },
               },
@@ -77,7 +79,7 @@ export function defineRelationalProperties(
             `Failed to create a unique "${relation.modelName}" relation for "${
               entity.__type
             }.${property}" (${
-              entity[entity.__primaryKey]
+              entity[entity[InternalEntityProperty.primaryKey]]
             }): the provided entity is already used.`,
           )
         }

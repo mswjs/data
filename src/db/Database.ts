@@ -1,6 +1,11 @@
 import md5 from 'md5'
 import { StrictEventEmitter } from 'strict-event-emitter'
-import { InternalEntity, ModelDictionary, PrimaryKeyType } from '../glossary'
+import {
+  InternalEntity,
+  InternalEntityProperty,
+  ModelDictionary,
+  PrimaryKeyType,
+} from '../glossary'
 
 type Models<Dictionary extends ModelDictionary> = Record<
   string,
@@ -61,7 +66,8 @@ export class Database<Dictionary extends ModelDictionary> {
     customPrimaryKey?: PrimaryKeyType,
   ) {
     const primaryKey =
-      customPrimaryKey || (entity[entity.__primaryKey] as string)
+      customPrimaryKey ||
+      (entity[entity[InternalEntityProperty.primaryKey]] as string)
 
     this.events.emit('create', this.id, modelName, entity, customPrimaryKey)
 
@@ -73,8 +79,10 @@ export class Database<Dictionary extends ModelDictionary> {
     prevEntity: InternalEntity<Dictionary, any>,
     nextEntity: InternalEntity<Dictionary, any>,
   ) {
-    const prevPrimaryKey = prevEntity[prevEntity.__primaryKey]
-    const nextPrimaryKey = nextEntity[prevEntity.__primaryKey]
+    const prevPrimaryKey =
+      prevEntity[prevEntity[InternalEntityProperty.primaryKey]]
+    const nextPrimaryKey =
+      nextEntity[prevEntity[InternalEntityProperty.primaryKey]]
 
     if (nextPrimaryKey !== prevPrimaryKey) {
       this.delete(modelName, prevPrimaryKey as string)

@@ -3,6 +3,7 @@ import { Database } from '../db/Database'
 import {
   InternalEntity,
   InternalEntityProperties,
+  InternalEntityProperty,
   ModelDefinition,
   ModelDictionary,
   Value,
@@ -33,8 +34,8 @@ export function createModel<
   )
 
   const internalProperties: InternalEntityProperties<ModelName> = {
-    __type: modelName,
-    __primaryKey: primaryKey,
+    [InternalEntityProperty.type]: modelName,
+    [InternalEntityProperty.primaryKey]: primaryKey,
   }
 
   const resolvedProperties = properties.reduce<Record<string, any>>(
@@ -73,22 +74,6 @@ export function createModel<
     },
     {},
   )
-
-  // const two = Object.entries(relations).reduce(
-  //   (entity, [property, relation]) => {
-  //     const entityRef = initialValues[property]!
-
-  //     invariant(
-  //       entityRef,
-  //       `Failed to set "${modelName}.${property}" relational property: expected an initial value, but got: ${exactVaentityReflue}`,
-  //     )
-
-  //     entityRef
-
-  //     return entity
-  //   },
-  //   foo,
-  // )
 
   const entity = Object.assign({}, resolvedProperties, internalProperties)
   defineRelationalProperties(entity, initialValues, relations, db)
