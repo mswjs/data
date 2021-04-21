@@ -1,5 +1,5 @@
 import { datatype } from 'faker'
-import { factory, primaryKey } from '@mswjs/data'
+import { factory, oneOf, primaryKey } from '@mswjs/data'
 import { OperationErrorType } from '../../src/errors/OperationError'
 import { getThrownError } from '../testUtils'
 
@@ -75,4 +75,62 @@ test('returns an empty array when not found matching entities', () => {
     },
   })
   expect(users).toHaveLength(0)
+})
+
+// See: https://github.com/mswjs/data/issues/78
+test('returns same results in setTimeout', async () => {
+  const db = factory({
+    user: {
+      id: primaryKey(datatype.uuid),
+      firstName: String,
+    },
+    userObject: {
+      id: primaryKey(datatype.uuid),
+      data: String,
+      user: oneOf('user'),
+    },
+  })
+
+  // Seed the database
+  const seededUser = db.user.create({
+    firstName: 'Test',
+  })
+  const seededObject = db.userObject.create({
+    user: seededUser,
+    data: 'test data - associated with user',
+  })
+
+  const queryObject = () => {
+    const object = db.userObject.findMany({
+      where: {
+        user: {
+          id: {
+            equals: seededUser.id,
+          },
+        },
+      },
+    })
+    expect(object).toEqual([
+      {
+        data: 'test data - associated with user',
+        id: seededObject.id,
+        user: {
+          id: seededUser.id,
+          firstName: 'Test',
+        },
+      },
+    ])
+  }
+
+  // Query for the object immediately
+  queryObject()
+
+  // This should return the exact same results as the query above,
+  // since nothing has changed
+  await new Promise<void>((res) =>
+    setTimeout(() => {
+      queryObject()
+      res()
+    }, 1000),
+  )
 })
