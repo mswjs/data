@@ -1,4 +1,4 @@
-import { random } from 'faker'
+import { datatype } from 'faker'
 import { factory, primaryKey } from '@mswjs/data'
 import { OperationErrorType } from '../../src/errors/OperationError'
 import { getThrownError } from '../testUtils'
@@ -6,7 +6,7 @@ import { getThrownError } from '../testUtils'
 test('returns all matching entities', () => {
   const db = factory({
     user: {
-      id: primaryKey(random.uuid),
+      id: primaryKey(datatype.uuid),
       followersCount: Number,
     },
   })
@@ -30,7 +30,7 @@ test('returns all matching entities', () => {
 test('throws an exception when no results in strict mode', () => {
   const db = factory({
     user: {
-      id: primaryKey(random.uuid),
+      id: primaryKey(datatype.uuid),
     },
   })
   db.user.create()
@@ -58,7 +58,7 @@ test('throws an exception when no results in strict mode', () => {
 test('returns an empty array when not found matching entities', () => {
   const db = factory({
     user: {
-      id: primaryKey(random.uuid),
+      id: primaryKey(datatype.uuid),
       followersCount: Number,
     },
   })

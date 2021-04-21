@@ -1,4 +1,4 @@
-import { random, name } from 'faker'
+import { datatype, name } from 'faker'
 import { factory, primaryKey } from '@mswjs/data'
 import { OperationErrorType } from '../../src/errors/OperationError'
 import { getThrownError } from '../testUtils'
@@ -6,9 +6,9 @@ import { getThrownError } from '../testUtils'
 test('deletes all entites that match the query', () => {
   const db = factory({
     user: {
-      id: primaryKey(random.uuid),
+      id: primaryKey(datatype.uuid),
       firstName: name.firstName,
-      followersCount: random.number,
+      followersCount: datatype.number,
     },
   })
 
@@ -60,7 +60,7 @@ test('deletes all entites that match the query', () => {
 test('throws an exception when no entities match the query in a strict mode', () => {
   const db = factory({
     user: {
-      id: primaryKey(random.uuid),
+      id: primaryKey(datatype.uuid),
     },
   })
   db.user.create()
@@ -88,9 +88,9 @@ test('throws an exception when no entities match the query in a strict mode', ()
 test('does nothing when no entities match the query', () => {
   const db = factory({
     user: {
-      id: primaryKey(random.uuid),
+      id: primaryKey(datatype.uuid),
       firstName: name.firstName,
-      followersCount: random.number,
+      followersCount: datatype.number,
     },
   })
 

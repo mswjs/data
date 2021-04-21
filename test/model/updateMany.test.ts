@@ -1,4 +1,4 @@
-import { random, name } from 'faker'
+import { datatype, name } from 'faker'
 import { factory, primaryKey } from '@mswjs/data'
 import { OperationErrorType } from '../../src/errors/OperationError'
 import { getThrownError } from '../testUtils'
@@ -6,7 +6,7 @@ import { getThrownError } from '../testUtils'
 test('derives updated value from the existing value', () => {
   const db = factory({
     user: {
-      id: primaryKey(random.uuid),
+      id: primaryKey(datatype.uuid),
       firstName: name.findName,
       role: String,
     },
@@ -110,7 +110,7 @@ test('moves entities when they update primary keys', () => {
 test('throws an exception when no entity matches the query in strict mode', () => {
   const db = factory({
     user: {
-      id: primaryKey(random.uuid),
+      id: primaryKey(datatype.uuid),
       firstName: name.firstName,
     },
   })
@@ -142,7 +142,7 @@ test('throws an exception when no entity matches the query in strict mode', () =
 test('should update many entities with primitive values', () => {
   const db = factory({
     user: {
-      id: primaryKey(random.uuid),
+      id: primaryKey(datatype.uuid),
       firstName: name.findName,
       role: String,
     },
@@ -180,7 +180,7 @@ test('should update many entities with primitive values', () => {
 test('throw an error when trying entities using a key already used', () => {
   const db = factory({
     user: {
-      id: primaryKey(random.uuid),
+      id: primaryKey(datatype.uuid),
       role: String,
     },
   })

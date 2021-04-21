@@ -1,11 +1,11 @@
-import { random } from 'faker'
+import { datatype } from 'faker'
 import { factory, primaryKey } from '@mswjs/data'
 import { repeat } from '../testUtils'
 
 test('counts the amount of records for the model', () => {
   const db = factory({
     book: {
-      id: primaryKey(random.uuid),
+      id: primaryKey(datatype.uuid),
     },
   })
   repeat(db.book.create, 12)
@@ -17,10 +17,10 @@ test('counts the amount of records for the model', () => {
 test('returns 0 when no records are present', () => {
   const db = factory({
     book: {
-      id: primaryKey(random.uuid),
+      id: primaryKey(datatype.uuid),
     },
     user: {
-      id: primaryKey(random.uuid),
+      id: primaryKey(datatype.uuid),
     },
   })
   repeat(db.book.create, 5)
@@ -32,7 +32,7 @@ test('returns 0 when no records are present', () => {
 test('counts the amount of records that match the query', () => {
   const db = factory({
     book: {
-      id: primaryKey(random.uuid),
+      id: primaryKey(datatype.uuid),
       pagesCount: Number,
     },
   })
@@ -53,7 +53,7 @@ test('counts the amount of records that match the query', () => {
 test('returns 0 when no records match the query', () => {
   const db = factory({
     book: {
-      id: primaryKey(random.uuid),
+      id: primaryKey(datatype.uuid),
       pagesCount: Number,
     },
   })

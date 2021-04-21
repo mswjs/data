@@ -1,10 +1,10 @@
-import { random } from 'faker'
+import { datatype } from 'faker'
 import { factory, primaryKey } from '@mswjs/data'
 
 test('supports offset-based pagination', () => {
   const db = factory({
     book: {
-      id: primaryKey(random.uuid),
+      id: primaryKey(datatype.uuid),
       title: String,
       category: String,
     },
@@ -42,7 +42,7 @@ test('supports offset-based pagination', () => {
 test('supports cursor-based pagination', () => {
   const db = factory({
     book: {
-      id: primaryKey(random.uuid),
+      id: primaryKey(datatype.uuid),
       title: String,
       category: String,
     },
@@ -81,7 +81,7 @@ test('supports cursor-based pagination', () => {
 test('returns an empty list given invalid cursor', () => {
   const db = factory({
     book: {
-      id: primaryKey(random.uuid),
+      id: primaryKey(datatype.uuid),
       title: String,
       category: String,
     },

@@ -650,7 +650,7 @@ drop(db)
 Libraries like [`faker`](https://github.com/Marak/Faker.js) can help you generate fake data for your models.
 
 ```js
-import { seed, random, name } from 'faker'
+import { seed, datatype, name } from 'faker'
 import { factory, primaryKey } from '@mswjs/data'
 
 // (Optional) Seed `faker` to ensure reproducible
@@ -659,7 +659,7 @@ seed(123)
 
 factory({
   user: {
-    id: primaryKey(random.uuid),
+    id: primaryKey(datatype.uuid),
     firstName: name.firstName,
   },
 })
