@@ -10,7 +10,7 @@ it('returns the primary key property name of the model definition', () => {
   expect(primaryKey).toEqual('id')
 })
 
-it('returns undefined if the model definition has no primart key', () => {
+it('returns undefined if the model definition has no primary key', () => {
   const primaryKey = findPrimaryKey({})
   expect(primaryKey).toBeUndefined()
 })
