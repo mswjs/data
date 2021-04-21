@@ -1,14 +1,14 @@
-import { InternalEntityInstance } from '../glossary'
+import { InternalEntity } from '../glossary'
 
 /**
  * Update given entity with the data, potentially evolving
  * it based on the existing values.
  */
 export function updateEntity(
-  entity: InternalEntityInstance<any, any>,
+  entity: InternalEntity<any, any>,
   data: any,
-): InternalEntityInstance<any, any> {
-  return Object.entries(data).reduce<InternalEntityInstance<any, any>>(
+): InternalEntity<any, any> {
+  return Object.entries(data).reduce<InternalEntity<any, any>>(
     (acc, [key, value]) => {
       // Ignore attempts to update entity with properties
       // that were not specified in the model definition.

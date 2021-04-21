@@ -1,8 +1,8 @@
 import { debug } from 'debug'
 import { Database } from '../db/Database'
 import {
-  InternalEntityInstance,
-  EntityInstance,
+  Entity,
+  InternalEntity,
   ModelDictionary,
   Relation,
   RelationKind,
@@ -14,7 +14,7 @@ import { first } from '../utils/first'
 const log = debug('defineRelationalProperties')
 
 export function defineRelationalProperties(
-  entity: InternalEntityInstance<any, any>,
+  entity: InternalEntity<any, any>,
   initialValues: Partial<Value<any, ModelDictionary>>,
   relations: Record<string, Relation>,
   db: Database<any>,
@@ -25,18 +25,14 @@ export function defineRelationalProperties(
     Record<
       string,
       {
-        get():
-          | InternalEntityInstance<any, any>
-          | InternalEntityInstance<any, any>[]
+        get(): InternalEntity<any, any> | InternalEntity<any, any>[]
         enumerable: boolean
       }
     >
   >((properties, [property, relation]) => {
     log(`defining relational property "${entity.__type}.${property}"`, relation)
     // Take the relational entity reference from the initial values.
-    const entityRefs: EntityInstance<any, any>[] = [].concat(
-      initialValues[property],
-    )
+    const entityRefs: Entity<any, any>[] = [].concat(initialValues[property])
 
     if (relation.unique) {
       log(`verifying that the "${property}" relation is unique...`)
@@ -88,7 +84,7 @@ export function defineRelationalProperties(
       get() {
         log(`get "${property}"`, relation)
 
-        const refValue = entityRefs.reduce<InternalEntityInstance<any, any>[]>(
+        const refValue = entityRefs.reduce<InternalEntity<any, any>[]>(
           (list, entityRef) => {
             return list.concat(
               executeQuery(

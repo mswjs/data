@@ -1,14 +1,10 @@
 import md5 from 'md5'
 import { StrictEventEmitter } from 'strict-event-emitter'
-import {
-  InternalEntityInstance,
-  ModelDictionary,
-  PrimaryKeyType,
-} from '../glossary'
+import { InternalEntity, ModelDictionary, PrimaryKeyType } from '../glossary'
 
 type Models<Dictionary extends ModelDictionary> = Record<
   string,
-  Map<string, InternalEntityInstance<Dictionary, any>>
+  Map<string, InternalEntity<Dictionary, any>>
 >
 
 export type DatabaseMethodToEventFn<Method extends (...args: any[]) => any> = (
@@ -33,10 +29,7 @@ export class Database<Dictionary extends ModelDictionary> {
     this.events = new StrictEventEmitter()
     this.models = Object.keys(dictionary).reduce<Models<Dictionary>>(
       (acc, modelName) => {
-        acc[modelName] = new Map<
-          string,
-          InternalEntityInstance<Dictionary, string>
-        >()
+        acc[modelName] = new Map<string, InternalEntity<Dictionary, string>>()
         return acc
       },
       {},
@@ -64,7 +57,7 @@ export class Database<Dictionary extends ModelDictionary> {
 
   create<ModelName extends string>(
     modelName: ModelName,
-    entity: InternalEntityInstance<Dictionary, any>,
+    entity: InternalEntity<Dictionary, any>,
     customPrimaryKey?: PrimaryKeyType,
   ) {
     const primaryKey =
@@ -77,8 +70,8 @@ export class Database<Dictionary extends ModelDictionary> {
 
   update<ModelName extends string>(
     modelName: ModelName,
-    prevEntity: InternalEntityInstance<Dictionary, any>,
-    nextEntity: InternalEntityInstance<Dictionary, any>,
+    prevEntity: InternalEntity<Dictionary, any>,
+    nextEntity: InternalEntity<Dictionary, any>,
   ) {
     const prevPrimaryKey = prevEntity[prevEntity.__primaryKey]
     const nextPrimaryKey = nextEntity[prevEntity.__primaryKey]
@@ -112,7 +105,7 @@ export class Database<Dictionary extends ModelDictionary> {
 
   listEntities<ModelName extends string>(
     modelName: ModelName,
-  ): InternalEntityInstance<Dictionary, ModelName>[] {
+  ): InternalEntity<Dictionary, ModelName>[] {
     return Array.from(this.getModel(modelName).values())
   }
 }
