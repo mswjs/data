@@ -36,6 +36,9 @@ export function defineRelationalProperties(
         `defining relational property "${entity.__type}.${property}"`,
         relation,
       )
+
+      if (!(property in initialValues)) return properties
+
       // Take the relational entity reference from the initial values.
       const entityRefs: Entity<any, any>[] = [].concat(initialValues[property])
 
