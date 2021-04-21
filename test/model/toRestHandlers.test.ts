@@ -1,11 +1,11 @@
 import fetch from 'node-fetch'
-import { name, random } from 'faker'
+import { name, datatype } from 'faker'
 import { setupServer } from 'msw/node'
 import { factory, drop, primaryKey } from '@mswjs/data'
 
 const db = factory({
   user: {
-    id: primaryKey(random.uuid),
+    id: primaryKey(datatype.uuid),
     firstName: name.firstName,
   },
 })

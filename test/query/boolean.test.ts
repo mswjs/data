@@ -1,10 +1,10 @@
-import { random } from 'faker'
+import { datatype } from 'faker'
 import { factory, primaryKey } from '@mswjs/data'
 
 test('queries entities based on a boolean value', () => {
   const db = factory({
     book: {
-      id: primaryKey(random.uuid),
+      id: primaryKey(datatype.uuid),
       title: String,
       published: Boolean,
     },

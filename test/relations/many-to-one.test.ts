@@ -1,14 +1,14 @@
-import { random, name } from 'faker'
+import { datatype, random, name } from 'faker'
 import { factory, oneOf, primaryKey } from '@mswjs/data'
 
 test('supports querying against a many-to-one relation', () => {
   const db = factory({
     user: {
-      id: primaryKey(random.uuid),
+      id: primaryKey(datatype.uuid),
       firstName: name.firstName,
     },
     post: {
-      id: primaryKey(random.uuid),
+      id: primaryKey(datatype.uuid),
       title: random.words,
       author: oneOf('user'),
     },
@@ -46,16 +46,16 @@ test('supports querying against a many-to-one relation', () => {
 test('supports querying through nested relational properties', () => {
   const db = factory({
     role: {
-      id: primaryKey(random.uuid),
+      id: primaryKey(datatype.uuid),
       title: random.word,
     },
     user: {
-      id: primaryKey(random.uuid),
+      id: primaryKey(datatype.uuid),
       firstName: name.firstName,
       role: oneOf('role'),
     },
     post: {
-      id: primaryKey(random.uuid),
+      id: primaryKey(datatype.uuid),
       title: random.words,
       author: oneOf('user'),
     },

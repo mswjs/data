@@ -1,13 +1,13 @@
-import { random, name } from 'faker'
+import { datatype, name } from 'faker'
 import { factory, primaryKey } from '@mswjs/data'
 import { OperationErrorType } from '../../src/errors/OperationError'
 import { getThrownError } from '../testUtils'
 
 test('updates a unique entity that matches the query', () => {
-  const userId = random.uuid()
+  const userId = datatype.uuid()
   const db = factory({
     user: {
-      id: primaryKey(random.uuid),
+      id: primaryKey(datatype.uuid),
       firstName: name.findName,
     },
   })
@@ -42,9 +42,9 @@ test('updates a unique entity that matches the query', () => {
 test('updates the first entity when multiple entities match the query', () => {
   const db = factory({
     user: {
-      id: primaryKey(random.uuid),
+      id: primaryKey(datatype.uuid),
       firstName: name.findName,
-      followersCount: random.number,
+      followersCount: datatype.number,
     },
   })
   db.user.create({
@@ -80,7 +80,7 @@ test('updates the first entity when multiple entities match the query', () => {
 test('throws an exception when no model matches the query in strict mode', () => {
   const db = factory({
     user: {
-      id: primaryKey(random.uuid),
+      id: primaryKey(datatype.uuid),
       firstName: String,
     },
   })
@@ -112,7 +112,7 @@ test('throws an exception when no model matches the query in strict mode', () =>
 test('moves the entity when it updates the primary key', () => {
   const db = factory({
     user: {
-      id: primaryKey(random.uuid),
+      id: primaryKey(datatype.uuid),
     },
   })
 
@@ -154,7 +154,7 @@ test('moves the entity when it updates the primary key', () => {
 test('does nothing when no entity matches the query', () => {
   const db = factory({
     user: {
-      id: primaryKey(random.uuid),
+      id: primaryKey(datatype.uuid),
     },
   })
 
@@ -177,7 +177,7 @@ test('does nothing when no entity matches the query', () => {
 test('throw an error when trying to update an entity using a key already used', () => {
   const db = factory({
     user: {
-      id: primaryKey(random.uuid),
+      id: primaryKey(datatype.uuid),
     },
   })
 
@@ -212,7 +212,7 @@ test('throw an error when trying to update an entity using a key already used', 
 test('derives next entity values based on the existing ones', () => {
   const db = factory({
     user: {
-      id: primaryKey(random.uuid),
+      id: primaryKey(datatype.uuid),
       firstName: name.findName,
       role: String,
     },

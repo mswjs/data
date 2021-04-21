@@ -1,14 +1,14 @@
-import { random, name } from 'faker'
+import { datatype, random, name } from 'faker'
 import { factory, primaryKey } from '@mswjs/data'
 import { measurePerformance, repeat } from '../testUtils'
 
 test('creates a 1000 records in under 100ms', async () => {
   const db = factory({
     user: {
-      id: primaryKey(random.uuid),
+      id: primaryKey(datatype.uuid),
       firstName: name.firstName,
       lastName: name.lastName,
-      age: random.number,
+      age: datatype.number,
       role: random.word,
     },
   })
@@ -23,10 +23,10 @@ test('creates a 1000 records in under 100ms', async () => {
 test('queries through a 1000 records in under 100ms', async () => {
   const db = factory({
     user: {
-      id: primaryKey(random.uuid),
+      id: primaryKey(datatype.uuid),
       firstName: name.firstName,
       lastName: name.lastName,
-      age: random.number,
+      age: datatype.number,
       role: random.word,
     },
   })
@@ -48,10 +48,10 @@ test('queries through a 1000 records in under 100ms', async () => {
 test('updates a single record under 100ms', async () => {
   const db = factory({
     user: {
-      id: primaryKey(random.uuid),
+      id: primaryKey(datatype.uuid),
       firstName: name.firstName,
       lastName: name.lastName,
-      age: random.number,
+      age: datatype.number,
       role: random.word,
     },
   })
@@ -76,10 +76,10 @@ test('updates a single record under 100ms', async () => {
 test('deletes a single record in under 100ms', async () => {
   const db = factory({
     user: {
-      id: primaryKey(random.uuid),
+      id: primaryKey(datatype.uuid),
       firstName: name.firstName,
       lastName: name.lastName,
-      age: random.number,
+      age: datatype.number,
       role: random.word,
     },
   })
@@ -102,10 +102,10 @@ test('deletes a single record in under 100ms', async () => {
 test('deletes multiple records in under 100ms', async () => {
   const db = factory({
     user: {
-      id: primaryKey(random.uuid),
+      id: primaryKey(datatype.uuid),
       firstName: name.firstName,
       lastName: name.lastName,
-      age: random.number,
+      age: datatype.number,
       role: random.word,
     },
   })

@@ -1,14 +1,14 @@
-import { random } from 'faker'
+import { datatype, random } from 'faker'
 import { factory, primaryKey, oneOf } from '@mswjs/data'
 
 test.only('supports one-to-one relation', () => {
   const db = factory({
     country: {
-      id: primaryKey(random.uuid),
+      id: primaryKey(datatype.uuid),
       name: random.words,
     },
     capital: {
-      id: primaryKey(random.uuid),
+      id: primaryKey(datatype.uuid),
       name: random.word,
       country: oneOf('country'),
     },
@@ -28,11 +28,11 @@ test.only('supports one-to-one relation', () => {
 test('supports querying through a one-to-one relational property', () => {
   const db = factory({
     country: {
-      id: primaryKey(random.uuid),
+      id: primaryKey(datatype.uuid),
       name: random.words,
     },
     capital: {
-      id: primaryKey(random.uuid),
+      id: primaryKey(datatype.uuid),
       name: random.word,
       country: oneOf('country'),
     },

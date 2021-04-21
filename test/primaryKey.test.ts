@@ -1,5 +1,5 @@
 import { v4 } from 'uuid'
-import { random } from 'faker'
+import { random, datatype } from 'faker'
 import { factory, primaryKey } from '../src'
 import {
   OperationError,
@@ -68,7 +68,7 @@ test('supports querying by the range of primary keys', () => {
 test('supports querying by the primary key and additional properties', () => {
   const db = factory({
     user: {
-      id: primaryKey(random.uuid),
+      id: primaryKey(datatype.uuid),
       firstName: String,
       age: Number,
     },

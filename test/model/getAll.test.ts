@@ -1,10 +1,10 @@
-import { random } from 'faker'
+import { datatype } from 'faker'
 import { factory, primaryKey } from '@mswjs/data'
 
 test('returns all entities', () => {
   const db = factory({
     user: {
-      id: primaryKey(random.uuid),
+      id: primaryKey(datatype.uuid),
       firstName: String,
     },
   })
@@ -23,7 +23,7 @@ test('returns all entities', () => {
 test('returns an empty list when found no entities', () => {
   const db = factory({
     user: {
-      id: primaryKey(random.uuid),
+      id: primaryKey(datatype.uuid),
       firstName: String,
     },
   })

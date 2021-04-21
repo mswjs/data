@@ -1,9 +1,9 @@
-import { random } from 'faker'
+import { datatype } from 'faker'
 import { factory, primaryKey } from '@mswjs/data'
 import { identity } from '../../src/utils/identity'
 
 test('creates a new entity', () => {
-  const userId = random.uuid()
+  const userId = datatype.uuid()
   const db = factory({
     user: {
       id: primaryKey(identity(userId)),
@@ -19,7 +19,7 @@ test('creates a new entity', () => {
 test('creates a new entity with initial values', () => {
   const db = factory({
     user: {
-      id: primaryKey(random.uuid),
+      id: primaryKey(datatype.uuid),
     },
   })
 

@@ -1,11 +1,11 @@
-import { random } from 'faker'
+import { datatype } from 'faker'
 import { factory, primaryKey } from '@mswjs/data'
 import { OperationErrorType } from '../../src/errors/OperationError'
 import { identity } from '../../src/utils/identity'
 import { getThrownError } from '../testUtils'
 
 test('returns the only matching entity', () => {
-  const userId = random.uuid()
+  const userId = datatype.uuid()
   const db = factory({
     user: {
       id: primaryKey(identity(userId)),
@@ -27,7 +27,7 @@ test('returns the only matching entity', () => {
 test('returns the first entity among multiple matching entities', () => {
   const db = factory({
     user: {
-      id: primaryKey(random.uuid),
+      id: primaryKey(datatype.uuid),
       followersCount: Number,
     },
   })
@@ -49,7 +49,7 @@ test('returns the first entity among multiple matching entities', () => {
 test('throws an exception when no results in strict mode', () => {
   const db = factory({
     user: {
-      id: primaryKey(random.uuid),
+      id: primaryKey(datatype.uuid),
     },
   })
   db.user.create()
@@ -76,7 +76,7 @@ test('throws an exception when no results in strict mode', () => {
 test('returns null when found no matching entities', () => {
   const db = factory({
     user: {
-      id: primaryKey(random.uuid),
+      id: primaryKey(datatype.uuid),
     },
   })
   db.user.create()

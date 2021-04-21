@@ -1,14 +1,14 @@
-import { random } from 'faker'
+import { random, datatype } from 'faker'
 import { factory, primaryKey, manyOf } from '@mswjs/data'
 
 test('supports one-to-many relation', () => {
   const db = factory({
     user: {
-      id: primaryKey(random.uuid),
+      id: primaryKey(datatype.uuid),
       posts: manyOf('post'),
     },
     post: {
-      id: primaryKey(random.uuid),
+      id: primaryKey(datatype.uuid),
       title: random.words,
     },
   })
@@ -36,7 +36,7 @@ test('supports querying through one-to-many relation', () => {
       posts: manyOf('post'),
     },
     post: {
-      id: primaryKey(random.uuid),
+      id: primaryKey(datatype.uuid),
       title: random.words,
     },
   })
