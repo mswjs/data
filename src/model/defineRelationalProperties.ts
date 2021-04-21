@@ -42,11 +42,6 @@ export function defineRelationalProperties(
       if (relation.unique) {
         log(`verifying that the "${property}" relation is unique...`)
 
-        /**
-         * @fixme Is it safe to assume the first reference?
-         */
-        const firstRef = entityRefs[0]
-
         // Trying to look up an entity of the same type
         // that references the same relational entity.
         const existingEntities = executeQuery(
