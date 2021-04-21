@@ -4,6 +4,7 @@ import {
   ModelAPI,
   ModelDefinition,
   ModelDictionary,
+  InternalEntityProperty,
 } from './glossary'
 import { first } from './utils/first'
 import { executeQuery } from './query/executeQuery'
@@ -70,7 +71,9 @@ function createModelApi<
         db,
       )
 
-      const entityId = entity[entity.__primaryKey] as string
+      const entityId = entity[
+        entity[InternalEntityProperty.primaryKey]
+      ] as string
 
       invariant(
         !entityId,
@@ -81,7 +84,9 @@ function createModelApi<
       // Prevent creation of multiple entities with the same primary key value.
       invariant(
         db.has(modelName, entityId),
-        `Failed to create a "${modelName}" entity: an entity with the same primary key "${entityId}" ("${entity.__primaryKey}") already exists.`,
+        `Failed to create a "${modelName}" entity: an entity with the same primary key "${entityId}" ("${
+          entity[InternalEntityProperty.primaryKey]
+        }") already exists.`,
         new OperationError(OperationErrorType.DuplicatePrimaryKey),
       )
 
@@ -145,13 +150,16 @@ function createModelApi<
       const nextRecord = updateEntity(prevRecord, query.data)
 
       if (
-        nextRecord[prevRecord.__primaryKey] !==
-        prevRecord[prevRecord.__primaryKey]
+        nextRecord[prevRecord[InternalEntityProperty.primaryKey]] !==
+        prevRecord[prevRecord[InternalEntityProperty.primaryKey]]
       ) {
         invariant(
-          db.has(modelName, nextRecord[prevRecord.__primaryKey]),
+          db.has(
+            modelName,
+            nextRecord[prevRecord[InternalEntityProperty.primaryKey]],
+          ),
           `Failed to execute "update" on the "${modelName}" model: the entity with a primary key "${
-            nextRecord[prevRecord.__primaryKey]
+            nextRecord[prevRecord[InternalEntityProperty.primaryKey]]
           }" ("${primaryKey}") already exists.`,
           new OperationError(OperationErrorType.DuplicatePrimaryKey),
         )
@@ -181,11 +189,14 @@ function createModelApi<
         const nextRecord = updateEntity(prevRecord, query.data)
 
         if (
-          nextRecord[prevRecord.__primaryKey] !==
-          prevRecord[prevRecord.__primaryKey]
+          nextRecord[prevRecord[InternalEntityProperty.primaryKey]] !==
+          prevRecord[prevRecord[InternalEntityProperty.primaryKey]]
         ) {
           invariant(
-            db.has(modelName, nextRecord[prevRecord.__primaryKey]),
+            db.has(
+              modelName,
+              nextRecord[prevRecord[InternalEntityProperty.primaryKey]],
+            ),
             `Failed to execute "updateMany" on the "${modelName}" model: no entities found matching the query "${JSON.stringify(
               query.where,
             )}".`,
@@ -215,7 +226,10 @@ function createModelApi<
         return null
       }
 
-      db.delete(modelName, record[record.__primaryKey] as string)
+      db.delete(
+        modelName,
+        record[record[InternalEntityProperty.primaryKey]] as string,
+      )
       return removeInternalProperties(record)
     },
     deleteMany({ strict, ...query }) {
@@ -234,7 +248,10 @@ function createModelApi<
       }
 
       records.forEach((record) => {
-        db.delete(modelName, record[record.__primaryKey] as string)
+        db.delete(
+          modelName,
+          record[record[InternalEntityProperty.primaryKey]] as string,
+        )
       })
 
       return records.map(removeInternalProperties)
