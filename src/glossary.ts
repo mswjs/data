@@ -9,6 +9,12 @@ export type PrimaryKeyType = string
 export type BaseTypes = string | number | boolean | Date
 export type KeyType = string | number | symbol
 
+export enum InternalEntityProperty {
+  type = '__type',
+  nodeId = '__nodeId',
+  primaryKey = '__primaryKey',
+}
+
 export interface PrimaryKeyDeclaration {
   isPrimaryKey: boolean
   getValue(): PrimaryKeyType
@@ -46,7 +52,7 @@ export interface Relation {
 export type RelationRef<
   ModelName extends string
 > = InternalEntityProperties<ModelName> & {
-  __nodeId: PrimaryKeyType
+  [InternalEntityProperty.nodeId]: PrimaryKeyType
 }
 
 export interface RelationOptions {
@@ -73,8 +79,8 @@ export type FactoryAPI<Dictionary extends Record<string, any>> = {
 }
 
 export interface InternalEntityProperties<ModelName extends KeyType> {
-  readonly __type: ModelName
-  readonly __primaryKey: PrimaryKeyType
+  readonly [InternalEntityProperty.type]: ModelName
+  readonly [InternalEntityProperty.primaryKey]: PrimaryKeyType
 }
 
 export type EntityInstance<
