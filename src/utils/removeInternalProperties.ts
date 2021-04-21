@@ -1,13 +1,12 @@
-import { InternalEntityInstance, EntityInstance } from '../glossary'
-
-function isInternalEntity(
-  value: any,
-): value is InternalEntityInstance<any, any> {
-  return typeof value === 'object' && '__type' in value
-}
+import {
+  InternalEntityInstance,
+  InternalEntityProperty,
+  EntityInstance,
+} from '../glossary'
+import { isInternalEntity } from './isInternalEntity'
 
 /**
- * Remove internal properties from the given entity.
+ * Removes internal properties from the given entity.
  */
 export function removeInternalProperties<
   Dictionary extends Record<string, any>,
@@ -15,20 +14,41 @@ export function removeInternalProperties<
 >(
   entity: InternalEntityInstance<Dictionary, ModelName>,
 ): EntityInstance<Dictionary, ModelName> {
-  return Object.entries(entity).reduce<any>((result, [key, value]) => {
-    if (!key.startsWith('__')) {
-      if (isInternalEntity(value)) {
-        result[key] = removeInternalProperties(value)
-      } else if (Array.isArray(value)) {
-        result[key] = value.reduce((acc: any[], reletionalEntity: any[]) => {
-          if (isInternalEntity(reletionalEntity)) {
-            acc.push(removeInternalProperties(reletionalEntity))
-          } else acc.push(reletionalEntity)
-          return acc
-        }, [])
-      } else result[key] = value
-    }
+  return (
+    Object.entries(entity)
+      // Remove internal entity properties.
+      .filter(([property, value]) => {
+        if (
+          property !== InternalEntityProperty.type &&
+          property !== InternalEntityProperty.primaryKey
+        ) {
+          return [property, value]
+        }
+      })
+      .map<[string, EntityInstance<Dictionary, ModelName>]>(
+        ([property, value]) => {
+          // Remove internal properties of a "oneOf" relation.
+          if (typeof value === 'object' && isInternalEntity(value)) {
+            return [property, removeInternalProperties(value)]
+          }
 
-    return result
-  }, {})
+          // Remove internal properties of a "manyOf" relation.
+          if (Array.isArray(value)) {
+            const publicEntity = value.map((relationalEntity: any) => {
+              return isInternalEntity(relationalEntity)
+                ? removeInternalProperties(relationalEntity)
+                : relationalEntity
+            })
+
+            return [property, publicEntity]
+          }
+
+          return [property, value]
+        },
+      )
+      .reduce<any>((entity, [property, value]) => {
+        entity[property] = value
+        return entity
+      }, {})
+  )
 }
