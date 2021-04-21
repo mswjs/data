@@ -77,13 +77,20 @@ export function withErrors<RequestBodyType = any, RequestParamsType = any>(
   }
 }
 
-function getFilters<ModelName extends string>(
+function parseQueryParams<ModelName extends string>(
   modelName: ModelName,
   definition: ModelDefinition,
   searchParams: URLSearchParams,
-): QuerySelectorWhere<any> {
+) {
   const paginationKeys = ['cursor', 'skip', 'take']
+  const cursor = searchParams.get('cursor')
+  const rawSkip = searchParams.get('skip')
+  const rawTake = searchParams.get('take')
+
   const filters: QuerySelectorWhere<any> = {}
+  const skip = parseInt(rawSkip ?? '0', 10)
+  const take = rawTake == null ? rawTake : parseInt(rawTake, 10)
+
   searchParams.forEach((value, key) => {
     if (paginationKeys.includes(key)) {
       return
@@ -100,7 +107,13 @@ function getFilters<ModelName extends string>(
       )
     }
   })
-  return filters
+
+  return {
+    cursor,
+    skip,
+    take,
+    filters,
+  }
 }
 
 export function generateRestHandlers<
@@ -120,17 +133,11 @@ export function generateRestHandlers<
     rest.get(
       buildUrl(modelPath),
       withErrors<Entity<Dictionary, ModelName>>((req, res, ctx) => {
-        const cursor = req.url.searchParams.get('cursor')
-        const rawSkip = req.url.searchParams.get('skip')
-        const rawTake = req.url.searchParams.get('take')
-        const filters = getFilters(
+        const { skip, take, cursor, filters } = parseQueryParams(
           modelName,
           modelDefinition,
           req.url.searchParams,
         )
-
-        const skip = parseInt(rawSkip ?? '0', 10)
-        const take = rawTake == null ? rawTake : parseInt(rawTake, 10)
 
         let options = { where: filters }
         if (take && !isNaN(take) && !isNaN(skip)) {
