@@ -1,8 +1,8 @@
-import { InternalEntityInstance } from '../../src/glossary'
+import { InternalEntity } from '../../src/glossary'
 import { removeInternalProperties } from '../../src/utils/removeInternalProperties'
 
 it('removes internal properties from a plain entity', () => {
-  const user: InternalEntityInstance<any, any> = {
+  const user: InternalEntity<any, any> = {
     __type: 'user',
     __primaryKey: 'id',
     id: 'abc-123',
@@ -16,7 +16,7 @@ it('removes internal properties from a plain entity', () => {
 })
 
 it('removes internal properties from an entity with relations', () => {
-  const user: InternalEntityInstance<any, any> = {
+  const user: InternalEntity<any, any> = {
     __type: 'user',
     __primaryKey: 'id',
     id: 'abc-123',
@@ -58,7 +58,7 @@ it('removes internal properties from an entity with relations', () => {
 })
 
 it('preserves custom properties starting with a leading "__"', () => {
-  const user: InternalEntityInstance<any, any> = {
+  const user: InternalEntity<any, any> = {
     __type: 'user',
     __primaryKey: 'id',
     __customProperty: true,

@@ -1,5 +1,5 @@
 import {
-  InternalEntityInstance,
+  InternalEntity,
   FactoryAPI,
   ModelAPI,
   ModelDefinition,
@@ -163,7 +163,7 @@ function createModelApi<
     },
     updateMany({ strict, ...query }) {
       const records = executeQuery(modelName, primaryKey, query, db)
-      const updatedRecords: InternalEntityInstance<any, any>[] = []
+      const updatedRecords: InternalEntity<any, any>[] = []
 
       if (records.length === 0) {
         invariant(

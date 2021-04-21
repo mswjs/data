@@ -83,15 +83,15 @@ export interface InternalEntityProperties<ModelName extends KeyType> {
   readonly [InternalEntityProperty.primaryKey]: PrimaryKeyType
 }
 
-export type EntityInstance<
+export type Entity<
   Dictionary extends Record<string, any>,
   ModelName extends keyof Dictionary
 > = Value<Dictionary[ModelName], Dictionary>
 
-export type InternalEntityInstance<
+export type InternalEntity<
   Dictionary extends Record<string, any>,
   ModelName extends keyof Dictionary
-> = InternalEntityProperties<ModelName> & EntityInstance<Dictionary, ModelName>
+> = InternalEntityProperties<ModelName> & Entity<Dictionary, ModelName>
 
 export type ModelDictionary = Limit<Record<string, Record<string, any>>>
 
@@ -119,7 +119,7 @@ export interface ModelAPI<
    */
   create(
     initialValues?: Partial<Value<Dictionary[ModelName], Dictionary>>,
-  ): EntityInstance<Dictionary, ModelName>
+  ): Entity<Dictionary, ModelName>
   /**
    * Return the total number of entities.
    */
@@ -129,18 +129,18 @@ export interface ModelAPI<
    */
   findFirst(
     query: QuerySelector<Value<Dictionary[ModelName], Dictionary>>,
-  ): EntityInstance<Dictionary, ModelName> | null
+  ): Entity<Dictionary, ModelName> | null
   /**
    * Find multiple entities.
    */
   findMany(
     query: WeakQuerySelector<Value<Dictionary[ModelName], Dictionary>> &
       BulkQueryOptions,
-  ): EntityInstance<Dictionary, ModelName>[]
+  ): Entity<Dictionary, ModelName>[]
   /**
    * Return all entities of the current model.
    */
-  getAll(): EntityInstance<Dictionary, ModelName>[]
+  getAll(): Entity<Dictionary, ModelName>[]
   /**
    * Update a single entity with the next data.
    */
@@ -148,7 +148,7 @@ export interface ModelAPI<
     query: QuerySelector<Value<Dictionary[ModelName], Dictionary>> & {
       data: Partial<UpdateManyValue<Dictionary[ModelName], Dictionary>>
     },
-  ): EntityInstance<Dictionary, ModelName> | null
+  ): Entity<Dictionary, ModelName> | null
   /**
    * Update many entities with the next data.
    */
@@ -156,19 +156,19 @@ export interface ModelAPI<
     query: QuerySelector<Value<Dictionary[ModelName], Dictionary>> & {
       data: Partial<UpdateManyValue<Dictionary[ModelName], Dictionary>>
     },
-  ): EntityInstance<Dictionary, ModelName>[] | null
+  ): Entity<Dictionary, ModelName>[] | null
   /**
    * Delete a single entity.
    */
   delete(
     query: QuerySelector<Value<Dictionary[ModelName], Dictionary>>,
-  ): EntityInstance<Dictionary, ModelName> | null
+  ): Entity<Dictionary, ModelName> | null
   /**
    * Delete multiple entities.
    */
   deleteMany(
     query: QuerySelector<Value<Dictionary[ModelName], Dictionary>>,
-  ): EntityInstance<Dictionary, ModelName>[] | null
+  ): Entity<Dictionary, ModelName>[] | null
   /**
    * Generate request handlers of the given type based on the model.
    */
@@ -200,9 +200,9 @@ export type Value<
   Parent extends Record<string, any>
 > = {
   [K in keyof T]: T[K] extends OneOf<any>
-    ? EntityInstance<Parent, T[K]['modelName']>
+    ? Entity<Parent, T[K]['modelName']>
     : T[K] extends ManyOf<any>
-    ? EntityInstance<Parent, T[K]['modelName']>[]
+    ? Entity<Parent, T[K]['modelName']>[]
     : T[K] extends PrimaryKeyDeclaration
     ? ReturnType<T[K]['getValue']>
     : ReturnType<T[K]>
