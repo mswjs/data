@@ -135,6 +135,18 @@ Creates an entity for the model.
 const user = db.user.create()
 ```
 
+When called without arguments, `.create()` will populate the entity properties using the getter functions you've specified in the model definition.
+
+You can also provide a partial initial values when creating an entity:
+
+```js
+const user = db.user.create({
+  firstName: 'John',
+})
+```
+
+> Note that all model properties _are optional_, including [relational properties](#model-relationships).
+
 #### `findFirst`
 
 Returns the first entity that satisfies the given query.
