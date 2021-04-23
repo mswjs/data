@@ -18,14 +18,14 @@ it('returns an enumerable relation property', () => {
   const db = new Database(dictionary)
 
   db.create('post', {
-    __primaryKey: 'id',
-    __type: 'post',
+    [InternalEntityProperty.primaryKey]: 'id',
+    [InternalEntityProperty.type]: 'post',
     id: 'post-1',
     title: 'First Post',
   })
   db.create('post', {
-    __primaryKey: 'id',
-    __type: 'post',
+    [InternalEntityProperty.primaryKey]: 'id',
+    [InternalEntityProperty.type]: 'post',
     id: 'post-2',
     title: 'Second Post',
   })
