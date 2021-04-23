@@ -76,3 +76,18 @@ test('supports querying through one-to-many relation', () => {
   const userIds = users.map((user) => user.id)
   expect(userIds).toEqual(['user-1', 'user-3'])
 })
+
+test('should not throw error if an entity with one-to-many relation is created without it', () => {
+  const db = factory({
+    user: {
+      id: primaryKey(random.uuid),
+      posts: manyOf('post'),
+    },
+    post: {
+      id: primaryKey(random.uuid),
+      title: random.words,
+    },
+  })
+
+  expect(() => db.user.create()).not.toThrow()
+})
