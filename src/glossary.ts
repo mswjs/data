@@ -5,7 +5,7 @@ import {
   WeakQuerySelector,
 } from './query/queryTypes'
 
-export type PrimaryKeyType = string
+export type PrimaryKeyType = string | number
 export type BaseTypes = string | number | boolean | Date
 export type KeyType = string | number | symbol
 
@@ -17,7 +17,7 @@ export enum InternalEntityProperty {
 
 export interface PrimaryKeyDeclaration {
   isPrimaryKey: boolean
-  getValue(): KeyType
+  getValue(): PrimaryKeyType
 }
 
 export enum RelationKind {
