@@ -1,8 +1,6 @@
-import { PrimaryKeyDeclaration, PrimaryKeyType } from './glossary'
+import { PrimaryKeyDeclaration, KeyType } from './glossary'
 
-export function primaryKey(
-  getValue: () => PrimaryKeyType,
-): PrimaryKeyDeclaration {
+export function primaryKey(getValue: () => KeyType): PrimaryKeyDeclaration {
   return {
     isPrimaryKey: true,
     getValue,
