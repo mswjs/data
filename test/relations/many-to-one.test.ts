@@ -110,3 +110,19 @@ test('supports querying through nested relational properties', () => {
 
   expect(result).toHaveLength(3)
 })
+
+test('should not throw error if an entity with many-to-one relation is created without it', () => {
+  const db = factory({
+    user: {
+      id: primaryKey(random.uuid),
+      firstName: name.firstName,
+    },
+    post: {
+      id: primaryKey(random.uuid),
+      title: random.words,
+      author: oneOf('user'),
+    },
+  })
+
+  expect(() => db.post.create()).not.toThrow()
+})

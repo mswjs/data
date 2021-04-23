@@ -1,7 +1,7 @@
 import { random } from 'faker'
 import { factory, primaryKey, oneOf } from '@mswjs/data'
 
-test.only('supports one-to-one relation', () => {
+test('supports one-to-one relation', () => {
   const db = factory({
     country: {
       id: primaryKey(random.uuid),
@@ -56,4 +56,20 @@ test('supports querying through a one-to-one relational property', () => {
     },
   })
   expect(capital).toHaveProperty('name', 'Washington')
+})
+
+test('should not throw error if an entity with one-to-one relation is created without it', () => {
+  const db = factory({
+    country: {
+      id: primaryKey(random.uuid),
+      name: random.words,
+    },
+    capital: {
+      id: primaryKey(random.uuid),
+      name: random.word,
+      country: oneOf('country'),
+    },
+  })
+
+  expect(() => db.capital.create()).not.toThrow()
 })
