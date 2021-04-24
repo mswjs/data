@@ -3,7 +3,7 @@ import { Database } from '../../src/db/Database'
 import { InternalEntityProperty, Relation } from '../../src/glossary'
 import { defineRelationalProperties } from '../../src/model/defineRelationalProperties'
 
-it('returns an enumerable relation property', () => {
+it('marks relational properties as enumerable', () => {
   const dictionary = {
     user: {
       id: primaryKey(String),
