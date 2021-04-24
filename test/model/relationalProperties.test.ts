@@ -1,4 +1,4 @@
-import { manyOf, primaryKey } from '../../src'
+import { manyOf, oneOf, primaryKey } from '../../src'
 import { Database } from '../../src/db/Database'
 import { InternalEntityProperty, Relation } from '../../src/glossary'
 import { defineRelationalProperties } from '../../src/model/defineRelationalProperties'
@@ -7,46 +7,40 @@ it('marks relational properties as enumerable', () => {
   const dictionary = {
     user: {
       id: primaryKey(String),
-      posts: manyOf('post'),
+      name: String,
     },
     post: {
       id: primaryKey(String),
       title: String,
+      author: oneOf('user'),
     },
   }
 
   const db = new Database(dictionary)
 
-  db.create('post', {
+  db.create('user', {
     [InternalEntityProperty.primaryKey]: 'id',
-    [InternalEntityProperty.type]: 'post',
-    id: 'post-1',
-    title: 'First Post',
-  })
-  db.create('post', {
-    [InternalEntityProperty.primaryKey]: 'id',
-    [InternalEntityProperty.type]: 'post',
-    id: 'post-2',
-    title: 'Second Post',
+    [InternalEntityProperty.type]: 'user',
+    id: 'abc-123',
+    name: 'Test User',
   })
 
   const relations: Record<string, Relation> = {
-    posts: {
-      ...dictionary.user.posts,
+    author: {
+      ...dictionary.post.author,
       primaryKey: 'id',
     },
   }
 
-  const user = {
+  const post = {
     [InternalEntityProperty.primaryKey]: 'id',
     [InternalEntityProperty.type]: 'post',
-    id: 'abc-123',
+    id: '234',
+    title: 'Test Post',
   }
-  const initialValues = {
-    posts: [{ id: 'post-1' }, { id: 'post-2' }],
-  }
+  const initialValues = { author: { id: 'abc-123' } }
 
-  defineRelationalProperties(user, initialValues, relations, db)
+  defineRelationalProperties(post, initialValues, relations, db)
 
-  expect(user.propertyIsEnumerable('posts')).toBe(true)
+  expect(post.propertyIsEnumerable('author')).toBe(true)
 })
