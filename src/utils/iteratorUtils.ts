@@ -1,4 +1,4 @@
-export function forEach<K extends string, V>(
+export function forEach<K, V>(
   fn: (key: K, value: V) => any,
   map: Map<K, V>,
 ): void {
@@ -7,7 +7,7 @@ export function forEach<K extends string, V>(
   }
 }
 
-export function filter<K extends string, V>(
+export function filter<K, V>(
   predicate: (key: K, value: V) => boolean,
   map: Map<K, V>,
 ): Map<K, V> {
