@@ -9,7 +9,7 @@ interface WeakQuerySelectorWhere<KeyType extends PrimaryKeyType> {
 }
 
 type RequestParams<Key extends PrimaryKeyType> = {
-  [K in PrimaryKeyType]: PrimaryKeyType
+  [K in Key]: string
 }
 
 export function createUrlBuilder(baseUrl?: string) {
