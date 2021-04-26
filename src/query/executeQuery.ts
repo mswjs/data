@@ -1,5 +1,9 @@
 import { debug } from 'debug'
-import { InternalEntity, InternalEntityProperty } from '../glossary'
+import {
+  InternalEntity,
+  InternalEntityProperty,
+  PrimaryKeyType,
+} from '../glossary'
 import { compileQuery } from './compileQuery'
 import {
   BulkQueryOptions,
@@ -13,7 +17,7 @@ import { Database } from '../db/Database'
 const log = debug('executeQuery')
 
 function queryByPrimaryKey(
-  records: Map<string, InternalEntity<any, any>>,
+  records: Map<PrimaryKeyType, InternalEntity<any, any>>,
   query: QuerySelector<any>,
 ) {
   log('querying by primary key')
@@ -32,7 +36,7 @@ function queryByPrimaryKey(
  */
 export function executeQuery(
   modelName: string,
-  primaryKey: string,
+  primaryKey: PrimaryKeyType,
   query: WeakQuerySelector<any> & BulkQueryOptions,
   db: Database<any>,
 ): InternalEntity<any, any>[] {
