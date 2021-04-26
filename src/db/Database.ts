@@ -9,7 +9,7 @@ import {
 
 type Models<Dictionary extends ModelDictionary> = Record<
   string,
-  Map<string, InternalEntity<Dictionary, any>>
+  Map<PrimaryKeyType, InternalEntity<Dictionary, any>>
 >
 
 export type DatabaseMethodToEventFn<Method extends (...args: any[]) => any> = (
