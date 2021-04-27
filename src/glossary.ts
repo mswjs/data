@@ -15,9 +15,11 @@ export enum InternalEntityProperty {
   primaryKey = '__primaryKey',
 }
 
-export interface PrimaryKeyDeclaration {
+export interface PrimaryKeyDeclaration<
+  ValueType extends PrimaryKeyType = string
+> {
   isPrimaryKey: boolean
-  getValue(): PrimaryKeyType
+  getValue(): ValueType
 }
 
 export enum RelationKind {
