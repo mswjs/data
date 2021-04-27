@@ -77,7 +77,7 @@ export function withErrors<RequestBodyType = any, RequestParamsType = any>(
   }
 }
 
-function parseQueryParams<ModelName extends string>(
+export function parseQueryParams<ModelName extends string>(
   modelName: ModelName,
   definition: ModelDefinition,
   searchParams: URLSearchParams,
@@ -88,7 +88,7 @@ function parseQueryParams<ModelName extends string>(
   const rawTake = searchParams.get('take')
 
   const filters: QuerySelectorWhere<any> = {}
-  const skip = parseInt(rawSkip ?? '0', 10)
+  const skip = rawSkip == null ? rawSkip : parseInt(rawSkip, 10)
   const take = rawTake == null ? rawTake : parseInt(rawTake, 10)
 
   searchParams.forEach((value, key) => {
@@ -140,10 +140,10 @@ export function generateRestHandlers<
         )
 
         let options = { where: filters }
-        if (take && !isNaN(take) && !isNaN(skip)) {
+        if (take && skip) {
           options = Object.assign(options, { take, skip })
         }
-        if (take && !isNaN(take) && cursor) {
+        if (take && cursor) {
           options = Object.assign(options, { take, cursor })
         }
 

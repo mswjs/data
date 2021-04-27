@@ -1,4 +1,6 @@
 import { response, restContext } from 'msw'
+import { primaryKey } from '../..'
+import { ModelDefinition } from '../../src/glossary'
 import {
   OperationError,
   OperationErrorType,
@@ -7,6 +9,7 @@ import {
   createUrlBuilder,
   getResponseStatusByErrorType,
   withErrors,
+  parseQueryParams,
 } from '../../src/model/generateRestHandlers'
 
 describe('createUrlBuilder', () => {
@@ -90,6 +93,92 @@ describe('withErrors', () => {
     expect(result).toHaveProperty(
       'body',
       JSON.stringify({ message: 'Arbitrary error' }),
+    )
+  })
+})
+
+describe('parseQueryParams', () => {
+  const definition: ModelDefinition = {
+    id: primaryKey(String),
+    firstName: String,
+  }
+
+  it('parses search params into pagination and filters', () => {
+    const result = parseQueryParams(
+      'user',
+      definition,
+      new URLSearchParams({
+        take: '10',
+        skip: '5',
+        firstName: 'John',
+      }),
+    )
+    expect(result).toEqual({
+      take: 10,
+      skip: 5,
+      cursor: null,
+      filters: {
+        firstName: { equals: 'John' },
+      },
+    })
+  })
+
+  it('returns null as the "take" when none is set', () => {
+    const result = parseQueryParams(
+      'user',
+      definition,
+      new URLSearchParams({
+        skip: '5',
+      }),
+    )
+    expect(result).toHaveProperty('take', null)
+  })
+
+  it('returns null as the "skip" when none is set', () => {
+    const result = parseQueryParams(
+      'user',
+      definition,
+      new URLSearchParams({
+        take: '10',
+      }),
+    )
+    expect(result).toHaveProperty('skip', null)
+  })
+
+  it('returns null as the "cursor" when none is set', () => {
+    const result = parseQueryParams(
+      'user',
+      definition,
+      new URLSearchParams({
+        take: '10',
+        skip: '5',
+      }),
+    )
+    expect(result).toHaveProperty('cursor', null)
+  })
+
+  it('returns an empty object given no model definition-based params', () => {
+    const result = parseQueryParams(
+      'user',
+      definition,
+      new URLSearchParams({ take: '10', skip: '5' }),
+    )
+    expect(result).toHaveProperty('filters', {})
+  })
+
+  it('throws an error given an unknown model definition-based param', () => {
+    const parse = () => {
+      return parseQueryParams(
+        'user',
+        definition,
+        new URLSearchParams({
+          unknownProp: 'yes',
+        }),
+      )
+    }
+
+    expect(parse).toThrow(
+      'Failed to query the "user" model: unknown property "unknownProp".',
     )
   })
 })
