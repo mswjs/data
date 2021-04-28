@@ -9,6 +9,7 @@
   "scripts": {
     "start": "tsc -w",
     "format": "prettier src/**/*.ts --write",
+    "lint": "eslint --ignore-path .gitignore .",
     "test": "jest",
     "test:ts": "tsc -p test/typings/tsconfig.json",
     "clean": "rimraf ./lib",
@@ -24,7 +25,10 @@
     "@types/faker": "^5.5.3",
     "@types/jest": "^26.0.22",
     "@types/node-fetch": "^2.5.10",
+    "@typescript-eslint/eslint-plugin": "^4.22.0",
+    "@typescript-eslint/parser": "^4.22.0",
     "debug": "^4.3.1",
+    "eslint": "^7.25.0",
     "faker": "^5.5.3",
     "jest": "^26.6.0",
     "msw": "^0.28.2",

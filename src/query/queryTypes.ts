@@ -53,7 +53,7 @@ export type GetQueryFor<
   ? StringQuery
   : T extends number
   ? NumberQuery
-  : T extends Boolean
+  : T extends boolean
   ? BooleanQuery
   : T extends Date
   ? DateQuery
