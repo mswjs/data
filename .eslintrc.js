@@ -24,7 +24,7 @@ module.exports = {
       },
     },
     {
-      files: ['./**/*.test.ts'],
+      files: ['./**/*.test.ts', './test/**/*.js'],
       env: { node: true, jest: true, browser: true },
     },
   ],

@@ -139,7 +139,7 @@ export function generateGraphQLHandlers<
   modelName: ModelName,
   definition: ModelDefinition,
   model: ModelAPI<Dictionary, ModelName>,
-  baseUrl: string = '',
+  baseUrl = '',
 ): GraphQLHandler[] {
   const target = baseUrl ? graphql.link(baseUrl) : graphql
   const pluralModelName = pluralize(modelName)
