@@ -12,7 +12,7 @@ export function updateEntity(
     (acc, [key, value]) => {
       // Ignore attempts to update entity with properties
       // that were not specified in the model definition.
-      if (!entity.hasOwnProperty(key)) {
+      if (!Object.prototype.hasOwnProperty.call(entity, key)) {
         return acc
       }
 

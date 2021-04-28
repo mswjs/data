@@ -42,5 +42,5 @@ it('marks relational properties as enumerable', () => {
 
   defineRelationalProperties(post, initialValues, relations, db)
 
-  expect(post.propertyIsEnumerable('author')).toBe(true)
+  expect({}.propertyIsEnumerable.call(post, 'author')).toBe(true)
 })

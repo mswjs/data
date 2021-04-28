@@ -123,7 +123,7 @@ export function generateRestHandlers<
   modelName: ModelName,
   modelDefinition: ModelDefinition,
   model: ModelAPI<Dictionary, ModelName>,
-  baseUrl: string = '',
+  baseUrl = '',
 ) {
   const primaryKey = findPrimaryKey(modelDefinition)!
   const modelPath = pluralize(modelName)
