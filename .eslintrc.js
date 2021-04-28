@@ -8,7 +8,7 @@ module.exports = {
   overrides: [
     { files: ['./*.js'], env: { node: true } },
     {
-      files: ['./src/**/*.ts?(x)'],
+      files: ['./**/*.ts?(x)'],
       parser: '@typescript-eslint/parser',
       plugins: ['@typescript-eslint/eslint-plugin'],
       extends: ['plugin:@typescript-eslint/recommended'],
@@ -25,7 +25,6 @@ module.exports = {
     },
     {
       files: ['./**/*.test.ts'],
-      parser: '@typescript-eslint/parser',
       env: { node: true, jest: true, browser: true },
     },
   ],
