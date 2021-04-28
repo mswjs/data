@@ -2,7 +2,7 @@ import { datatype, random, name } from 'faker'
 import { factory, primaryKey } from '@mswjs/data'
 import { measurePerformance, repeat } from '../testUtils'
 
-test('creates a 1000 records in under 100ms', async () => {
+test('creates a 1000 records in under 350ms', async () => {
   const db = factory({
     user: {
       id: primaryKey(datatype.uuid),
@@ -20,7 +20,7 @@ test('creates a 1000 records in under 100ms', async () => {
   expect(createPerformance.duration).toBeLessThanOrEqual(350)
 })
 
-test('queries through a 1000 records in under 100ms', async () => {
+test('queries through a 1000 records in under 350ms', async () => {
   const db = factory({
     user: {
       id: primaryKey(datatype.uuid),
@@ -45,7 +45,7 @@ test('queries through a 1000 records in under 100ms', async () => {
   expect(findManyPerformance.duration).toBeLessThanOrEqual(350)
 })
 
-test('updates a single record under 100ms', async () => {
+test('updates a single record under 350ms', async () => {
   const db = factory({
     user: {
       id: primaryKey(datatype.uuid),
@@ -73,7 +73,7 @@ test('updates a single record under 100ms', async () => {
   expect(updatePerformance.duration).toBeLessThanOrEqual(350)
 })
 
-test('deletes a single record in under 100ms', async () => {
+test('deletes a single record in under 350ms', async () => {
   const db = factory({
     user: {
       id: primaryKey(datatype.uuid),
@@ -99,7 +99,7 @@ test('deletes a single record in under 100ms', async () => {
   expect(deletePerformance.duration).toBeLessThanOrEqual(350)
 })
 
-test('deletes multiple records in under 100ms', async () => {
+test('deletes multiple records in under 350ms', async () => {
   const db = factory({
     user: {
       id: primaryKey(datatype.uuid),
