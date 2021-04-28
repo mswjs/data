@@ -657,6 +657,23 @@ const db = factory({...})
 drop(db)
 ```
 
+#### `snapshot`
+
+Create a snapshot for entities present in the database.
+The snapshot is useful to restore the database later e.g. between tests.
+
+```js
+import { factory, snapshot } from '@mswjs/data'
+
+const db = factory({...})
+
+const restore = snapshot(db)
+
+// Make some update to the database
+
+restore()
+```
+
 ### Usage with `faker`
 
 Libraries like [`faker`](https://github.com/Marak/Faker.js) can help you generate fake data for your models.
