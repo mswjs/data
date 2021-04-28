@@ -2,7 +2,6 @@ import {
   InternalEntity,
   FactoryAPI,
   ModelAPI,
-  ModelDefinition,
   ModelDictionary,
   InternalEntityProperty,
 } from './glossary'
@@ -27,11 +26,10 @@ export function factory<Dictionary extends ModelDictionary>(
 ): FactoryAPI<Dictionary> {
   const db = new Database<Dictionary>(dictionary)
 
-  return Object.entries(dictionary).reduce<any>((acc, [modelName, props]) => {
+  return Object.keys(dictionary).reduce<any>((acc, modelName) => {
     acc[modelName] = createModelApi<Dictionary, typeof modelName>(
       dictionary,
       modelName,
-      props,
       db,
     )
     return acc
@@ -41,13 +39,9 @@ export function factory<Dictionary extends ModelDictionary>(
 function createModelApi<
   Dictionary extends ModelDictionary,
   ModelName extends string
->(
-  dictionary: Dictionary,
-  modelName: ModelName,
-  definition: ModelDefinition,
-  db: Database<Dictionary>,
-) {
-  const parsedModel = parseModelDefinition(dictionary, modelName, definition)
+>(dictionary: Dictionary, modelName: ModelName, db: Database<Dictionary>) {
+  const definition = dictionary[modelName]
+  const parsedModel = parseModelDefinition(dictionary, modelName)
   const { primaryKey } = parsedModel
 
   sync(db)

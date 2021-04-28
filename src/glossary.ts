@@ -95,7 +95,7 @@ export type InternalEntity<
   ModelName extends keyof Dictionary
 > = InternalEntityProperties<ModelName> & Entity<Dictionary, ModelName>
 
-export type ModelDictionary = Limit<Record<string, Record<string, any>>>
+export type ModelDictionary = Limit<Record<string, ModelDefinition>>
 
 export type Limit<T extends Record<string, any>> = {
   [RK in keyof T]: {

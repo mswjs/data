@@ -2,7 +2,6 @@ import { debug } from 'debug'
 import {
   Relation,
   RelationKind,
-  ModelDefinition,
   PrimaryKeyType,
   ModelDictionary,
 } from '../glossary'
@@ -17,11 +16,15 @@ export interface ParsedModelDefinition {
   relations: Record<string, Relation>
 }
 
+/**
+ * Parses a given model to determine its primary key, static properties,
+ * and relational properties.
+ */
 export function parseModelDefinition<Dictionary extends ModelDictionary>(
   dictionary: Dictionary,
-  modelName: string,
-  definition: ModelDefinition,
+  modelName: keyof Dictionary,
 ): ParsedModelDefinition {
+  const definition = dictionary[modelName]
   log(`parsing model definition for "${modelName}" entity`, definition)
 
   const result = Object.entries(definition).reduce<{
