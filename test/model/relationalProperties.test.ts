@@ -1,4 +1,4 @@
-import { manyOf, oneOf, primaryKey } from '../../src'
+import { oneOf, primaryKey } from '../../src'
 import { Database } from '../../src/db/Database'
 import { InternalEntityProperty, Relation } from '../../src/glossary'
 import { defineRelationalProperties } from '../../src/model/defineRelationalProperties'
