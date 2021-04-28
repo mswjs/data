@@ -34,3 +34,6 @@ jobs:
 
       - name: Tests (typings)
         run: yarn test:ts
+
+      - name: Lint
+        run: yarn lint
