@@ -1,5 +1,5 @@
 import { response, restContext } from 'msw'
-import { primaryKey } from '../..'
+import { primaryKey } from '../../src'
 import { ModelDefinition } from '../../src/glossary'
 import {
   OperationError,

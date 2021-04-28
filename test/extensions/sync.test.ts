@@ -7,9 +7,11 @@ interface User {
   firstName: string
 }
 
-declare namespace window {
-  export const db: FactoryAPI<{ user: User }>
-  export const secondDb: FactoryAPI<{ user: User }>
+declare global {
+  interface Window {
+    db: FactoryAPI<{ user: User }>
+    secondDb: FactoryAPI<{ user: User }>
+  }
 }
 
 let browser: CreateBrowserApi
