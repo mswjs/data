@@ -13,7 +13,7 @@ export async function measurePerformance(
   const startEvent = `${name}Start`
   const endEvent = `${name}End`
 
-  return new Promise(async (resolve) => {
+  const promise: Promise<PerformanceEntry> = new Promise((resolve) => {
     const observer = new PerformanceObserver((list) => {
       const entries = list.getEntriesByName(name)
       const lastEntry = entries[entries.length - 1]
@@ -22,12 +22,14 @@ export async function measurePerformance(
       resolve(lastEntry)
     })
     observer.observe({ entryTypes: ['measure'], buffered: false })
-
-    performance.mark(startEvent)
-    await fn()
-    performance.mark(endEvent)
-    performance.measure(name, startEvent, endEvent)
   })
+
+  performance.mark(startEvent)
+  await fn()
+  performance.mark(endEvent)
+  performance.measure(name, startEvent, endEvent)
+
+  return promise
 }
 
 export function getThrownError(fn: () => void) {
