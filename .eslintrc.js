@@ -2,7 +2,6 @@ module.exports = {
   parserOptions: {
     sourceType: 'module',
     ecmaVersion: 2020,
-    ecmaFeatures: { jsx: true },
   },
   extends: ['eslint:recommended'],
   overrides: [
