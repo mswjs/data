@@ -37,7 +37,14 @@ export function defineRelationalProperties(
         relation,
       )
 
-      if (!(property in initialValues)) return properties
+      if (!(property in initialValues)) {
+        log(
+          'property "%s" does not exist in initial values, skipping...',
+          property,
+          initialValues,
+        )
+        return properties
+      }
 
       // Take the relational entity reference from the initial values.
       const entityRefs: Entity<any, any>[] = [].concat(initialValues[property])
@@ -82,6 +89,8 @@ export function defineRelationalProperties(
           )
         }
       }
+
+      log('setting "%s" property as reltional on', property, entity)
 
       properties[property] = {
         enumerable: true,

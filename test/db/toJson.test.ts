@@ -1,17 +1,16 @@
-import { ModelDictionary } from 'lib/glossary'
-import { parseModelDefinition } from 'src/model/parseModelDefinition'
+import { parseModelDefinition } from '../../src/model/parseModelDefinition'
 import { oneOf, manyOf, primaryKey } from '../../src'
 import { Database } from '../../src/db/Database'
-import { RelationKind } from '../../src/glossary'
+import { RelationKind, ModelDictionary } from '../../src/glossary'
 import { createModel } from '../../src/model/createModel'
 
 test('serialized database models into JSON', () => {
   const dictionary: ModelDictionary = {
     user: {
       id: primaryKey(String),
-      firstName: 'John',
+      firstName: () => 'John',
       role: oneOf('role'),
-      posts: manyOf('post'),
+      posts: manyOf('post', { unique: true }),
     },
     role: {
       id: primaryKey(String),
@@ -36,9 +35,22 @@ test('serialized database models into JSON', () => {
     { id: 'role-1', name: 'Reader' },
     db,
   )
+
   const posts = [
-    createModel('post', 'id', { id: 'post-1', title: 'First' }, {}, db),
-    createModel('post', 'id', { id: 'post-2', title: 'Second' }, {}, db),
+    createModel(
+      'post',
+      dictionary.post,
+      parseModelDefinition(dictionary, 'post'),
+      { id: 'post-1', title: 'First' },
+      db,
+    ),
+    createModel(
+      'post',
+      dictionary.post,
+      parseModelDefinition(dictionary, 'post'),
+      { id: 'post-2', title: 'Second' },
+      db,
+    ),
   ]
 
   db.create('role', role)
@@ -50,41 +62,13 @@ test('serialized database models into JSON', () => {
     'user',
     createModel(
       'user',
-      'id',
+      dictionary.user,
+      parseModelDefinition(dictionary, 'user'),
       {
         id: 'abc-123',
         firstName: 'John',
-      } as any,
-      {
-        role: {
-          kind: RelationKind.OneOf,
-          modelName: 'role',
-          unique: false,
-          refs: [
-            {
-              __type: 'role',
-              __primaryKey: 'id',
-              __nodeId: 'role-1',
-            },
-          ],
-        },
-        posts: {
-          kind: RelationKind.ManyOf,
-          modelName: 'post',
-          unique: false,
-          refs: [
-            {
-              __type: 'post',
-              __primaryKey: 'id',
-              __nodeId: 'post-1',
-            },
-            {
-              __type: 'post',
-              __primaryKey: 'id',
-              __nodeId: 'post-2',
-            },
-          ],
-        },
+        role,
+        posts,
       },
       db,
     ),
@@ -106,15 +90,14 @@ test('serialized database models into JSON', () => {
             kind: RelationKind.OneOf,
             modelName: 'role',
             unique: false,
-            refs: [
-              {
-                __type: 'role',
-                __nodeId: 'role-1',
-                __primaryKey: 'id',
-              },
-            ],
+            primaryKey: 'id',
           },
-          posts: [],
+          posts: {
+            kind: RelationKind.ManyOf,
+            modelName: 'post',
+            unique: true,
+            primaryKey: 'id',
+          },
         },
       ],
     ],

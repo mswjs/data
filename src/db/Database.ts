@@ -1,4 +1,5 @@
 import md5 from 'md5'
+import { debug } from 'debug'
 import { StrictEventEmitter } from 'strict-event-emitter'
 import {
   Entity,
@@ -6,8 +7,11 @@ import {
   InternalEntityProperty,
   ModelDictionary,
   PrimaryKeyType,
+  Relation,
   RelationKind,
 } from '../glossary'
+
+const log = debug('Database')
 
 type Models<Dictionary extends ModelDictionary> = Record<
   string,
@@ -44,6 +48,8 @@ export class Database<Dictionary extends ModelDictionary> {
 
     callOrder++
     this.id = this.generateId()
+
+    log('constructed a new Database (%s)', this.id, this.models)
   }
 
   /**
@@ -121,10 +127,10 @@ export class Database<Dictionary extends ModelDictionary> {
   }
 
   /**
-   * Returns a JSON representation of the current database entities.
+   * Serializes database entities into JSON.
    */
   toJson(): Record<string, any> {
-    console.log('input:', this.models)
+    log('toJson', this.models)
 
     return Object.entries(this.models).reduce<Record<string, any>>(
       (json, [modelName, entities]) => {
@@ -134,49 +140,47 @@ export class Database<Dictionary extends ModelDictionary> {
           const descriptors = Object.getOwnPropertyDescriptors(entity)
           const jsonEntity: Entity<any, any> = {} as any
 
+          log('"%s" entity', modelName, entity)
+          log('descriptors for "%s" model:', modelName, descriptors)
+
           for (const propertyName in descriptors) {
             const node = descriptors[propertyName]
             const isRelationalProperty =
               !node.hasOwnProperty('value') && node.hasOwnProperty('get')
 
-            console.log('analyzing "%s.%s"', modelName, propertyName)
+            log('analyzing "%s.%s"', modelName, propertyName)
 
             if (isRelationalProperty) {
-              console.log(
-                'found a relational property "%s" on "%s"',
-                propertyName,
+              log(
+                'found a relational property "%s.%s"',
                 modelName,
+                propertyName,
               )
 
               /**
-               * @todo Handle `manyOf` relation: this variable will be a list
+               * @fixme Handle `manyOf` relation: this variable will be a list
                * of relations in that case.
+               * THERE IS ALSO A SIMILAR LOGIC SOMEWHERE. REUSE?
                */
-              const resolvedRelationNode = node.get?.()
+              const resolvedRelationNode = node.get?.()! as any
+              log('resolved relational node', resolvedRelationNode)
 
-              console.log('value', node)
-              console.log('resolved relation:', node.get?.())
-
-              jsonEntity[propertyName] = {
+              const relation: Relation = {
                 kind: RelationKind.OneOf,
-                modelName: resolvedRelationNode.__type,
+                modelName: resolvedRelationNode[InternalEntityProperty.type],
                 unique: false,
-                refs: [
-                  {
-                    __type: resolvedRelationNode.__type,
-                    __primaryKey: resolvedRelationNode.__primaryKey,
-                    __nodeId:
-                      resolvedRelationNode[resolvedRelationNode.__primaryKey],
-                  },
-                ],
+                primaryKey:
+                  resolvedRelationNode[InternalEntityProperty.primaryKey],
               }
+
+              jsonEntity[propertyName] = relation
             } else {
-              console.log('property "%s" is not relational', propertyName)
+              log('property "%s.%s" is not relational', modelName, propertyName)
               jsonEntity[propertyName] = node.value
             }
           }
 
-          console.log({ jsonEntity })
+          log('JSON for "%s":\n', modelName, jsonEntity)
 
           /**
            * @todo How to persist relational properties?
@@ -190,9 +194,5 @@ export class Database<Dictionary extends ModelDictionary> {
       },
       {},
     )
-  }
-
-  hydrate(state: Dictionary) {
-    // this.models = {}
   }
 }

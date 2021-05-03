@@ -79,5 +79,7 @@ export function parseModelDefinition<Dictionary extends ModelDictionary>(
     )
   }
 
+  log('parsed model definition for "%s"', modelName, result)
+
   return result
 }
