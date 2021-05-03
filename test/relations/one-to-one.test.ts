@@ -1,134 +1,179 @@
-import { datatype, random } from 'faker'
 import { factory, primaryKey, oneOf } from '@mswjs/data'
 
-test('supports one-to-one relation', () => {
+test('supports one-to-one relationship', () => {
   const db = factory({
     country: {
-      id: primaryKey(datatype.uuid),
-      name: random.words,
+      id: primaryKey(String),
+      name: String,
+      capital: oneOf('city'),
     },
+    city: {
+      id: primaryKey(String),
+      name: String,
+    },
+  })
+
+  const britain = db.country.create({
+    id: 'country-1',
+    name: 'Great Britain',
+    capital: db.city.create({
+      id: 'city-1',
+      name: 'London',
+    }),
+  })
+
+  expect(britain.capital).toEqual({
+    id: 'city-1',
+    name: 'London',
+  })
+  expect(
+    db.country.findFirst({
+      where: {
+        name: {
+          equals: 'Great Britain',
+        },
+      },
+    }),
+  ).toEqual({
+    id: 'country-1',
+    name: 'Great Britain',
     capital: {
-      id: primaryKey(datatype.uuid),
-      name: random.word,
-      country: oneOf('country'),
+      id: 'city-1',
+      name: 'London',
     },
   })
-
-  const usa = db.country.create({
-    name: 'United States of America',
-  })
-  const washington = db.capital.create({
-    name: 'Washington',
-    country: usa,
-  })
-
-  expect(washington.country).toHaveProperty('name', 'United States of America')
 })
 
 test('supports querying through a one-to-one relational property', () => {
   const db = factory({
     country: {
-      id: primaryKey(datatype.uuid),
-      name: random.words,
+      id: primaryKey(String),
+      name: String,
+      capital: oneOf('city'),
     },
-    capital: {
-      id: primaryKey(datatype.uuid),
-      name: random.word,
-      country: oneOf('country'),
+    city: {
+      id: primaryKey(String),
+      name: String,
     },
   })
 
-  const usa = db.country.create({
-    name: 'United States of America',
-  })
-  db.capital.create({
-    name: 'Washington',
-    country: usa,
+  db.country.create({
+    id: 'country-1',
+    name: 'Great Britain',
+    capital: db.city.create({
+      id: 'city-1',
+      name: 'London',
+    }),
   })
 
-  const capital = db.capital.findFirst({
-    where: {
-      country: {
-        name: {
-          equals: 'United States of America',
+  expect(
+    db.country.findFirst({
+      where: {
+        capital: {
+          name: {
+            equals: 'London',
+          },
         },
       },
+    }),
+  ).toEqual({
+    id: 'country-1',
+    name: 'Great Britain',
+    capital: {
+      id: 'city-1',
+      name: 'London',
     },
   })
-  expect(capital).toHaveProperty('name', 'Washington')
+
+  expect(
+    db.country.findFirst({
+      where: {
+        capital: {
+          name: {
+            equals: 'New Hampshire',
+          },
+        },
+      },
+    }),
+  ).toEqual(null)
 })
 
-test('should not throw error if an entity with one-to-one relation is created without it', () => {
+test('allows creating an entity without specifying a value for the one-to-one relational property', () => {
   const db = factory({
     country: {
-      id: primaryKey(random.uuid),
-      name: random.words,
+      id: primaryKey(String),
+      name: String,
+      capital: oneOf('city'),
     },
-    capital: {
-      id: primaryKey(random.uuid),
-      name: random.word,
-      country: oneOf('country'),
+    city: {
+      id: primaryKey(String),
+      name: String,
     },
   })
 
-  expect(() => db.capital.create()).not.toThrow()
+  expect(() => db.country.create({ id: 'country-1' })).not.toThrow()
 })
 
 test('updates the relational property to the next entity', () => {
   const db = factory({
     country: {
-      name: primaryKey(random.words),
+      id: primaryKey(String),
+      name: String,
+      capital: oneOf('city'),
     },
-    capital: {
-      name: primaryKey(random.word),
-      country: oneOf('country'),
+    city: {
+      id: primaryKey(String),
+      name: String,
     },
   })
-  const refetchCapital = () => {
-    return db.capital.findFirst({
+  const refetchCountry = () => {
+    return db.country.findFirst({
       where: {
-        name: { equals: 'Washington' },
+        name: {
+          equals: 'Great Britain',
+        },
       },
     })
   }
 
-  const usa = db.country.create({
-    name: 'United States of America',
-  })
-  const australia = db.country.create({
-    name: 'Australia',
-  })
-  db.capital.create({
-    name: 'Washington',
-    country: usa,
-  })
-  expect(refetchCapital()).toEqual({
-    name: 'Washington',
-    country: {
-      name: 'United States of America',
-    },
+  db.country.create({
+    id: 'country-1',
+    name: 'Great Britain',
+    capital: db.city.create({
+      id: 'city-1',
+      name: 'London',
+    }),
   })
 
-  // Update the "country" relational property.
-  const updatedCapital = db.capital.update({
+  // Update the "capital" relational property.
+  const updatedCountry = db.country.update({
     where: {
-      name: { equals: 'Washington' },
+      name: {
+        equals: 'Great Britain',
+      },
     },
     data: {
-      country: australia,
+      capital: db.city.create({
+        id: 'city-2',
+        name: 'New Hampshire',
+      }),
     },
   })
 
-  expect(updatedCapital).toEqual({
-    name: 'Washington',
-    country: {
-      name: 'Australia',
+  expect(updatedCountry).toEqual({
+    id: 'country-1',
+    name: 'Great Britain',
+    capital: {
+      id: 'city-2',
+      name: 'New Hampshire',
     },
   })
-  expect(refetchCapital()).toEqual({
-    name: 'Washington',
-    country: {
-      name: 'Australia',
+  expect(refetchCountry()).toEqual({
+    id: 'country-1',
+    name: 'Great Britain',
+    capital: {
+      id: 'city-2',
+      name: 'New Hampshire',
     },
   })
 })
@@ -136,59 +181,112 @@ test('updates the relational property to the next entity', () => {
 test('updates the relational property to a compatible object value', () => {
   const db = factory({
     country: {
-      name: primaryKey(random.words),
+      id: primaryKey(String),
+      name: String,
+      capital: oneOf('city'),
     },
-    capital: {
-      name: primaryKey(random.word),
-      country: oneOf('country'),
+    city: {
+      id: primaryKey(String),
+      name: String,
     },
   })
-  const refetchCapital = () => {
-    return db.capital.findFirst({
+  const refetchCountry = () => {
+    return db.country.findFirst({
       where: {
-        name: { equals: 'Washington' },
+        name: {
+          equals: 'Great Britain',
+        },
       },
     })
   }
 
-  const usa = db.country.create({
-    name: 'United States of America',
-  })
-  db.capital.create({
-    name: 'Washington',
-    country: usa,
-  })
-
-  expect(refetchCapital()).toEqual({
-    name: 'Washington',
-    country: {
-      name: 'United States of America',
-    },
+  db.country.create({
+    id: 'country-1',
+    name: 'Great Britain',
+    capital: db.city.create({
+      id: 'city-1',
+      name: 'London',
+    }),
   })
 
   // Update the "country" relational property
   // to a compatible object value.
-  const updatedCapital = db.capital.update({
+  const updatedCountry = db.country.update({
     where: {
-      name: { equals: 'Washington' },
+      name: {
+        equals: 'Great Britain',
+      },
     },
     data: {
-      country: {
-        name: 'Australia',
+      capital: {
+        id: 'city-2',
+        name: 'New Hampshire',
       },
     },
   })
 
-  expect(updatedCapital).toEqual({
-    name: 'Washington',
-    country: {
-      name: 'Australia',
+  expect(updatedCountry).toEqual({
+    id: 'country-1',
+    name: 'Great Britain',
+    capital: {
+      id: 'city-2',
+      name: 'New Hampshire',
     },
   })
-  expect(refetchCapital()).toEqual({
-    name: 'Washington',
+  expect(refetchCountry()).toEqual({
+    id: 'country-1',
+    name: 'Great Britain',
+    capital: {
+      id: 'city-2',
+      name: 'New Hampshire',
+    },
+  })
+})
+
+test('respects updates to the referenced relational entity', () => {
+  const db = factory({
     country: {
-      name: 'Australia',
+      id: primaryKey(String),
+      name: String,
+      capital: oneOf('city'),
+    },
+    city: {
+      id: primaryKey(String),
+      name: String,
+    },
+  })
+
+  db.country.create({
+    id: 'country-1',
+    name: 'Great Britain',
+    capital: db.city.create({
+      id: 'city-1',
+      name: 'London',
+    }),
+  })
+  db.city.update({
+    where: {
+      name: { equals: 'London' },
+    },
+    data: {
+      name: 'New Hampshire',
+    },
+  })
+
+  const country = db.country.findFirst({
+    where: {
+      name: {
+        equals: 'Great Britain',
+      },
+    },
+  })
+
+  expect(country).toEqual({
+    id: 'country-1',
+    name: 'Great Britain',
+    capital: {
+      id: 'city-1',
+      name: 'New Hampshire',
     },
   })
 })
