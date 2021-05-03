@@ -114,7 +114,7 @@ it('updates database entity modified via a generated handler', async () => {
     ],
   })
 
-  //
+  // Updates persist in the request handler's mocked response.
   const refetchedUser = await fetch('http://localhost/user').then((res) =>
     res.json(),
   )
