@@ -1,3 +1,4 @@
+import { GraphQLSchema } from 'graphql'
 import { GraphQLHandler, RestHandler } from 'msw'
 import {
   BulkQueryOptions,
@@ -174,10 +175,16 @@ export interface ModelAPI<
   /**
    * Generate request handlers of the given type based on the model.
    */
-  toHandlers<HandlerType extends 'rest' | 'graphql'>(
-    type: HandlerType,
-    baseUrl?: string,
-  ): HandlerType extends 'rest' ? RestHandler[] : GraphQLHandler[]
+  toHandlers(type: 'rest', baseUrl?: string): RestHandler[]
+  /**
+   * Generate request handlers of the given type based on the model.
+   */
+  toHandlers(type: 'graphql', baseUrl?: string): GraphQLHandler[]
+
+  /**
+   * Generate a schema of the given type based on the model.
+   */
+  toSchema(type: 'graphql'): GraphQLSchema
 }
 
 export type UpdateManyValue<

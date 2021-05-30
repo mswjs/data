@@ -15,7 +15,10 @@ import { updateEntity } from './model/updateEntity'
 import { OperationError, OperationErrorType } from './errors/OperationError'
 import { Database } from './db/Database'
 import { generateRestHandlers } from './model/generateRestHandlers'
-import { generateGraphQLHandlers } from './model/generateGraphQLHandlers'
+import {
+  generateGraphQLHandlers,
+  generateGraphQLSchema,
+} from './model/generateGraphQLHandlers'
 import { sync } from './extensions/sync'
 import { removeInternalProperties } from './utils/removeInternalProperties'
 
@@ -256,12 +259,18 @@ function createModelApi<
 
       return records.map(removeInternalProperties)
     },
-    toHandlers(type, baseUrl): any {
+    toHandlers(type: 'rest' | 'graphql', baseUrl: string): any {
       if (type === 'graphql') {
         return generateGraphQLHandlers(modelName, definition, api, baseUrl)
       }
 
       return generateRestHandlers(modelName, definition, api, baseUrl)
+    },
+    toSchema(type: 'graphql') {
+      if (type === 'graphql') {
+        return generateGraphQLSchema(modelName, definition, api)
+      }
+      throw new Error('This Schema type is not supported at the moment')
     },
   }
 

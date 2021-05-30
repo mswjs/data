@@ -132,16 +132,14 @@ export function definitionToFields(
   )
 }
 
-export function generateGraphQLHandlers<
+export function generateGraphQLSchema<
   Dictionary extends ModelDictionary,
   ModelName extends string
 >(
   modelName: ModelName,
   definition: ModelDefinition,
   model: ModelAPI<Dictionary, ModelName>,
-  baseUrl: string = '',
-): GraphQLHandler[] {
-  const target = baseUrl ? graphql.link(baseUrl) : graphql
+): GraphQLSchema {
   const pluralModelName = pluralize(modelName)
   const capitalModelName = capitalize(modelName)
   const { fields, inputFields, queryInputFields } = definitionToFields(
@@ -267,6 +265,22 @@ export function generateGraphQLHandlers<
       },
     }),
   })
+
+  return objectSchema
+}
+
+export function generateGraphQLHandlers<
+  Dictionary extends ModelDictionary,
+  ModelName extends string
+>(
+  modelName: ModelName,
+  definition: ModelDefinition,
+  model: ModelAPI<Dictionary, ModelName>,
+  baseUrl: string = '',
+): GraphQLHandler[] {
+  const target = baseUrl ? graphql.link(baseUrl) : graphql
+
+  const objectSchema = generateGraphQLSchema(modelName, definition, model)
 
   return [
     target.operation(async (req, res, ctx) => {
