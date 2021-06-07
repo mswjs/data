@@ -1,5 +1,6 @@
 import { debug } from 'debug'
 import { Database } from '../db/Database'
+import { isPrimitive } from '../utils/isPrimitive'
 import {
   InternalEntity,
   InternalEntityProperties,
@@ -58,13 +59,14 @@ export function createModel<
         return entity
       }
 
-      if (
-        typeof exactValue === 'string' ||
-        typeof exactValue === 'number' ||
-        typeof exactValue === 'boolean' ||
-        exactValue?.constructor.name === 'Date'
-      ) {
+      if (isPrimitive(exactValue)) {
         log(`"${modelName}.${property}" has a plain initial value:`, exactValue)
+        entity[property] = exactValue
+        return entity
+      }
+
+      if (Array.isArray(exactValue) && exactValue.every(isPrimitive)) {
+        log(`"${modelName}.${property}" has a plain array value:`, exactValue)
         entity[property] = exactValue
         return entity
       }

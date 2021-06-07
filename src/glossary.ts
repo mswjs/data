@@ -8,6 +8,7 @@ import {
 
 export type PrimaryKeyType = string | number
 export type BaseTypes = string | number | boolean | Date
+export type BaseTypesArray = BaseTypes[]
 export type KeyType = string | number | symbol
 
 export enum InternalEntityProperty {
@@ -74,7 +75,11 @@ export type ManyOf<ModelName extends KeyType> = RelationDefinition<
 
 export type ModelDefinition = Record<
   string,
-  (() => BaseTypes) | OneOf<any> | ManyOf<any> | PrimaryKeyDeclaration
+  | (() => BaseTypes)
+  | (() => BaseTypesArray)
+  | OneOf<any>
+  | ManyOf<any>
+  | PrimaryKeyDeclaration
 >
 
 export type FactoryAPI<Dictionary extends Record<string, any>> = {
@@ -102,9 +107,10 @@ export type Limit<T extends Record<string, any>> = {
   [RK in keyof T]: {
     [SK in keyof T[RK]]: T[RK][SK] extends
       | (() => BaseTypes)
+      | (() => BaseTypesArray)
+      | OneOf<any>
+      | ManyOf<any>
       | PrimaryKeyDeclaration
-      | OneOf<keyof T>
-      | ManyOf<keyof T>
       ? T[RK][SK]
       : {
           error: 'expected a value or a relation'
