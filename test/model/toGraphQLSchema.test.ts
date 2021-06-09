@@ -11,7 +11,7 @@ const db = factory({
 })
 
 test('generates a graphql schema', () => {
-  const schema = db.user.toSchema('graphql')
+  const schema = db.user.toGraphQLSchema()
   expect(printSchema(schema)).toMatchInlineSnapshot(`
     "type Query {
       user(where: UserQueryInput): User
