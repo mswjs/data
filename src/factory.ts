@@ -266,11 +266,8 @@ function createModelApi<
 
       return generateRestHandlers(modelName, definition, api, baseUrl)
     },
-    toSchema(type: 'graphql') {
-      if (type === 'graphql') {
-        return generateGraphQLSchema(modelName, definition, api)
-      }
-      throw new Error('This Schema type is not supported at the moment')
+    toGraphQLSchema() {
+      return generateGraphQLSchema(modelName, definition, api)
     },
   }
 

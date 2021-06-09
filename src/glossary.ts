@@ -182,9 +182,9 @@ export interface ModelAPI<
   toHandlers(type: 'graphql', baseUrl?: string): GraphQLHandler[]
 
   /**
-   * Generate a schema of the given type based on the model.
+   * Generate a graphql schema based on the model.
    */
-  toSchema(type: 'graphql'): GraphQLSchema
+  toGraphQLSchema(): GraphQLSchema
 }
 
 export type UpdateManyValue<
