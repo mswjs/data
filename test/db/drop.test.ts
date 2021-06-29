@@ -36,19 +36,20 @@ test('does nothing when the database is already empty', () => {
   expect(db.user.getAll()).toHaveLength(0)
 })
 
-test('db drop does not care relation dependency', () => {
+test('properly cleans up relational properties', () => {
   const db = factory({
     user: {
       id: primaryKey(identity('abc-123')),
     },
     group: {
-      id: primaryKey(identity('xyz-123')),
-      root: oneOf('user')
+      id: primaryKey(identity('def-456')),
+      owner: oneOf('user')
     }
   })
 
   const user = db.user.create()
-  db.group.create({root: user})
+  db.group.create({ owner: user })
+
   expect(db.user.getAll()).toHaveLength(1)
   expect(db.group.getAll()).toHaveLength(1)
 
