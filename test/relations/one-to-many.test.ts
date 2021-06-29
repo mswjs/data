@@ -77,14 +77,14 @@ test('supports querying through one-to-many relation', () => {
   expect(userIds).toEqual(['user-1', 'user-3'])
 })
 
-test('should not throw error if an entity with one-to-many relation is created without it', () => {
+test('does not throw any error if an entity with one-to-many relation is created without it', () => {
   const db = factory({
     user: {
-      id: primaryKey(random.uuid),
+      id: primaryKey(datatype.uuid),
       posts: manyOf('post'),
     },
     post: {
-      id: primaryKey(random.uuid),
+      id: primaryKey(datatype.uuid),
       title: random.words,
     },
   })
@@ -95,11 +95,11 @@ test('should not throw error if an entity with one-to-many relation is created w
 test('updates the relational value via the ".update()" model method', () => {
   const db = factory({
     user: {
-      id: primaryKey(random.uuid),
+      id: primaryKey(datatype.uuid),
       posts: manyOf('post'),
     },
     post: {
-      id: primaryKey(random.uuid),
+      id: primaryKey(datatype.uuid),
       title: random.words,
     },
   })
@@ -147,11 +147,11 @@ test('updates the relational value via the ".update()" model method', () => {
 test('updates the relational value via a compatible object', () => {
   const db = factory({
     user: {
-      id: primaryKey(random.uuid),
+      id: primaryKey(datatype.uuid),
       posts: manyOf('post'),
     },
     post: {
-      id: primaryKey(random.uuid),
+      id: primaryKey(datatype.uuid),
       title: random.words,
     },
   })
