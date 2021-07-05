@@ -111,6 +111,7 @@ setupWorker(
 - [Strict mode](#strict-mode)
 - [Model relationships](#model-relationships)
 - [Pagination](#pagination)
+- [Sorting](#sorting)
 
 ### Model methods
 
@@ -640,6 +641,100 @@ const secondPage = db.post.findMany({
   // The second page will start from the last post
   // of the `firstPage`.
   cursor: firstPage[firstPage.length - 1].id,
+})
+```
+
+### Sorting
+
+#### Basic sorting
+
+```js
+const db = factory({
+  post: {
+    id: primaryKey(String),
+    title: String,
+  },
+})
+
+// Return first 10 posts in the "Science" category
+// sorted by the post's "title".
+db.post.findMany({
+  where: {
+    category: {
+      equals: 'Science',
+    },
+  },
+  take: 10,
+  orderBy: {
+    title: 'asc',
+  },
+})
+```
+
+> You can use `orderBy` with [pagination](#pagination).
+
+#### Sorting by relational properties
+
+```js
+const db = factory({
+  post: {
+    id: primaryKey(String),
+    title: String,
+    author: oneOf('user')
+  },
+  user: {
+    id: primaryKey(String),
+    firstName: String
+  }
+})
+
+// Return all posts in the "Science" category
+// sorted by the post author's first name.
+db.post.findMany({
+  where: {
+    category: {
+      equals: 'Science'
+    }
+  }
+  orderBy: {
+    author: {
+      firstName: 'asc'
+    }
+  }
+})
+```
+
+#### Sorting by multiple criteria
+
+Provide a list of criteria to sort the query result against.
+
+```js
+db.post.findMany({
+  orderBy: [
+    {
+      title: 'asc',
+    },
+    {
+      views: 'desc',
+    },
+  ],
+})
+```
+
+You can also use a combination of direct and relational properties on a single query:
+
+```js
+db.post.findMany({
+  orderBy: [
+    {
+      title: 'asc',
+    },
+    {
+      author: {
+        firstName: 'asc',
+      },
+    },
+  ],
 })
 ```
 
