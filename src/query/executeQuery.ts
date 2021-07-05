@@ -13,6 +13,7 @@ import {
 import * as iteratorUtils from '../utils/iteratorUtils'
 import { paginateResults } from './paginateResults'
 import { Database } from '../db/Database'
+import { sortResults } from './sortResults'
 
 const log = debug('executeQuery')
 
@@ -37,7 +38,7 @@ function queryByPrimaryKey(
 export function executeQuery(
   modelName: string,
   primaryKey: PrimaryKeyType,
-  query: WeakQuerySelector<any> & BulkQueryOptions,
+  query: WeakQuerySelector<any> & BulkQueryOptions<any>,
   db: Database<any>,
 ): InternalEntity<any, any>[] {
   log(`${JSON.stringify(query)} on "${modelName}"`)
@@ -65,6 +66,10 @@ export function executeQuery(
     `resolved query "${JSON.stringify(query)}" on "${modelName}" to`,
     resultJson,
   )
+
+  if (query.orderBy) {
+    sortResults(query.orderBy, resultJson)
+  }
 
   const paginatedResults = paginateResults(query, resultJson)
   log('paginated query results', paginatedResults)

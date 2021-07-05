@@ -1,4 +1,9 @@
-import { PrimaryKeyType, Value } from '../glossary'
+import {
+  BaseTypes,
+  DeepRequireExactlyOne,
+  PrimaryKeyType,
+  Value,
+} from '../glossary'
 
 export interface QuerySelector<EntityType extends Record<string, any>> {
   strict?: boolean
@@ -17,21 +22,35 @@ export interface WeakQuerySelectorWhere<KeyType extends PrimaryKeyType> {
   [key: string]: Partial<GetQueryFor<KeyType>>
 }
 
-interface BulkQueryBaseOptions {
+export type SortDirection = 'asc' | 'desc'
+export type OrderBy<EntityType> = DeepRequireExactlyOne<
+  {
+    [K in keyof EntityType]?: EntityType[K] extends BaseTypes
+      ? SortDirection
+      : OrderBy<EntityType[K]>
+  }
+>
+
+export interface BulkQueryBaseOptions<EntityType extends Record<string, any>> {
   take?: number
+  orderBy?: OrderBy<EntityType> | OrderBy<EntityType>[]
 }
 
-interface BulkQueryOffsetOptions extends BulkQueryBaseOptions {
+interface BulkQueryOffsetOptions<EntityType>
+  extends BulkQueryBaseOptions<EntityType> {
   skip?: number
   cursor?: never
 }
 
-interface BulkQueryCursorOptions extends BulkQueryBaseOptions {
+interface BulkQueryCursorOptions<EntityType>
+  extends BulkQueryBaseOptions<EntityType> {
   skip?: never
   cursor: PrimaryKeyType | null
 }
 
-export type BulkQueryOptions = BulkQueryOffsetOptions | BulkQueryCursorOptions
+export type BulkQueryOptions<EntityType> =
+  | BulkQueryOffsetOptions<EntityType>
+  | BulkQueryCursorOptions<EntityType>
 
 export type ComparatorFn<ExpectedType extends any, ActualType extends any> = (
   expected: ExpectedType,

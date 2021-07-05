@@ -15,11 +15,11 @@ export function compileQuery<Data extends Record<string, any>>(
 
   return (data: Data): boolean => {
     return Object.entries(query.where)
-      .map<boolean>(([propName, queryChunk]) => {
-        const actualValue = data[propName]
+      .map<boolean>(([property, queryChunk]) => {
+        const actualValue = data[property]
 
         log('executing query chunk', queryChunk, data)
-        log(`actual value for "${propName}"`, actualValue)
+        log('actual value for "%s"', property, actualValue)
 
         if (!queryChunk) {
           return true

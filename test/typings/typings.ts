@@ -4,10 +4,12 @@ const db = factory({
   user: {
     id: primaryKey(String),
     firstName: String,
+    createdAt: () => new Date(),
     country: oneOf('country'),
   },
   country: {
-    name: primaryKey(String),
+    id: primaryKey(String),
+    name: String,
   },
   post: {
     id: primaryKey(String),
@@ -98,4 +100,142 @@ db.user.getAll().map((user) => {
 
   // @ts-expect-error Unknown property "foo" on the "user" model.
   user.foo
+})
+
+/**
+ * Sorting.
+ */
+db.user.findMany({
+  orderBy: {
+    firstName: 'asc',
+  },
+})
+
+db.user.findMany({
+  orderBy: {
+    createdAt: 'asc',
+  },
+})
+
+db.user.findMany({
+  orderBy: [
+    {
+      id: 'asc',
+    },
+    {
+      firstName: 'desc',
+    },
+  ],
+})
+
+db.user.findMany({
+  orderBy: {
+    country: {
+      name: 'asc',
+    },
+  },
+})
+
+db.user.findMany({
+  orderBy: [
+    {
+      firstName: 'desc',
+    },
+    {
+      country: {
+        name: 'asc',
+      },
+    },
+  ],
+})
+
+db.user.findMany({
+  orderBy: [
+    {
+      country: {
+        id: 'asc',
+      },
+    },
+    {
+      country: {
+        name: 'desc',
+      },
+    },
+  ],
+})
+
+db.user.findMany({
+  // @ts-expect-error Unknown sort criteria.
+  orderBy: {
+    firstName: 'acs',
+  },
+})
+
+db.user.findMany({
+  orderBy: [
+    {
+      // @ts-expect-error Unknown sort criteria.
+      firstName: 'acs',
+    },
+  ],
+})
+
+db.user.findMany({
+  orderBy: [
+    {
+      country: {
+        // @ts-expect-error Unknown sort criteria.
+        name: 'unknown',
+      },
+    },
+  ],
+})
+
+db.user.findMany({
+  orderBy: {
+    // @ts-expect-error Unknown property "foo" on the "user" model.
+    foo: 'asc',
+  },
+})
+
+db.user.findMany({
+  orderBy: [
+    {
+      // @ts-expect-error Unknown property "foo" on the "user" model.
+      foo: 'asc',
+    },
+  ],
+})
+
+db.user.findMany({
+  // @ts-expect-error Cannot specify more than 1 sorting key.
+  orderBy: {
+    id: 'asc',
+    firstName: 'desc',
+  },
+})
+
+db.user.findMany({
+  orderBy: [
+    // @ts-expect-error Cannot specify more than 1 sorting key.
+    {
+      id: 'asc',
+      firstName: 'desc',
+    },
+  ],
+})
+
+db.user.findMany({
+  orderBy: [
+    {
+      id: 'asc',
+    },
+    {
+      country: {
+        // @ts-expect-error Cannot specify more than 1 sorting key.
+        id: 'desc',
+        name: 'asc',
+      },
+    },
+  ],
 })

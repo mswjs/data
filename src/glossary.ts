@@ -113,6 +113,23 @@ export type Limit<T extends Record<string, any>> = {
   }
 }
 
+export type RequireExactlyOne<
+  ObjectType,
+  KeysType extends keyof ObjectType = keyof ObjectType
+> = {
+  [Key in KeysType]: Required<Pick<ObjectType, Key>> &
+    Partial<Record<Exclude<KeysType, Key>, never>>
+}[KeysType] &
+  Pick<ObjectType, Exclude<keyof ObjectType, KeysType>>
+
+export type DeepRequireExactlyOne<ObjectType> = RequireExactlyOne<
+  {
+    [K in keyof ObjectType]: ObjectType[K] extends Record<any, any>
+      ? RequireExactlyOne<ObjectType[K]>
+      : ObjectType[K]
+  }
+>
+
 export interface ModelAPI<
   Dictionary extends ModelDictionary,
   ModelName extends keyof Dictionary
@@ -138,7 +155,7 @@ export interface ModelAPI<
    */
   findMany(
     query: WeakQuerySelector<Value<Dictionary[ModelName], Dictionary>> &
-      BulkQueryOptions,
+      BulkQueryOptions<Value<Dictionary[ModelName], Dictionary>>,
   ): Entity<Dictionary, ModelName>[]
   /**
    * Return all entities of the current model.

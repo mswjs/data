@@ -6,7 +6,7 @@ function getEndIndex(start: number, end?: number) {
 }
 
 export function paginateResults(
-  query: WeakQuerySelector<any> & BulkQueryOptions,
+  query: WeakQuerySelector<any> & BulkQueryOptions<any>,
   data: InternalEntity<any, any>[],
 ): InternalEntity<any, any>[] {
   if (query.cursor) {
