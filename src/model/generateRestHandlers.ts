@@ -140,10 +140,10 @@ export function generateRestHandlers<
         )
 
         let options = { where: filters }
-        if (take && skip) {
+        if (take || skip) {
           options = Object.assign(options, { take, skip })
         }
-        if (take && cursor) {
+        if (take || cursor) {
           options = Object.assign(options, { take, cursor })
         }
 
