@@ -111,6 +111,84 @@ describe('GET /users', () => {
     ])
   })
 
+  it('returns offset paginated entities without an explicit "skip" parameter', async () => {
+    server.use(...db.user.toHandlers('rest', 'http://localhost'))
+    db.user.create({
+      id: 'abc-123',
+      firstName: 'John',
+      lastName: 'White',
+    })
+    db.user.create({
+      id: 'def-456',
+      firstName: 'Kate',
+      lastName: 'Moen',
+    })
+    db.user.create({
+      id: 'ghi-789',
+      firstName: 'Joseph',
+      lastName: 'Sipes',
+    })
+    db.user.create({
+      id: 'xyz-321',
+      firstName: 'Eva',
+      lastName: 'Grant',
+    })
+
+    const res = await fetch('http://localhost/users?take=2')
+    const users = await res.json()
+    expect(users).toEqual([
+      {
+        id: 'abc-123',
+        firstName: 'John',
+        lastName: 'White',
+      },
+      {
+        id: 'def-456',
+        firstName: 'Kate',
+        lastName: 'Moen',
+      },
+    ])
+  })
+
+  it('returns offset paginated entities with the "skip" parameter set to 0', async () => {
+    server.use(...db.user.toHandlers('rest', 'http://localhost'))
+    db.user.create({
+      id: 'abc-123',
+      firstName: 'John',
+      lastName: 'White',
+    })
+    db.user.create({
+      id: 'def-456',
+      firstName: 'Kate',
+      lastName: 'Moen',
+    })
+    db.user.create({
+      id: 'ghi-789',
+      firstName: 'Joseph',
+      lastName: 'Sipes',
+    })
+    db.user.create({
+      id: 'xyz-321',
+      firstName: 'Eva',
+      lastName: 'Grant',
+    })
+
+    const res = await fetch('http://localhost/users?skip=0&take=2')
+    const users = await res.json()
+    expect(users).toEqual([
+      {
+        id: 'abc-123',
+        firstName: 'John',
+        lastName: 'White',
+      },
+      {
+        id: 'def-456',
+        firstName: 'Kate',
+        lastName: 'Moen',
+      },
+    ])
+  })
+
   it('returns cursor paginated entities', async () => {
     server.use(...db.user.toHandlers('rest', 'http://localhost'))
     db.user.create({
@@ -138,6 +216,51 @@ describe('GET /users', () => {
     const users = await res.json()
 
     expect(users).toEqual([
+      {
+        id: 'ghi-789',
+        firstName: 'Joseph',
+        lastName: 'Sipes',
+      },
+      {
+        id: 'xyz-321',
+        firstName: 'Eva',
+        lastName: 'Grant',
+      },
+    ])
+  })
+
+  it('returns cursor paginated entities without an explicit "take" parameter', async () => {
+    server.use(...db.user.toHandlers('rest', 'http://localhost'))
+    db.user.create({
+      id: 'abc-123',
+      firstName: 'John',
+      lastName: 'White',
+    })
+    db.user.create({
+      id: 'def-456',
+      firstName: 'Kate',
+      lastName: 'Moen',
+    })
+    db.user.create({
+      id: 'ghi-789',
+      firstName: 'Joseph',
+      lastName: 'Sipes',
+    })
+    db.user.create({
+      id: 'xyz-321',
+      firstName: 'Eva',
+      lastName: 'Grant',
+    })
+
+    const res = await fetch('http://localhost/users?cursor=abc-123')
+    const users = await res.json()
+
+    expect(users).toEqual([
+      {
+        id: 'def-456',
+        firstName: 'Kate',
+        lastName: 'Moen',
+      },
       {
         id: 'ghi-789',
         firstName: 'Joseph',
