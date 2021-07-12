@@ -1,6 +1,6 @@
 import * as path from 'path'
 import { createBrowser, CreateBrowserApi, pageWith } from 'page-with'
-import { FactoryAPI } from '../../src/glossary'
+import { FactoryAPI } from '../../../src/glossary'
 
 interface User {
   id: string

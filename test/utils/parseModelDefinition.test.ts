@@ -9,7 +9,7 @@ it('parses a given plain model definition', () => {
       firstName: String,
     },
   }
-  const result = parseModelDefinition(dictionary, 'user', dictionary.user)
+  const result = parseModelDefinition(dictionary, 'user')
 
   expect(result).toEqual({
     primaryKey: 'id',
@@ -33,7 +33,7 @@ it('parses a given model definition with relations', () => {
       id: primaryKey(String),
     },
   }
-  const result = parseModelDefinition(dictionary, 'user', dictionary['user'])
+  const result = parseModelDefinition(dictionary, 'user')
 
   expect(result).toEqual({
     primaryKey: 'id',
@@ -62,7 +62,7 @@ it('throws an error when provided a model definition with multiple primary keys'
       role: primaryKey(String),
     },
   }
-  const parse = () => parseModelDefinition(dictionary, 'user', dictionary.user)
+  const parse = () => parseModelDefinition(dictionary, 'user')
 
   expect(parse).toThrow(
     'Failed to parse a model definition for "user": cannot have both properties "id" and "role" as a primary key.',
@@ -75,7 +75,7 @@ it('throws an error when provided a model definition without a primary key', () 
       firstName: String,
     },
   }
-  const parse = () => parseModelDefinition(dictionary, 'user', dictionary.user)
+  const parse = () => parseModelDefinition(dictionary, 'user')
 
   expect(parse).toThrow(
     'Failed to parse a model definition for "user": no provided properties are marked as a primary key (firstName).',
