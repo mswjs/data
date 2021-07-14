@@ -21,12 +21,14 @@ it('removes internal properties from an entity with relations', () => {
     __primaryKey: 'id',
     id: 'abc-123',
     firstName: 'John',
+    // "oneOf" relation.
     address: {
       __type: 'address',
       __primaryKey: 'id',
       id: 'addr-123',
       street: 'Broadway',
     },
+    // "manyOf" relation.
     contacts: [
       {
         __type: 'contact',
@@ -57,7 +59,7 @@ it('removes internal properties from an entity with relations', () => {
   })
 })
 
-it('preserves custom properties starting with a leading "__"', () => {
+it('preserves custom properties starting with the double underscore', () => {
   const user: InternalEntity<any, any> = {
     __type: 'user',
     __primaryKey: 'id',

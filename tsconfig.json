@@ -7,6 +7,7 @@
     "moduleResolution": "node",
     "downlevelIteration": true,
     "esModuleInterop": true,
+    "noImplicitAny": true,
     "baseUrl": ".",
     "paths": {
       "@mswjs/data": ["./lib"]

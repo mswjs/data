@@ -87,12 +87,12 @@ export interface InternalEntityProperties<ModelName extends KeyType> {
 }
 
 export type Entity<
-  Dictionary extends Record<string, any>,
+  Dictionary extends ModelDictionary,
   ModelName extends keyof Dictionary
 > = Value<Dictionary[ModelName], Dictionary>
 
 export type InternalEntity<
-  Dictionary extends Record<string, any>,
+  Dictionary extends ModelDictionary,
   ModelName extends keyof Dictionary
 > = InternalEntityProperties<ModelName> & Entity<Dictionary, ModelName>
 
