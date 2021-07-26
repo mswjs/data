@@ -3483,7 +3483,7 @@ ms@2.1.2:
   resolved "https://registry.yarnpkg.com/ms/-/ms-2.1.2.tgz#d09d1f357b443f493382a8eb3ccd183872ae6009"
   integrity sha512-sGkPx+VjMtmA6MX27oA4FBFELFCZZ4S4XqeGOXCv68tT+jb3vk/RyaKWP0PTKyWtmLSM0b+adUTEvbs1PEaH2w==
 
-msw@^0.33.0:
+msw@latest:
   version "0.33.0"
   resolved "https://registry.yarnpkg.com/msw/-/msw-0.33.0.tgz#6a842dd17a6e8a2aff176106fb18b50a7b37ab8e"
   integrity sha512-lX0mBSE+kgXYMiqyjaYM+2kfxPg2ywbhZjPDwHk5bN/MqoEvGcj6cpL0j1OgLSitN1ve8F0ePCSrk2jhITRubw==
