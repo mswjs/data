@@ -14,9 +14,15 @@ import {
   GraphQLInputType,
   GraphQLScalarType,
   GraphQLFieldConfigArgumentMap,
+  GraphQLNonNull,
 } from 'graphql'
 import { GraphQLHandler, graphql } from 'msw'
-import { ModelAPI, ModelDefinition, ModelDictionary } from '../glossary'
+import {
+  ModelAPI,
+  ModelDefinition,
+  ModelDictionary,
+  ModelDictionaryValue,
+} from '../glossary'
 import { capitalize } from '../utils/capitalize'
 import { QueryToComparator } from '../query/queryTypes'
 import { booleanComparators } from '../comparators/boolean'
@@ -32,16 +38,32 @@ interface GraphQLFieldsMap {
 /**
  * Derive a GraphQL scalar type from a variable.
  */
-export function getGraphQLType(value: any) {
+export function getGraphQLType(
+  value: ModelDictionaryValue<any>,
+): GraphQLScalarType {
   const resolvedValue = typeof value === 'function' ? value() : value
-  switch (resolvedValue.constructor.name) {
-    case 'Number':
-      return GraphQLInt
-    case 'Boolean':
-      return GraphQLBoolean
-    default:
-      return GraphQLString
+
+  if (typeof resolvedValue === 'number') {
+    return GraphQLID
   }
+
+  if (typeof resolvedValue === 'string') {
+    return GraphQLString
+  }
+
+  if (typeof resolvedValue === 'boolean') {
+    return GraphQLBoolean
+  }
+
+  if ('kind' in resolvedValue) {
+    return new GraphQLScalarType({
+      name: capitalize(resolvedValue.modelName.toString()),
+    })
+  }
+
+  console.log({ resolvedValue })
+
+  return GraphQLString
 }
 
 /**
