@@ -47,6 +47,9 @@ function flattenSortCriteria<EntityType extends Entity<any, any>>(
   }, [])
 }
 
+/**
+ * Sorts the given list of entities by a certain criteria.
+ */
 export function sortResults<EntityType extends Entity<any, any>>(
   orderBy: OrderBy<EntityType> | OrderBy<EntityType>[],
   data: InternalEntity<any, any>[],
