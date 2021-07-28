@@ -232,8 +232,8 @@ db.user.findMany({
     },
     {
       country: {
-        // @ts-expect-error Cannot specify more than 1 sorting key.
         id: 'desc',
+        // @ts-expect-error Cannot specify more than 1 sorting key.
         name: 'asc',
       },
     },
