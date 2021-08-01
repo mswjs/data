@@ -1,3 +1,4 @@
+import set from 'lodash/set'
 import {
   InternalEntity,
   InternalEntityProperty,
@@ -9,7 +10,7 @@ import { isInternalEntity } from './isInternalEntity'
 
 function isOneOfRelation<
   Dictionary extends ModelDictionary,
-  ModelName extends keyof Dictionary
+  ModelName extends keyof Dictionary,
 >(
   value: Value<Dictionary[ModelName], Dictionary>,
 ): value is InternalEntity<Dictionary, ModelName> {
@@ -27,7 +28,7 @@ function isManyOfRelation(
  */
 export function removeInternalProperties<
   Dictionary extends ModelDictionary,
-  ModelName extends keyof Dictionary
+  ModelName extends keyof Dictionary,
 >(
   entity: InternalEntity<Dictionary, ModelName>,
 ): Entity<Dictionary, ModelName> {
@@ -44,19 +45,19 @@ export function removeInternalProperties<
       // Remove the internal properties of a "oneOf" relation.
       if (isOneOfRelation(value)) {
         const relationalEntity = removeInternalProperties(value)
-        entity[property] = relationalEntity
+        set(entity, property, relationalEntity)
         return entity
       }
 
       // Remove the internal properties of a "manyOf" relation.
       if (isManyOfRelation(value)) {
         const relationalEntityList = value.map(removeInternalProperties)
-        entity[property] = relationalEntityList
+        set(entity, property, relationalEntityList)
         return entity
       }
 
       // Otherwise dealing with a base type value, preserving.
-      entity[property] = value
+      set(entity, property, value)
       return entity
     },
     {},

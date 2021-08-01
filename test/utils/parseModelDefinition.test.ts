@@ -1,8 +1,11 @@
-import { parseModelDefinition } from '../../src/model/parseModelDefinition'
+import {
+  ParsedModelDefinition,
+  parseModelDefinition,
+} from '../../src/model/parseModelDefinition'
 import { manyOf, oneOf, primaryKey } from '../../src'
-import { RelationKind } from '../../src/glossary'
+import { ModelDictionary, RelationKind } from '../../src/glossary'
 
-it('parses a given plain model definition', () => {
+it('parses a plain model definition', () => {
   const dictionary = {
     user: {
       id: primaryKey(String),
@@ -15,10 +18,10 @@ it('parses a given plain model definition', () => {
     primaryKey: 'id',
     properties: ['id', 'firstName'],
     relations: {},
-  })
+  } as ParsedModelDefinition)
 })
 
-it('parses a given model definition with relations', () => {
+it('parses a model definition with relations', () => {
   const dictionary = {
     user: {
       id: primaryKey(String),
@@ -52,7 +55,52 @@ it('parses a given model definition with relations', () => {
         primaryKey: 'id',
       },
     },
-  })
+  } as ParsedModelDefinition)
+})
+
+it('parses a model definition with nested objects', () => {
+  const dictionary: ModelDictionary = {
+    user: {
+      id: primaryKey(String),
+      address: {
+        billing: {
+          street: String,
+          houseNumber: String,
+          country: oneOf('country'),
+        },
+      },
+      activity: {
+        posts: manyOf('post', { unique: true }),
+      },
+    },
+    post: {
+      id: primaryKey(String),
+    },
+    country: {
+      code: primaryKey(String),
+    },
+  }
+
+  const result = parseModelDefinition(dictionary, 'user', dictionary.user)
+
+  expect(result).toEqual({
+    primaryKey: 'id',
+    properties: ['id', 'address.billing.street', 'address.billing.houseNumber'],
+    relations: {
+      'address.billing.country': {
+        kind: RelationKind.OneOf,
+        modelName: 'country',
+        unique: false,
+        primaryKey: 'code',
+      },
+      'activity.posts': {
+        kind: RelationKind.ManyOf,
+        modelName: 'post',
+        unique: true,
+        primaryKey: 'id',
+      },
+    },
+  } as ParsedModelDefinition)
 })
 
 it('throws an error when provided a model definition with multiple primary keys', () => {
@@ -78,6 +126,6 @@ it('throws an error when provided a model definition without a primary key', () 
   const parse = () => parseModelDefinition(dictionary, 'user', dictionary.user)
 
   expect(parse).toThrow(
-    'Failed to parse a model definition for "user": no provided properties are marked as a primary key (firstName).',
+    'Failed to parse a model definition for "user": model is missing a primary key. Did you forget to mark one of its properties using the "primaryKey" function?',
   )
 })

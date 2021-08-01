@@ -1,5 +1,5 @@
 import {
-  BaseTypes,
+  PrimitiveValueType,
   DeepRequireExactlyOne,
   PrimaryKeyType,
   Value,
@@ -23,13 +23,11 @@ export interface WeakQuerySelectorWhere<KeyType extends PrimaryKeyType> {
 }
 
 export type SortDirection = 'asc' | 'desc'
-export type OrderBy<EntityType> = DeepRequireExactlyOne<
-  {
-    [K in keyof EntityType]?: EntityType[K] extends BaseTypes
-      ? SortDirection
-      : OrderBy<EntityType[K]>
-  }
->
+export type OrderBy<EntityType> = DeepRequireExactlyOne<{
+  [K in keyof EntityType]?: EntityType[K] extends PrimitiveValueType
+    ? SortDirection
+    : OrderBy<EntityType[K]>
+}>
 
 export interface BulkQueryBaseOptions<EntityType extends Record<string, any>> {
   take?: number
@@ -58,7 +56,7 @@ export type ComparatorFn<ExpectedType extends any, ActualType extends any> = (
 ) => boolean
 
 export type QueryToComparator<
-  QueryType extends StringQuery | NumberQuery | BooleanQuery | DateQuery
+  QueryType extends StringQuery | NumberQuery | BooleanQuery | DateQuery,
 > = {
   [K in keyof QueryType]: ComparatorFn<
     QueryType[K],
@@ -66,25 +64,24 @@ export type QueryToComparator<
   >
 }
 
-export type GetQueryFor<
-  T extends string | number | boolean | any[]
-> = T extends string
-  ? StringQuery
-  : T extends number
-  ? NumberQuery
-  : T extends Boolean
-  ? BooleanQuery
-  : T extends Date
-  ? DateQuery
-  : T extends Array<infer U>
-  ? QuerySelector<U>['where']
-  : /**
-   * Relational `oneOf`/`manyOf` invocation
-   * resolves to the `Value` type.
-   */
-  T extends Value<any, any>
-  ? QuerySelector<T>['where']
-  : never
+export type GetQueryFor<T extends string | number | boolean | any[]> =
+  T extends string
+    ? StringQuery
+    : T extends number
+    ? NumberQuery
+    : T extends Boolean
+    ? BooleanQuery
+    : T extends Date
+    ? DateQuery
+    : T extends Array<infer U>
+    ? QuerySelector<U>['where']
+    : /**
+     * Relational `oneOf`/`manyOf` invocation
+     * resolves to the `Value` type.
+     */
+    T extends Value<any, any>
+    ? QuerySelector<T>['where']
+    : never
 
 export interface StringQuery {
   equals: string

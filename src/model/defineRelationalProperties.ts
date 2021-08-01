@@ -1,4 +1,7 @@
 import { debug } from 'debug'
+import get from 'lodash/get'
+import set from 'lodash/set'
+import { isObject } from '../utils/isObject'
 import { Database } from '../db/Database'
 import {
   Entity,
@@ -37,10 +40,12 @@ export function defineRelationalProperties(
         relation,
       )
 
-      if (!(property in initialValues)) return properties
+      if (!get(initialValues, property)) return properties
 
       // Take the relational entity reference from the initial values.
-      const entityRefs: Entity<any, any>[] = [].concat(initialValues[property])
+      const entityRefs: Entity<any, any>[] = [].concat(
+        get(initialValues, property),
+      )
 
       if (relation.unique) {
         log(`verifying that the "${property}" relation is unique...`)
@@ -83,7 +88,7 @@ export function defineRelationalProperties(
         }
       }
 
-      properties[property] = {
+      set(properties, property, {
         enumerable: true,
         get() {
           log(`get "${property}"`, relation)
@@ -107,17 +112,44 @@ export function defineRelationalProperties(
             },
             [],
           )
+
           log(`resolved "${relation.kind}" "${property}" to`, refValue)
 
           return relation.kind === RelationKind.OneOf
             ? first(refValue)!
             : refValue
         },
-      }
-
+      })
       return properties
     },
     {},
   )
-  Object.defineProperties(entity, properties)
+  defineNestedProperties(entity, properties, '')
+}
+
+function defineNestedProperties(
+  entity: InternalEntity<any, any>,
+  properties: any,
+  path: string,
+) {
+  for (let key in properties) {
+    const value = properties[key]
+    const nestedPath = path ? `${path}.${key}` : key
+
+    if (isRelationalProperty(value)) {
+      const nestedPathArray = nestedPath.split('.')
+      nestedPathArray.reduce((acc, curr, i) => {
+        if (i === nestedPathArray.length - 1) {
+          Object.defineProperty(acc, curr, value)
+        }
+        return acc[curr]
+      }, entity)
+    } else if (isObject(value)) {
+      defineNestedProperties(entity, value, nestedPath)
+    }
+  }
+}
+
+function isRelationalProperty(val: any) {
+  return val?.enumerable && typeof val?.get === 'function'
 }

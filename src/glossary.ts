@@ -7,7 +7,7 @@ import {
 } from './query/queryTypes'
 
 export type PrimaryKeyType = string | number
-export type BaseTypes = string | number | boolean | Date
+export type PrimitiveValueType = string | number | boolean | Date
 export type KeyType = string | number | symbol
 
 export enum InternalEntityProperty {
@@ -17,7 +17,7 @@ export enum InternalEntityProperty {
 }
 
 export interface PrimaryKeyDeclaration<
-  ValueType extends PrimaryKeyType = string
+  ValueType extends PrimaryKeyType = string,
 > {
   isPrimaryKey: boolean
   getValue(): ValueType
@@ -34,7 +34,7 @@ export enum RelationKind {
  */
 export interface RelationDefinition<
   Kind extends RelationKind,
-  ModelName extends KeyType
+  ModelName extends KeyType,
 > {
   kind: Kind
   unique: boolean
@@ -52,11 +52,10 @@ export interface Relation {
  * Minimal representation of an entity to look it up
  * in the database and resolve upon reference.
  */
-export type RelationRef<
-  ModelName extends string
-> = InternalEntityProperties<ModelName> & {
-  [InternalEntityProperty.nodeId]: PrimaryKeyType
-}
+export type RelationRef<ModelName extends string> =
+  InternalEntityProperties<ModelName> & {
+    [InternalEntityProperty.nodeId]: PrimaryKeyType
+  }
 
 export interface RelationOptions {
   unique: boolean
@@ -74,7 +73,8 @@ export type ManyOf<ModelName extends KeyType> = RelationDefinition<
 
 export type ModelDefinition = Record<
   string,
-  (() => BaseTypes) | OneOf<any> | ManyOf<any> | PrimaryKeyDeclaration
+  PrimaryKeyDeclaration | OneOf<any> | ManyOf<any> | (() => PrimitiveValueType)
+  // | Record<string, unknown>
 >
 
 export type FactoryAPI<Dictionary extends Record<string, any>> = {
@@ -88,12 +88,12 @@ export interface InternalEntityProperties<ModelName extends KeyType> {
 
 export type Entity<
   Dictionary extends ModelDictionary,
-  ModelName extends keyof Dictionary
+  ModelName extends keyof Dictionary,
 > = Value<Dictionary[ModelName], Dictionary>
 
 export type InternalEntity<
   Dictionary extends ModelDictionary,
-  ModelName extends keyof Dictionary
+  ModelName extends keyof Dictionary,
 > = InternalEntityProperties<ModelName> & Entity<Dictionary, ModelName>
 
 export type ModelDictionary = Limit<Record<string, Record<string, any>>>
@@ -101,7 +101,7 @@ export type ModelDictionary = Limit<Record<string, Record<string, any>>>
 export type Limit<T extends Record<string, any>> = {
   [RK in keyof T]: {
     [SK in keyof T[RK]]: T[RK][SK] extends
-      | (() => BaseTypes)
+      | (() => PrimitiveValueType)
       | PrimaryKeyDeclaration
       | OneOf<keyof T>
       | ManyOf<keyof T>
@@ -115,24 +115,22 @@ export type Limit<T extends Record<string, any>> = {
 
 export type RequireExactlyOne<
   ObjectType,
-  KeysType extends keyof ObjectType = keyof ObjectType
+  KeysType extends keyof ObjectType = keyof ObjectType,
 > = {
   [Key in KeysType]: Required<Pick<ObjectType, Key>> &
     Partial<Record<Exclude<KeysType, Key>, never>>
 }[KeysType] &
   Pick<ObjectType, Exclude<keyof ObjectType, KeysType>>
 
-export type DeepRequireExactlyOne<ObjectType> = RequireExactlyOne<
-  {
-    [K in keyof ObjectType]: ObjectType[K] extends Record<any, any>
-      ? RequireExactlyOne<ObjectType[K]>
-      : ObjectType[K]
-  }
->
+export type DeepRequireExactlyOne<ObjectType> = RequireExactlyOne<{
+  [K in keyof ObjectType]: ObjectType[K] extends Record<any, any>
+    ? RequireExactlyOne<ObjectType[K]>
+    : ObjectType[K]
+}>
 
 export interface ModelAPI<
   Dictionary extends ModelDictionary,
-  ModelName extends keyof Dictionary
+  ModelName extends keyof Dictionary,
 > {
   /**
    * Create a single entity for the model.
@@ -206,7 +204,7 @@ export interface ModelAPI<
 
 export type UpdateManyValue<
   T extends Record<string, any>,
-  Parent extends Record<string, any>
+  Parent extends Record<string, any>,
 > =
   | Value<T, Parent>
   | {
@@ -223,7 +221,7 @@ export type UpdateManyValue<
 
 export type Value<
   T extends Record<string, any>,
-  Parent extends Record<string, any>
+  Parent extends Record<string, any>,
 > = {
   [K in keyof T]: T[K] extends OneOf<any>
     ? Entity<Parent, T[K]['modelName']>

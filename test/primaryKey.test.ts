@@ -5,6 +5,7 @@ import {
   OperationError,
   OperationErrorType,
 } from '../src/errors/OperationError'
+import { getThrownError } from './testUtils'
 
 test('supports querying by the primary key', () => {
   const db = factory({
@@ -125,5 +126,24 @@ test('throws an exception when creating entity with existing primary key', () =>
       OperationErrorType.DuplicatePrimaryKey,
       'Failed to create a "user" entity: an entity with the same primary key "abc-123" ("id") already exists.',
     ),
+  )
+})
+
+test('throws an error when primary key is not set at root level', () => {
+  const error = getThrownError(() => {
+    factory({
+      user: {
+        name: String,
+        info: {
+          id: primaryKey(datatype.uuid),
+          firstName: String,
+          lastName: String,
+        },
+      },
+    })
+  })
+  expect(error).toHaveProperty(
+    'message',
+    'Failed to parse a model definition for "info" property of "user": cannot have a primary key in a nested object.',
   )
 })
