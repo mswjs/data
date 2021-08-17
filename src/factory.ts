@@ -30,6 +30,9 @@ export function factory<Dictionary extends ModelDictionary>(
 ): FactoryAPI<Dictionary> {
   const db = new Database<Dictionary>(dictionary)
 
+  // Jnitialize database extensions.
+  sync(db)
+
   return Object.entries(dictionary).reduce<any>((acc, [modelName, props]) => {
     acc[modelName] = createModelApi<Dictionary, typeof modelName>(
       dictionary,
@@ -52,8 +55,6 @@ function createModelApi<
 ) {
   const parsedModel = parseModelDefinition(dictionary, modelName, definition)
   const { primaryKey } = parsedModel
-
-  sync(db)
 
   if (typeof primaryKey === 'undefined') {
     throw new OperationError(
