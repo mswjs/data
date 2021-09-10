@@ -13,7 +13,7 @@ function isOneOfRelation<
 >(
   value: Value<Dictionary[ModelName], Dictionary>,
 ): value is InternalEntity<Dictionary, ModelName> {
-  return typeof value === 'object' && isInternalEntity(value)
+  return isInternalEntity(value)
 }
 
 function isManyOfRelation(

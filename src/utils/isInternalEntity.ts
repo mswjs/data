@@ -1,13 +1,14 @@
 import { InternalEntity, InternalEntityProperty } from '../glossary'
+import { isObject } from './isObject'
 
 /**
- * Determines if the given object is an internal entity.
+ * Returns true if the given value is an internal entity object.
  */
 export function isInternalEntity(
   value: Record<string, any>,
 ): value is InternalEntity<any, any> {
   return (
-    value &&
+    isObject(value) &&
     InternalEntityProperty.type in value &&
     InternalEntityProperty.primaryKey in value
   )
