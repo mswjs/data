@@ -98,13 +98,15 @@ export type InternalEntity<
 
 export type ModelDictionary = Limit<Record<string, Record<string, any>>>
 
+export type ModelDictionaryValue<T extends Record<string, any>> =
+  | (() => BaseTypes)
+  | PrimaryKeyDeclaration
+  | OneOf<keyof T>
+  | ManyOf<keyof T>
+
 export type Limit<T extends Record<string, any>> = {
   [RK in keyof T]: {
-    [SK in keyof T[RK]]: T[RK][SK] extends
-      | (() => BaseTypes)
-      | PrimaryKeyDeclaration
-      | OneOf<keyof T>
-      | ManyOf<keyof T>
+    [SK in keyof T[RK]]: T[RK][SK] extends ModelDictionaryValue<T>
       ? T[RK][SK]
       : {
           error: 'expected a value or a relation'
