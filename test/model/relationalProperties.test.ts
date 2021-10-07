@@ -1,10 +1,14 @@
-import { manyOf, oneOf, primaryKey } from '../../src'
+import { oneOf, primaryKey } from '../../src'
 import { Database } from '../../src/db/Database'
-import { InternalEntityProperty, Relation } from '../../src/glossary'
+import {
+  InternalEntityProperty,
+  ModelDictionary,
+  Relation,
+} from '../../src/glossary'
 import { defineRelationalProperties } from '../../src/model/defineRelationalProperties'
 
 it('marks relational properties as enumerable', () => {
-  const dictionary = {
+  const dictionary: ModelDictionary = {
     user: {
       id: primaryKey(String),
       name: String,

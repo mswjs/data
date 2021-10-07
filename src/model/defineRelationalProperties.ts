@@ -1,7 +1,5 @@
 import { debug } from 'debug'
 import get from 'lodash/get'
-import set from 'lodash/set'
-import { isObject } from '../utils/isObject'
 import { Database } from '../db/Database'
 import {
   Entity,
@@ -14,13 +12,13 @@ import {
 } from '../glossary'
 import { executeQuery } from '../query/executeQuery'
 import { first } from '../utils/first'
+import { invariant } from '../utils/invariant'
+import { definePropertyAtPath } from '../utils/definePropertyAtPath'
 
 const log = debug('defineRelationalProperties')
 
-type RelationalPropertyDescriptorMap = {
-  [property: string]: Omit<PropertyDescriptor, 'get'> & {
-    get(): InternalEntity<any, any> | InternalEntity<any, any>[]
-  }
+type RelationalPropertyDescriptor = Omit<PropertyDescriptor, 'get'> & {
+  get(): InternalEntity<any, any> | InternalEntity<any, any>[]
 }
 
 export function defineRelationalProperties(
@@ -29,127 +27,100 @@ export function defineRelationalProperties(
   relations: Record<string, Relation>,
   db: Database<any>,
 ): void {
-  log('setting relations', relations, entity)
+  log('defining relational properties...', { entity, initialValues, relations })
 
-  const properties = Object.entries(
-    relations,
-  ).reduce<RelationalPropertyDescriptorMap>(
-    (properties, [property, relation]) => {
-      log(
-        `defining relational property "${entity.__type}.${property}"`,
-        relation,
-      )
+  for (const [propertyPath, relation] of Object.entries(relations)) {
+    log(
+      `setting relational property "${entity.__type}.${propertyPath}"`,
+      relation,
+    )
 
-      if (!get(initialValues, property)) return properties
+    if (!get(initialValues, propertyPath)) {
+      log('relation has no initial value, skipping...')
+      continue
+    }
 
-      // Take the relational entity reference from the initial values.
-      const entityRefs: Entity<any, any>[] = [].concat(
-        get(initialValues, property),
-      )
+    // Take the relational entity reference from the initial values.
+    const entityRefs: Entity<any, any>[] = [].concat(
+      get(initialValues, propertyPath),
+    )
 
-      if (relation.unique) {
-        log(`verifying that the "${property}" relation is unique...`)
+    log('entity references:', entityRefs)
 
-        // Trying to look up an entity of the same type
-        // that references the same relational entity.
-        const existingEntities = executeQuery(
-          entity[InternalEntityProperty.type],
-          entity[InternalEntityProperty.primaryKey],
-          {
-            where: {
-              [property]: {
-                [relation.primaryKey]: {
-                  in: entityRefs.map(
-                    (entityRef) =>
-                      entityRef[entity[InternalEntityProperty.primaryKey]],
-                  ),
-                },
+    if (relation.unique) {
+      log('"%s" is a unique relation, verifying..."', propertyPath)
+
+      // Trying to look up an entity of the same type
+      // that references the same relational entity.
+      const existingEntities = executeQuery(
+        entity[InternalEntityProperty.type],
+        entity[InternalEntityProperty.primaryKey],
+        {
+          where: {
+            /**
+             * @fixme Would "property.path" work when querying?
+             */
+            [propertyPath]: {
+              [relation.primaryKey]: {
+                in: entityRefs.map(
+                  (entityRef) =>
+                    entityRef[entity[InternalEntityProperty.primaryKey]],
+                ),
               },
             },
           },
-          db,
-        )
+        },
+        db,
+      )
 
-        log(
-          `existing entities that reference the same "${property}"`,
-          existingEntities,
-        )
+      log(
+        `existing entities that reference the same "${propertyPath}"`,
+        existingEntities,
+      )
 
-        if (existingEntities.length > 0) {
-          log(`found a non-unique relational entity!`)
+      invariant(
+        existingEntities.length !== 0,
+        `Failed to create a unique "${relation.modelName}" relation for "${
+          entity.__type
+        }.${propertyPath}" (${
+          entity[entity[InternalEntityProperty.primaryKey]]
+        }): the provided entity is already used.`,
+      )
+    }
 
-          throw new Error(
-            `Failed to create a unique "${relation.modelName}" relation for "${
-              entity.__type
-            }.${property}" (${
-              entity[entity[InternalEntityProperty.primaryKey]]
-            }): the provided entity is already used.`,
-          )
-        }
-      }
+    definePropertyAtPath<RelationalPropertyDescriptor>(entity, propertyPath, {
+      enumerable: true,
+      get() {
+        log(`get "${propertyPath}"`, relation)
 
-      set(properties, property, {
-        enumerable: true,
-        get() {
-          log(`get "${property}"`, relation)
-
-          const refValue = entityRefs.reduce<InternalEntity<any, any>[]>(
-            (list, entityRef) => {
-              return list.concat(
-                executeQuery(
-                  relation.modelName,
-                  relation.primaryKey,
-                  {
-                    where: {
-                      [relation.primaryKey]: {
-                        equals: entityRef[relation.primaryKey],
-                      },
+        const refValue = entityRefs.reduce<InternalEntity<any, any>[]>(
+          (list, entityRef) => {
+            return list.concat(
+              executeQuery(
+                relation.modelName,
+                relation.primaryKey,
+                {
+                  where: {
+                    [relation.primaryKey]: {
+                      equals: entityRef[relation.primaryKey],
                     },
                   },
-                  db,
-                ),
-              )
-            },
-            [],
-          )
+                },
+                db,
+              ),
+            )
+          },
+          [],
+        )
 
-          log(`resolved "${relation.kind}" "${property}" to`, refValue)
+        log(`resolved "${relation.kind}" "${propertyPath}" to`, refValue)
 
-          return relation.kind === RelationKind.OneOf
-            ? first(refValue)!
-            : refValue
-        },
-      })
-      return properties
-    },
-    {},
-  )
-  defineNestedProperties(entity, properties, '')
-}
+        return relation.kind === RelationKind.OneOf
+          ? first(refValue)!
+          : refValue
+      },
+    })
 
-function defineNestedProperties(
-  entity: InternalEntity<any, any>,
-  properties: any,
-  path: string,
-) {
-  for (let key in properties) {
-    const value = properties[key]
-    const nestedPath = path ? `${path}.${key}` : key
-
-    if (isRelationalProperty(value)) {
-      const nestedPathArray = nestedPath.split('.')
-      nestedPathArray.reduce((acc, curr, i) => {
-        if (i === nestedPathArray.length - 1) {
-          Object.defineProperty(acc, curr, value)
-        }
-        return acc[curr]
-      }, entity)
-    } else if (isObject(value)) {
-      defineNestedProperties(entity, value, nestedPath)
-    }
+    log('relation "%s" successfuly set!', propertyPath)
   }
-}
-
-function isRelationalProperty(val: any) {
-  return val?.enumerable && typeof val?.get === 'function'
 }

@@ -45,7 +45,7 @@ export function createModel<
 
   const publicProperties = properties.reduce<Record<string, unknown>>(
     (properties, propertyName) => {
-      const value = get(initialValues, propertyName)
+      const initialValue = get(initialValues, propertyName)
       const propertyDefinition = get(definition, propertyName)
 
       // Ignore relational properties at this stage.
@@ -54,23 +54,27 @@ export function createModel<
       }
 
       if ('isPrimaryKey' in propertyDefinition) {
-        set(properties, propertyName, value || propertyDefinition.getValue())
+        set(
+          properties,
+          propertyName,
+          initialValue || propertyDefinition.getValue(),
+        )
         return properties
       }
 
       if (
-        typeof value === 'string' ||
-        typeof value === 'number' ||
-        typeof value === 'boolean' ||
-        value?.constructor.name === 'Date' ||
-        Array.isArray(value)
+        typeof initialValue === 'string' ||
+        typeof initialValue === 'number' ||
+        typeof initialValue === 'boolean' ||
+        initialValue?.constructor.name === 'Date' ||
+        Array.isArray(initialValue)
       ) {
         log(
           '"%s" has a plain initial value:',
           `${modelName}.${propertyName}`,
-          value,
+          initialValue,
         )
-        set(properties, propertyName, value)
+        set(properties, propertyName, initialValue)
         return properties
       }
 

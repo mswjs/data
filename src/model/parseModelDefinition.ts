@@ -41,7 +41,7 @@ function deepParseModelDefinition<Dictionary extends ModelDictionary>(
   }
 
   for (const [property, value] of Object.entries(definition)) {
-    const propertyPath = `${parentPath ? `${parentPath}.` : ''}${property}`
+    const propertyPath = parentPath ? `${parentPath}.${property}` : property
 
     // Primary key.
     if ('isPrimaryKey' in value) {
