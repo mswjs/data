@@ -13,6 +13,7 @@ import {
 } from '../glossary'
 import { ParsedModelDefinition } from './parseModelDefinition'
 import { defineRelationalProperties } from './defineRelationalProperties'
+import { PrimaryKey } from '../primaryKey'
 
 const log = debug('createModel')
 
@@ -53,7 +54,7 @@ export function createModel<
         return properties
       }
 
-      if ('isPrimaryKey' in propertyDefinition) {
+      if (propertyDefinition instanceof PrimaryKey) {
         set(
           properties,
           propertyName,

@@ -5,6 +5,7 @@ import {
   PrimaryKeyType,
   ModelDictionary,
 } from '../glossary'
+import { PrimaryKey } from '../primaryKey'
 import { invariant } from '../utils/invariant'
 import { findPrimaryKey } from '../utils/findPrimaryKey'
 import { isObject } from '../utils/isObject'
@@ -44,7 +45,7 @@ function deepParseModelDefinition<Dictionary extends ModelDictionary>(
     const propertyPath = parentPath ? `${parentPath}.${property}` : property
 
     // Primary key.
-    if ('isPrimaryKey' in value) {
+    if (value instanceof PrimaryKey) {
       invariant(
         result.primaryKey,
         `Failed to parse a model definition for "${modelName}": cannot have both properties "${result.primaryKey}" and "${property}" as a primary key.`,

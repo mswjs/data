@@ -1,6 +1,6 @@
-import { primaryKey } from '@mswjs/data'
 import { Database } from '../../src/db/Database'
 import { createModel } from '../../src/model/createModel'
+import { primaryKey } from '../../src/primaryKey'
 import { parseModelDefinition } from '../../src/model/parseModelDefinition'
 
 test('emits the "create" event when a new entity is created', (done) => {

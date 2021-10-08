@@ -1,6 +1,6 @@
 import { v4 } from 'uuid'
 import { random, datatype } from 'faker'
-import { factory, primaryKey } from '../src'
+import { factory, primaryKey } from '@mswjs/data'
 import {
   OperationError,
   OperationErrorType,

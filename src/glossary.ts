@@ -1,5 +1,6 @@
 import { GraphQLSchema } from 'graphql'
 import { GraphQLHandler, RestHandler } from 'msw'
+import { PrimaryKey } from './primaryKey'
 import {
   BulkQueryOptions,
   QuerySelector,
@@ -14,13 +15,6 @@ export enum InternalEntityProperty {
   type = '__type',
   nodeId = '__nodeId',
   primaryKey = '__primaryKey',
-}
-
-export interface PrimaryKeyDeclaration<
-  ValueType extends PrimaryKeyType = string,
-> {
-  isPrimaryKey: boolean
-  getValue(): ValueType
 }
 
 export enum RelationKind {
@@ -73,7 +67,7 @@ export type ManyOf<ModelName extends KeyType> = RelationDefinition<
 
 export type ModelDefinition = Record<
   string,
-  PrimaryKeyDeclaration | OneOf<any> | ManyOf<any> | (() => PrimitiveValueType)
+  PrimaryKey | OneOf<any> | ManyOf<any> | (() => PrimitiveValueType)
   // | Record<string, unknown>
 >
 
@@ -102,7 +96,7 @@ export type Limit<T extends Record<string, any>> = {
   [RK in keyof T]: {
     [SK in keyof T[RK]]: T[RK][SK] extends
       | (() => PrimitiveValueType)
-      | PrimaryKeyDeclaration
+      | PrimaryKey
       | OneOf<keyof T>
       | ManyOf<keyof T>
       ? T[RK][SK]
@@ -208,7 +202,7 @@ export type UpdateManyValue<
 > =
   | Value<T, Parent>
   | {
-      [K in keyof T]: T[K] extends PrimaryKeyDeclaration
+      [K in keyof T]: T[K] extends PrimaryKey
         ? (
             prevValue: ReturnType<T[K]['getValue']>,
             entity: Value<T, Parent>,
@@ -227,7 +221,7 @@ export type Value<
     ? Entity<Parent, T[K]['modelName']>
     : T[K] extends ManyOf<any>
     ? Entity<Parent, T[K]['modelName']>[]
-    : T[K] extends PrimaryKeyDeclaration
+    : T[K] extends PrimaryKey
     ? ReturnType<T[K]['getValue']>
     : ReturnType<T[K]>
 }
