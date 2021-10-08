@@ -134,10 +134,12 @@ function createModelApi<
         )
       }
 
-      return results.map(removeInternalProperties)
+      return results.map((record) => removeInternalProperties(record))
     },
     getAll() {
-      return db.listEntities(modelName).map(removeInternalProperties)
+      return db
+        .listEntities(modelName)
+        .map((entity) => removeInternalProperties(entity))
     },
     update({ strict, ...query }) {
       const results = executeQuery(modelName, primaryKey, query, db)
@@ -216,7 +218,7 @@ function createModelApi<
         updatedRecords.push(nextRecord)
       })
 
-      return updatedRecords.map(removeInternalProperties)
+      return updatedRecords.map((record) => removeInternalProperties(record))
     },
     delete({ strict, ...query }) {
       const results = executeQuery(modelName, primaryKey, query, db)
@@ -262,7 +264,7 @@ function createModelApi<
         )
       })
 
-      return records.map(removeInternalProperties)
+      return records.map((record) => removeInternalProperties(record))
     },
     toHandlers(type: 'rest' | 'graphql', baseUrl: string): any {
       if (type === 'graphql') {

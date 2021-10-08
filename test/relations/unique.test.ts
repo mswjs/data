@@ -60,3 +60,43 @@ test('throws an error when using an already associated "manyOf" unique relation'
     'Failed to create a unique "post" relation for "user.posts" (user-2): the provided entity is already used.',
   )
 })
+
+test('throws an error when using an already associated "oneOf" nested unique relation', () => {
+  const db = factory({
+    user: {
+      id: primaryKey(String),
+      address: {
+        billing: {
+          country: oneOf('country', { unique: true }),
+        },
+      },
+    },
+    country: {
+      code: primaryKey(String),
+    },
+  })
+
+  const usa = db.country.create({ code: 'us' })
+
+  db.user.create({
+    id: 'user-1',
+    address: {
+      billing: {
+        country: usa,
+      },
+    },
+  })
+
+  expect(() => {
+    db.user.create({
+      id: 'user-2',
+      address: {
+        billing: {
+          country: usa,
+        },
+      },
+    })
+  }).toThrow(
+    'Failed to create a unique "country" relation for "user.address.billing.country" (user-2): the provided entity is already used.',
+  )
+})

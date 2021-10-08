@@ -1,5 +1,6 @@
 import { debug } from 'debug'
 import get from 'lodash/get'
+import set from 'lodash/set'
 import { Database } from '../db/Database'
 import {
   Entity,
@@ -13,6 +14,7 @@ import { first } from '../utils/first'
 import { invariant } from '../utils/invariant'
 import { definePropertyAtPath } from '../utils/definePropertyAtPath'
 import { ProducedRelationsMap, RelationKind } from '../relations/Relation'
+import { QuerySelector, QuerySelectorWhere } from 'src/query/queryTypes'
 
 const log = debug('defineRelationalProperties')
 
@@ -55,19 +57,13 @@ export function defineRelationalProperties(
         entity[InternalEntityProperty.type],
         entity[InternalEntityProperty.primaryKey],
         {
-          where: {
-            /**
-             * @fixme Would "property.path" work when querying?
-             */
-            [propertyPath]: {
-              [relation.primaryKey]: {
-                in: entityRefs.map(
-                  (entityRef) =>
-                    entityRef[entity[InternalEntityProperty.primaryKey]],
-                ),
-              },
+          where: set<QuerySelectorWhere<any>>({}, propertyPath, {
+            [relation.primaryKey]: {
+              in: entityRefs.map((entityRef) => {
+                return entityRef[relation.primaryKey]
+              }),
             },
-          },
+          }),
         },
         db,
       )

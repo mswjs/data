@@ -7,6 +7,7 @@ import {
   Value,
 } from '../glossary'
 import { isInternalEntity } from './isInternalEntity'
+import { isObject } from './isObject'
 
 function isOneOfRelation<
   Dictionary extends ModelDictionary,
@@ -31,35 +32,44 @@ export function removeInternalProperties<
   ModelName extends keyof Dictionary,
 >(
   entity: InternalEntity<Dictionary, ModelName>,
+  result: Entity<any, ModelName> = {},
 ): Entity<Dictionary, ModelName> {
-  return Object.entries(entity).reduce<Entity<any, ModelName>>(
-    (entity, [property, value]) => {
-      // Remove the internal entity properties.
-      if (
-        property === InternalEntityProperty.type ||
-        property === InternalEntityProperty.primaryKey
-      ) {
-        return entity
-      }
+  for (const [propertyName, value] of Object.entries(entity)) {
+    // Remove the internal entity properties.
+    if (
+      propertyName === InternalEntityProperty.type ||
+      propertyName === InternalEntityProperty.primaryKey
+    ) {
+      continue
+    }
 
-      // Remove the internal properties of a "oneOf" relation.
-      if (isOneOfRelation(value)) {
-        const relationalEntity = removeInternalProperties(value)
-        set(entity, property, relationalEntity)
-        return entity
-      }
+    // Remove the internal properties of a "oneOf" relation.
+    if (isOneOfRelation(value)) {
+      const relationalEntity = removeInternalProperties(value)
+      set(result, propertyName, relationalEntity)
+      continue
+    }
 
-      // Remove the internal properties of a "manyOf" relation.
-      if (isManyOfRelation(value)) {
-        const relationalEntityList = value.map(removeInternalProperties)
-        set(entity, property, relationalEntityList)
-        return entity
-      }
+    // Remove the internal properties of a "manyOf" relation.
+    if (isManyOfRelation(value)) {
+      const relationalEntityList = value.map((node) =>
+        removeInternalProperties(node),
+      )
+      set(result, propertyName, relationalEntityList)
+      continue
+    }
 
-      // Otherwise dealing with a base type value, preserving.
-      set(entity, property, value)
-      return entity
-    },
-    {},
-  )
+    if (isObject(value)) {
+      set(
+        result,
+        propertyName,
+        removeInternalProperties(value as any, result[propertyName]),
+      )
+      continue
+    }
+
+    set(result, propertyName, value)
+  }
+
+  return result
 }

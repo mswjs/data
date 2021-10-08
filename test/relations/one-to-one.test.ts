@@ -98,6 +98,49 @@ test('supports querying through a one-to-one relational property', () => {
   ).toEqual(null)
 })
 
+test('supports querying through a nested one-to-one relation', () => {
+  const db = factory({
+    user: {
+      id: primaryKey(String),
+      address: {
+        billing: {
+          country: oneOf('country', { unique: true }),
+        },
+      },
+    },
+    country: {
+      code: primaryKey(String),
+    },
+  })
+
+  const usa = db.country.create({ code: 'us' })
+
+  const user = db.user.create({
+    id: 'user-1',
+    address: {
+      billing: {
+        country: usa,
+      },
+    },
+  })
+
+  const result = db.user.findFirst({
+    where: {
+      address: {
+        billing: {
+          country: {
+            code: {
+              equals: 'us',
+            },
+          },
+        },
+      },
+    },
+  })
+
+  expect(result).toEqual(user)
+})
+
 test('allows creating an entity without specifying a value for the one-to-one relational property', () => {
   const db = factory({
     country: {

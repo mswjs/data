@@ -1,6 +1,7 @@
 import { debug } from 'debug'
 import { ComparatorFn, QuerySelector } from './queryTypes'
 import { getComparatorsForValue } from './getComparatorsForValue'
+import { isObject } from '../utils/isObject'
 
 const log = debug('compileQuery')
 
@@ -50,7 +51,7 @@ export function compileQuery<Data extends Record<string, any>>(
 
             // When the actual value is a resolved relational property reference,
             // execute the current query chunk on the referenced entity.
-            if (actualValue.__type) {
+            if (actualValue.__type || isObject(actualValue)) {
               return compileQuery({ where: queryChunk })(actualValue)
             }
 

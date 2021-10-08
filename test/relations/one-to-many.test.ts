@@ -77,6 +77,44 @@ test('supports querying through one-to-many relation', () => {
   expect(userIds).toEqual(['user-1', 'user-3'])
 })
 
+test('supports querying through a nested one-to-many relation', () => {
+  const db = factory({
+    user: {
+      id: primaryKey(String),
+      activity: {
+        posts: manyOf('post'),
+      },
+    },
+    post: {
+      id: primaryKey(String),
+    },
+  })
+
+  const user = db.user.create({
+    id: 'user-1',
+    activity: {
+      posts: [
+        db.post.create({ id: 'post-1' }),
+        db.post.create({ id: 'post-2' }),
+      ],
+    },
+  })
+
+  const result = db.user.findFirst({
+    where: {
+      activity: {
+        posts: {
+          id: {
+            equals: 'post-2',
+          },
+        },
+      },
+    },
+  })
+
+  expect(result).toEqual(user)
+})
+
 test('does not throw any error if an entity with one-to-many relation is created without it', () => {
   const db = factory({
     user: {
