@@ -3,7 +3,8 @@ import {
   parseModelDefinition,
 } from '../../src/model/parseModelDefinition'
 import { manyOf, oneOf, primaryKey } from '../../src'
-import { ModelDictionary, RelationKind } from '../../src/glossary'
+import { ModelDictionary } from '../../src/glossary'
+import { RelationKind } from '../../src/relations/Relation'
 
 it('parses a plain model definition', () => {
   const dictionary = {

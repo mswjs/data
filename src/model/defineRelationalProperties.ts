@@ -6,25 +6,24 @@ import {
   InternalEntity,
   InternalEntityProperty,
   ModelDictionary,
-  Relation,
-  RelationKind,
   Value,
 } from '../glossary'
 import { executeQuery } from '../query/executeQuery'
 import { first } from '../utils/first'
 import { invariant } from '../utils/invariant'
 import { definePropertyAtPath } from '../utils/definePropertyAtPath'
+import { ProducedRelationsMap, RelationKind } from '../relations/Relation'
 
 const log = debug('defineRelationalProperties')
 
 type RelationalPropertyDescriptor = Omit<PropertyDescriptor, 'get'> & {
-  get(): InternalEntity<any, any> | InternalEntity<any, any>[]
+  get(): InternalEntity<any, any> | InternalEntity<any, any>[] | null
 }
 
 export function defineRelationalProperties(
   entity: InternalEntity<any, any>,
   initialValues: Partial<Value<any, ModelDictionary>>,
-  relations: Record<string, Relation>,
+  relations: ProducedRelationsMap,
   db: Database<any>,
 ): void {
   log('defining relational properties...', { entity, initialValues, relations })
@@ -79,7 +78,7 @@ export function defineRelationalProperties(
       )
 
       invariant(
-        existingEntities.length !== 0,
+        existingEntities.length === 0,
         `Failed to create a unique "${relation.modelName}" relation for "${
           entity.__type
         }.${propertyPath}" (${
@@ -115,9 +114,7 @@ export function defineRelationalProperties(
 
         log(`resolved "${relation.kind}" "${propertyPath}" to`, refValue)
 
-        return relation.kind === RelationKind.OneOf
-          ? first(refValue)!
-          : refValue
+        return relation.kind === RelationKind.OneOf ? first(refValue) : refValue
       },
     })
 

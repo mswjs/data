@@ -6,6 +6,7 @@ import {
   QuerySelector,
   WeakQuerySelector,
 } from './query/queryTypes'
+import { RelationKind, ManyOf, OneOf } from './relations/Relation'
 
 export type PrimaryKeyType = string | number
 export type PrimitiveValueType = string | number | boolean | Date
@@ -15,11 +16,6 @@ export enum InternalEntityProperty {
   type = '__type',
   nodeId = '__nodeId',
   primaryKey = '__primaryKey',
-}
-
-export enum RelationKind {
-  OneOf = 'oneOf',
-  ManyOf = 'manyOf',
 }
 
 /**
@@ -35,13 +31,6 @@ export interface RelationDefinition<
   modelName: ModelName
 }
 
-export interface Relation {
-  kind: RelationKind
-  modelName: string
-  unique: boolean
-  primaryKey: PrimaryKeyType
-}
-
 /**
  * Minimal representation of an entity to look it up
  * in the database and resolve upon reference.
@@ -50,20 +39,6 @@ export type RelationRef<ModelName extends string> =
   InternalEntityProperties<ModelName> & {
     [InternalEntityProperty.nodeId]: PrimaryKeyType
   }
-
-export interface RelationOptions {
-  unique: boolean
-}
-
-export type OneOf<ModelName extends KeyType> = RelationDefinition<
-  RelationKind.OneOf,
-  ModelName
->
-
-export type ManyOf<ModelName extends KeyType> = RelationDefinition<
-  RelationKind.ManyOf,
-  ModelName
->
 
 export type ModelDefinition = Record<
   string,
@@ -90,7 +65,7 @@ export type InternalEntity<
   ModelName extends keyof Dictionary,
 > = InternalEntityProperties<ModelName> & Entity<Dictionary, ModelName>
 
-export type ModelDictionary = Limit<Record<string, Record<string, any>>>
+export type ModelDictionary = Limit<Record<KeyType, Record<string, any>>>
 
 export type Limit<T extends Record<string, any>> = {
   [RK in keyof T]: {

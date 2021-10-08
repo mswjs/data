@@ -14,6 +14,7 @@ import {
 import { ParsedModelDefinition } from './parseModelDefinition'
 import { defineRelationalProperties } from './defineRelationalProperties'
 import { PrimaryKey } from '../primaryKey'
+import { Relation } from '../relations/Relation'
 
 const log = debug('createModel')
 
@@ -50,7 +51,7 @@ export function createModel<
       const propertyDefinition = get(definition, propertyName)
 
       // Ignore relational properties at this stage.
-      if ('kind' in propertyDefinition) {
+      if (propertyDefinition instanceof Relation) {
         return properties
       }
 

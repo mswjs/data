@@ -1,21 +1,16 @@
 import { debug } from 'debug'
-import {
-  Relation,
-  ModelDefinition,
-  PrimaryKeyType,
-  ModelDictionary,
-} from '../glossary'
+import { ModelDefinition, PrimaryKeyType, ModelDictionary } from '../glossary'
 import { PrimaryKey } from '../primaryKey'
 import { invariant } from '../utils/invariant'
-import { findPrimaryKey } from '../utils/findPrimaryKey'
 import { isObject } from '../utils/isObject'
+import { Relation, ProducedRelationsMap } from '../relations/Relation'
 
 const log = debug('parseModelDefinition')
 
 export interface ParsedModelDefinition {
   primaryKey: PrimaryKeyType
   properties: string[]
-  relations: Record<string, Relation>
+  relations: ProducedRelationsMap
 }
 
 /**
@@ -47,12 +42,12 @@ function deepParseModelDefinition<Dictionary extends ModelDictionary>(
     // Primary key.
     if (value instanceof PrimaryKey) {
       invariant(
-        result.primaryKey,
+        !result.primaryKey,
         `Failed to parse a model definition for "${modelName}": cannot have both properties "${result.primaryKey}" and "${property}" as a primary key.`,
       )
 
       invariant(
-        parentPath,
+        !parentPath,
         `Failed to parse a model definition for "${parentPath}" property of "${modelName}": cannot have a primary key in a nested object.`,
       )
 
@@ -63,20 +58,10 @@ function deepParseModelDefinition<Dictionary extends ModelDictionary>(
     }
 
     // Relations.
-    /**
-     * @fixme The "kind" property may also be a key in an arbitrary object,
-     * resulting in false-positive match here.
-     */
-    if ('kind' in value) {
-      const relationPrimaryKey = findPrimaryKey(dictionary[value.modelName])!
-
-      result.relations[propertyPath] = {
-        kind: value.kind,
-        modelName: value.modelName,
-        unique: value.unique,
-        primaryKey: relationPrimaryKey,
-      }
-
+    if (value instanceof Relation) {
+      // Resolve a relation against the dictionary to collect
+      // the primary key names of the referenced models.
+      result.relations[propertyPath] = value.produce(dictionary)
       continue
     }
 
@@ -112,7 +97,7 @@ export function parseModelDefinition<Dictionary extends ModelDictionary>(
   const result = deepParseModelDefinition(dictionary, modelName, definition, '')
 
   invariant(
-    result.primaryKey == null,
+    result.primaryKey,
     `Failed to parse a model definition for "${modelName}": model is missing a primary key. Did you forget to mark one of its properties using the "primaryKey" function?`,
   )
 
