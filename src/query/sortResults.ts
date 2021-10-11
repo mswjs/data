@@ -1,4 +1,4 @@
-import debug from 'debug'
+import { debug } from 'debug'
 import get from 'lodash/get'
 import { Entity, InternalEntity } from 'src/glossary'
 import { OrderBy, SortDirection } from './queryTypes'

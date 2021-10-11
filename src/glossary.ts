@@ -8,15 +8,12 @@ import {
 } from './query/queryTypes'
 import { RelationKind, ManyOf, OneOf } from './relations/Relation'
 
+export type KeyType = string | number | symbol
+export type AnyObject = Record<KeyType, any>
 export type PrimaryKeyType = string | number
 export type PrimitiveValueType = string | number | boolean | Date
-export type KeyType = string | number | symbol
-
-export enum InternalEntityProperty {
-  type = '__type',
-  nodeId = '__nodeId',
-  primaryKey = '__primaryKey',
-}
+export type ModelValueType = PrimitiveValueType | PrimitiveValueType[]
+export type ModelValueTypeGetter = () => ModelValueType
 
 /**
  * Definition of the relation.
@@ -40,14 +37,41 @@ export type RelationRef<ModelName extends string> =
     [InternalEntityProperty.nodeId]: PrimaryKeyType
   }
 
-export type ModelDefinition = Record<
-  string,
-  PrimaryKey | OneOf<any> | ManyOf<any> | (() => PrimitiveValueType)
-  // | Record<string, unknown>
->
+export type ModelDefinition = Record<string, ModelDefinitionValue>
+
+export type ModelDefinitionValue =
+  | ModelValueTypeGetter
+  | PrimaryKey<any>
+  | OneOf<any>
+  | ManyOf<any>
+  | NestedModelDefinition
+
+type NestedModelDefinition = {
+  [propertyName: string]:
+    | ModelValueTypeGetter
+    | OneOf<any>
+    | ManyOf<any>
+    | NestedModelDefinition
+}
 
 export type FactoryAPI<Dictionary extends Record<string, any>> = {
-  [K in keyof Dictionary]: ModelAPI<Dictionary, K>
+  [ModelName in keyof Dictionary]: ModelAPI<Dictionary, ModelName>
+}
+
+export type ModelDictionary = Record<KeyType, Limit<ModelDefinition>>
+
+export type Limit<Definition extends ModelDefinition> = {
+  [Key in keyof Definition]: Definition[Key] extends ModelDefinitionValue
+    ? Definition[Key]
+    : {
+        error: 'expected primary key, initial value, or relation'
+      }
+}
+
+export enum InternalEntityProperty {
+  type = '__type',
+  nodeId = '__nodeId',
+  primaryKey = '__primaryKey',
 }
 
 export interface InternalEntityProperties<ModelName extends KeyType> {
@@ -65,24 +89,7 @@ export type InternalEntity<
   ModelName extends keyof Dictionary,
 > = InternalEntityProperties<ModelName> & Entity<Dictionary, ModelName>
 
-export type ModelDictionary = Limit<Record<KeyType, Record<string, any>>>
-
-export type Limit<T extends Record<string, any>> = {
-  [RK in keyof T]: {
-    [SK in keyof T[RK]]: T[RK][SK] extends
-      | (() => PrimitiveValueType)
-      | PrimaryKey
-      | OneOf<keyof T>
-      | ManyOf<keyof T>
-      ? T[RK][SK]
-      : {
-          error: 'expected a value or a relation'
-          oneOf: keyof T
-        }
-  }
-}
-
-export type RequireExactlyOne<
+export type RequiredExactlyOne<
   ObjectType,
   KeysType extends keyof ObjectType = keyof ObjectType,
 > = {
@@ -91,11 +98,17 @@ export type RequireExactlyOne<
 }[KeysType] &
   Pick<ObjectType, Exclude<keyof ObjectType, KeysType>>
 
-export type DeepRequireExactlyOne<ObjectType> = RequireExactlyOne<{
-  [K in keyof ObjectType]: ObjectType[K] extends Record<any, any>
-    ? RequireExactlyOne<ObjectType[K]>
-    : ObjectType[K]
-}>
+export type DeepRequiredExactlyOne<Target extends AnyObject> =
+  RequiredExactlyOne<{
+    [Key in keyof Target]: Target[Key] extends AnyObject
+      ? DeepRequiredExactlyOne<Target[Key]>
+      : Target[Key]
+  }>
+
+export type InitialValues<
+  Dictionary extends ModelDictionary,
+  ModelName extends keyof Dictionary,
+> = Partial<Value<Dictionary[ModelName], Dictionary>>
 
 export interface ModelAPI<
   Dictionary extends ModelDictionary,
@@ -105,24 +118,24 @@ export interface ModelAPI<
    * Create a single entity for the model.
    */
   create(
-    initialValues?: Partial<Value<Dictionary[ModelName], Dictionary>>,
+    initialValues?: InitialValues<Dictionary, ModelName>,
   ): Entity<Dictionary, ModelName>
   /**
    * Return the total number of entities.
    */
-  count(query?: QuerySelector<Value<Dictionary[ModelName], Dictionary>>): number
+  count(query?: QuerySelector<InitialValues<Dictionary, ModelName>>): number
   /**
    * Find a first entity matching the query.
    */
   findFirst(
-    query: QuerySelector<Value<Dictionary[ModelName], Dictionary>>,
+    query: QuerySelector<InitialValues<Dictionary, ModelName>>,
   ): Entity<Dictionary, ModelName> | null
   /**
    * Find multiple entities.
    */
   findMany(
-    query: WeakQuerySelector<Value<Dictionary[ModelName], Dictionary>> &
-      BulkQueryOptions<Value<Dictionary[ModelName], Dictionary>>,
+    query: WeakQuerySelector<InitialValues<Dictionary, ModelName>> &
+      BulkQueryOptions<InitialValues<Dictionary, ModelName>>,
   ): Entity<Dictionary, ModelName>[]
   /**
    * Return all entities of the current model.
@@ -132,7 +145,7 @@ export interface ModelAPI<
    * Update a single entity with the next data.
    */
   update(
-    query: QuerySelector<Value<Dictionary[ModelName], Dictionary>> & {
+    query: QuerySelector<InitialValues<Dictionary, ModelName>> & {
       data: Partial<UpdateManyValue<Dictionary[ModelName], Dictionary>>
     },
   ): Entity<Dictionary, ModelName> | null
@@ -140,7 +153,7 @@ export interface ModelAPI<
    * Update many entities with the next data.
    */
   updateMany(
-    query: QuerySelector<Value<Dictionary[ModelName], Dictionary>> & {
+    query: QuerySelector<InitialValues<Dictionary, ModelName>> & {
       data: Partial<UpdateManyValue<Dictionary[ModelName], Dictionary>>
     },
   ): Entity<Dictionary, ModelName>[] | null
@@ -148,55 +161,68 @@ export interface ModelAPI<
    * Delete a single entity.
    */
   delete(
-    query: QuerySelector<Value<Dictionary[ModelName], Dictionary>>,
+    query: QuerySelector<InitialValues<Dictionary, ModelName>>,
   ): Entity<Dictionary, ModelName> | null
   /**
    * Delete multiple entities.
    */
   deleteMany(
-    query: QuerySelector<Value<Dictionary[ModelName], Dictionary>>,
+    query: QuerySelector<InitialValues<Dictionary, ModelName>>,
   ): Entity<Dictionary, ModelName>[] | null
   /**
-   * Generate request handlers of the given type based on the model.
+   * Generate request handlers of the given type based on the model definition.
    */
   toHandlers(type: 'rest', baseUrl?: string): RestHandler[]
   /**
-   * Generate request handlers of the given type based on the model.
+   * Generate request handlers of the given type based on the model definition.
    */
   toHandlers(type: 'graphql', baseUrl?: string): GraphQLHandler[]
 
   /**
-   * Generate a graphql schema based on the model.
+   * Generate a graphql schema based on the model definition.
    */
   toGraphQLSchema(): GraphQLSchema
 }
 
 export type UpdateManyValue<
-  T extends Record<string, any>,
-  Parent extends Record<string, any>,
+  Target extends AnyObject,
+  Parent extends AnyObject,
 > =
-  | Value<T, Parent>
+  | Value<Target, Parent>
   | {
-      [K in keyof T]: T[K] extends PrimaryKey
+      [Key in keyof Target]: Target[Key] extends PrimaryKey
         ? (
-            prevValue: ReturnType<T[K]['getValue']>,
-            entity: Value<T, Parent>,
-          ) => ReturnType<T[K]['getValue']>
+            prevValue: ReturnType<Target[Key]['getValue']>,
+            entity: Value<Target, Parent>,
+          ) => ReturnType<Target[Key]['getValue']>
+        : Target[Key] extends ModelValueTypeGetter
+        ? (
+            prevValue: ReturnType<Target[Key]>,
+            entity: Value<Target, Parent>,
+          ) => ReturnType<Target[Key]>
+        : Target[Key] extends AnyObject
+        ? Partial<UpdateManyValue<Target[Key], Target>>
         : (
-            prevValue: ReturnType<T[K]>,
-            entity: Value<T, Parent>,
-          ) => ReturnType<T[K]>
+            prevValue: ReturnType<Target[Key]>,
+            entity: Value<Target, Parent>,
+          ) => ReturnType<Target[Key]>
     }
 
-export type Value<
-  T extends Record<string, any>,
-  Parent extends Record<string, any>,
-> = {
-  [K in keyof T]: T[K] extends OneOf<any>
-    ? Entity<Parent, T[K]['modelName']>
-    : T[K] extends ManyOf<any>
-    ? Entity<Parent, T[K]['modelName']>[]
-    : T[K] extends PrimaryKey
-    ? ReturnType<T[K]['getValue']>
-    : ReturnType<T[K]>
+export type Value<Target extends AnyObject, Parent extends AnyObject> = {
+  [Key in keyof Target]: Target[Key] extends PrimaryKey<any>
+    ? ReturnType<Target[Key]['getValue']>
+    : // Extract value type from relations.
+    Target[Key] extends OneOf<any>
+    ? Entity<Parent, Target[Key]['modelName']>
+    : Target[Key] extends ManyOf<any>
+    ? Entity<Parent, Target[Key]['modelName']>[]
+    : // Account for pritimive value getters because
+    // native constructors satisfy the "AnyObject" predicate below.
+    Target[Key] extends ModelValueTypeGetter
+    ? ReturnType<Target[Key]>
+    : // Handle nested objects.
+    Target[Key] extends AnyObject
+    ? Partial<Value<Target[Key], Target>>
+    : // Otherwise, return the return type of primitive value getters.
+      ReturnType<Target[Key]>
 }

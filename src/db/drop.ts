@@ -1,9 +1,7 @@
-import { factory } from '../factory'
+import { FactoryAPI } from '../glossary'
 
-export function drop(db: ReturnType<typeof factory>): void {
+export function drop(db: FactoryAPI<any>): void {
   Object.values(db).forEach((model) => {
-    model.deleteMany({
-      where: {},
-    })
+    model.deleteMany({ where: {} })
   })
 }

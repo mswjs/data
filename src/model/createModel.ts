@@ -68,6 +68,7 @@ export function createModel<
         typeof initialValue === 'string' ||
         typeof initialValue === 'number' ||
         typeof initialValue === 'boolean' ||
+        // @ts-ignore
         initialValue?.constructor.name === 'Date' ||
         Array.isArray(initialValue)
       ) {

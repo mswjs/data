@@ -1,5 +1,8 @@
 import { oneOf, primaryKey } from '../../src'
-import { ProducedRelationsMap } from '../../src/relations/Relation'
+import {
+  ProducedRelationsMap,
+  RelationKind,
+} from '../../src/relations/Relation'
 import { Database } from '../../src/db/Database'
 import { InternalEntityProperty, ModelDictionary } from '../../src/glossary'
 import { defineRelationalProperties } from '../../src/model/defineRelationalProperties'
@@ -28,8 +31,10 @@ it('marks relational properties as enumerable', () => {
 
   const relations: ProducedRelationsMap = {
     author: {
-      ...dictionary.post.author,
+      kind: RelationKind.OneOf,
       primaryKey: 'id',
+      modelName: 'user',
+      unique: false,
     },
   }
 

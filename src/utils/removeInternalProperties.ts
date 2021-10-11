@@ -9,12 +9,9 @@ import {
 import { isInternalEntity } from './isInternalEntity'
 import { isObject } from './isObject'
 
-function isOneOfRelation<
-  Dictionary extends ModelDictionary,
-  ModelName extends keyof Dictionary,
->(
-  value: Value<Dictionary[ModelName], Dictionary>,
-): value is InternalEntity<Dictionary, ModelName> {
+function isOneOfRelation(
+  value: Value<any, any>,
+): value is InternalEntity<any, any> {
   return isInternalEntity(value)
 }
 
@@ -44,16 +41,29 @@ export function removeInternalProperties<
     }
 
     // Remove the internal properties of a "oneOf" relation.
-    if (isOneOfRelation(value)) {
+    if (
+      isOneOfRelation(
+        // @ts-ignore
+        value,
+      )
+    ) {
       const relationalEntity = removeInternalProperties(value)
       set(result, propertyName, relationalEntity)
       continue
     }
 
     // Remove the internal properties of a "manyOf" relation.
-    if (isManyOfRelation(value)) {
-      const relationalEntityList = value.map((node) =>
-        removeInternalProperties(node),
+    if (
+      isManyOfRelation(
+        // @ts-ignore
+        value,
+      )
+    ) {
+      const relationalEntityList = value.map(
+        (
+          // @ts-ignore
+          node,
+        ) => removeInternalProperties(node),
       )
       set(result, propertyName, relationalEntityList)
       continue

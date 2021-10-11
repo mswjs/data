@@ -135,6 +135,7 @@ test('throws an error when primary key is not set at root level', () => {
       user: {
         name: String,
         info: {
+          // @ts-expect-error Primary key on nested properties are forbidden.
           id: primaryKey(datatype.uuid),
           firstName: String,
           lastName: String,

@@ -57,9 +57,9 @@ export class Relation<Kind extends RelationKind, ModelName extends KeyType> {
     this.unique = !!definition.unique
 
     log(
-      'created a Relation to "%s" (%s): %o',
-      this.modelName,
+      'created a %s relation to "%s": %o',
       this.kind,
+      this.modelName,
       definition,
     )
   }
@@ -70,7 +70,11 @@ export class Relation<Kind extends RelationKind, ModelName extends KeyType> {
    * in the dictionary and returns a formed relation object.
    */
   public produce(dictionary: ModelDictionary): ProducedRelation {
-    log('producing a "%s" relation on: %s', this.modelName, dictionary)
+    log(
+      'producing the "%s" relation in the dictionary: %s',
+      this.modelName,
+      dictionary,
+    )
 
     const primaryKey = findPrimaryKey(dictionary[this.modelName])
     log(
