@@ -1,123 +1,119 @@
 import { debug } from 'debug'
+import get from 'lodash/get'
+import set from 'lodash/set'
 import { Database } from '../db/Database'
 import {
   Entity,
   InternalEntity,
   InternalEntityProperty,
   ModelDictionary,
-  Relation,
-  RelationKind,
   Value,
 } from '../glossary'
 import { executeQuery } from '../query/executeQuery'
 import { first } from '../utils/first'
+import { invariant } from '../utils/invariant'
+import { definePropertyAtPath } from '../utils/definePropertyAtPath'
+import { ProducedRelationsMap, RelationKind } from '../relations/Relation'
+import { QuerySelector, QuerySelectorWhere } from 'src/query/queryTypes'
 
 const log = debug('defineRelationalProperties')
 
-type RelationalPropertyDescriptorMap = {
-  [property: string]: Omit<PropertyDescriptor, 'get'> & {
-    get(): InternalEntity<any, any> | InternalEntity<any, any>[]
-  }
+type RelationalPropertyDescriptor = Omit<PropertyDescriptor, 'get'> & {
+  get(): InternalEntity<any, any> | InternalEntity<any, any>[] | null
 }
 
 export function defineRelationalProperties(
   entity: InternalEntity<any, any>,
   initialValues: Partial<Value<any, ModelDictionary>>,
-  relations: Record<string, Relation>,
+  relations: ProducedRelationsMap,
   db: Database<any>,
 ): void {
-  log('setting relations', relations, entity)
+  log('defining relational properties...', { entity, initialValues, relations })
 
-  const properties = Object.entries(
-    relations,
-  ).reduce<RelationalPropertyDescriptorMap>(
-    (properties, [property, relation]) => {
-      log(
-        `defining relational property "${entity.__type}.${property}"`,
-        relation,
+  for (const [propertyPath, relation] of Object.entries(relations)) {
+    log(
+      `setting relational property "${entity.__type}.${propertyPath}"`,
+      relation,
+    )
+
+    if (!get(initialValues, propertyPath)) {
+      log('relation has no initial value, skipping...')
+      continue
+    }
+
+    // Take the relational entity reference from the initial values.
+    const entityRefs: Entity<any, any>[] = [].concat(
+      get(initialValues, propertyPath),
+    )
+
+    log('entity references:', entityRefs)
+
+    if (relation.unique) {
+      log('"%s" is a unique relation, verifying..."', propertyPath)
+
+      // Trying to look up an entity of the same type
+      // that references the same relational entity.
+      const existingEntities = executeQuery(
+        entity[InternalEntityProperty.type],
+        entity[InternalEntityProperty.primaryKey],
+        {
+          where: set<QuerySelectorWhere<any>>({}, propertyPath, {
+            [relation.primaryKey]: {
+              in: entityRefs.map((entityRef) => {
+                return entityRef[relation.primaryKey]
+              }),
+            },
+          }),
+        },
+        db,
       )
 
-      if (!(property in initialValues)) return properties
+      log(
+        `existing entities that reference the same "${propertyPath}"`,
+        existingEntities,
+      )
 
-      // Take the relational entity reference from the initial values.
-      const entityRefs: Entity<any, any>[] = [].concat(initialValues[property])
+      invariant(
+        existingEntities.length === 0,
+        `Failed to create a unique "${relation.modelName}" relation for "${
+          entity.__type
+        }.${propertyPath}" (${
+          entity[entity[InternalEntityProperty.primaryKey]]
+        }): the provided entity is already used.`,
+      )
+    }
 
-      if (relation.unique) {
-        log(`verifying that the "${property}" relation is unique...`)
+    definePropertyAtPath<RelationalPropertyDescriptor>(entity, propertyPath, {
+      enumerable: true,
+      get() {
+        log(`get "${propertyPath}"`, relation)
 
-        // Trying to look up an entity of the same type
-        // that references the same relational entity.
-        const existingEntities = executeQuery(
-          entity[InternalEntityProperty.type],
-          entity[InternalEntityProperty.primaryKey],
-          {
-            where: {
-              [property]: {
-                [relation.primaryKey]: {
-                  in: entityRefs.map(
-                    (entityRef) =>
-                      entityRef[entity[InternalEntityProperty.primaryKey]],
-                  ),
-                },
-              },
-            },
-          },
-          db,
-        )
-
-        log(
-          `existing entities that reference the same "${property}"`,
-          existingEntities,
-        )
-
-        if (existingEntities.length > 0) {
-          log(`found a non-unique relational entity!`)
-
-          throw new Error(
-            `Failed to create a unique "${relation.modelName}" relation for "${
-              entity.__type
-            }.${property}" (${
-              entity[entity[InternalEntityProperty.primaryKey]]
-            }): the provided entity is already used.`,
-          )
-        }
-      }
-
-      properties[property] = {
-        enumerable: true,
-        get() {
-          log(`get "${property}"`, relation)
-
-          const refValue = entityRefs.reduce<InternalEntity<any, any>[]>(
-            (list, entityRef) => {
-              return list.concat(
-                executeQuery(
-                  relation.modelName,
-                  relation.primaryKey,
-                  {
-                    where: {
-                      [relation.primaryKey]: {
-                        equals: entityRef[relation.primaryKey],
-                      },
+        const refValue = entityRefs.reduce<InternalEntity<any, any>[]>(
+          (list, entityRef) => {
+            return list.concat(
+              executeQuery(
+                relation.modelName,
+                relation.primaryKey,
+                {
+                  where: {
+                    [relation.primaryKey]: {
+                      equals: entityRef[relation.primaryKey],
                     },
                   },
-                  db,
-                ),
-              )
-            },
-            [],
-          )
-          log(`resolved "${relation.kind}" "${property}" to`, refValue)
+                },
+                db,
+              ),
+            )
+          },
+          [],
+        )
 
-          return relation.kind === RelationKind.OneOf
-            ? first(refValue)!
-            : refValue
-        },
-      }
+        log(`resolved "${relation.kind}" "${propertyPath}" to`, refValue)
 
-      return properties
-    },
-    {},
-  )
-  Object.defineProperties(entity, properties)
+        return relation.kind === RelationKind.OneOf ? first(refValue) : refValue
+      },
+    })
+
+    log('relation "%s" successfuly set!', propertyPath)
+  }
 }

@@ -6,5 +6,5 @@
     "esModuleInterop": true,
     "downlevelIteration": true
   },
-  "include": ["**/*.ts"]
+  "include": ["**/*.test-d.ts"]
 }

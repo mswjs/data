@@ -1,21 +1,34 @@
 import {
-  BaseTypes,
-  DeepRequireExactlyOne,
+  AnyObject,
+  DeepRequiredExactlyOne,
   PrimaryKeyType,
   Value,
+  ModelValueType,
+  ModelDefinitionValue,
 } from '../glossary'
 
-export interface QuerySelector<EntityType extends Record<string, any>> {
+export interface QuerySelector<EntityType extends AnyObject> {
   strict?: boolean
   where: QuerySelectorWhere<EntityType>
 }
 
-export type WeakQuerySelector<EntityType extends Record<string, any>> = Partial<
+export type WeakQuerySelector<EntityType extends AnyObject> = Partial<
   QuerySelector<EntityType>
 >
 
-export type QuerySelectorWhere<EntityType extends Record<string, any>> = {
-  [K in keyof EntityType]?: Partial<GetQueryFor<EntityType[K]>>
+export type RecursiveQuerySelectorWhere<Value extends ModelValueType> =
+  Value extends Array<infer ItemType>
+    ? Partial<GetQueryFor<ItemType>>
+    : Value extends ModelValueType
+    ? Partial<GetQueryFor<Value>>
+    : Value extends AnyObject
+    ? {
+        [K in keyof Value]?: RecursiveQuerySelectorWhere<Value[K]>
+      }
+    : never
+
+export type QuerySelectorWhere<EntityType extends AnyObject> = {
+  [Key in keyof EntityType]?: RecursiveQuerySelectorWhere<EntityType[Key]>
 }
 
 export interface WeakQuerySelectorWhere<KeyType extends PrimaryKeyType> {
@@ -23,15 +36,21 @@ export interface WeakQuerySelectorWhere<KeyType extends PrimaryKeyType> {
 }
 
 export type SortDirection = 'asc' | 'desc'
-export type OrderBy<EntityType> = DeepRequireExactlyOne<
-  {
-    [K in keyof EntityType]?: EntityType[K] extends BaseTypes
-      ? SortDirection
-      : OrderBy<EntityType[K]>
-  }
->
 
-export interface BulkQueryBaseOptions<EntityType extends Record<string, any>> {
+export type RecursiveOrderBy<Value extends ModelDefinitionValue> =
+  Value extends ModelValueType
+    ? SortDirection
+    : Value extends AnyObject
+    ? DeepRequiredExactlyOne<{
+        [K in keyof Value]?: RecursiveOrderBy<Value[K]>
+      }>
+    : never
+
+export type OrderBy<EntityType extends AnyObject> = DeepRequiredExactlyOne<{
+  [Key in keyof EntityType]?: RecursiveOrderBy<EntityType[Key]>
+}>
+
+export interface BulkQueryBaseOptions<EntityType extends AnyObject> {
   take?: number
   orderBy?: OrderBy<EntityType> | OrderBy<EntityType>[]
 }
@@ -48,7 +67,7 @@ interface BulkQueryCursorOptions<EntityType>
   cursor: PrimaryKeyType | null
 }
 
-export type BulkQueryOptions<EntityType> =
+export type BulkQueryOptions<EntityType extends AnyObject> =
   | BulkQueryOffsetOptions<EntityType>
   | BulkQueryCursorOptions<EntityType>
 
@@ -58,32 +77,30 @@ export type ComparatorFn<ExpectedType extends any, ActualType extends any> = (
 ) => boolean
 
 export type QueryToComparator<
-  QueryType extends StringQuery | NumberQuery | BooleanQuery | DateQuery
+  QueryType extends StringQuery | NumberQuery | BooleanQuery | DateQuery,
 > = {
-  [K in keyof QueryType]: ComparatorFn<
-    QueryType[K],
-    QueryType[K] extends Array<infer T> ? T : QueryType[K]
+  [Key in keyof QueryType]: ComparatorFn<
+    QueryType[Key],
+    QueryType[Key] extends Array<infer ValueType> ? ValueType : QueryType[Key]
   >
 }
 
-export type GetQueryFor<
-  T extends string | number | boolean | any[]
-> = T extends string
+export type GetQueryFor<ValueType extends any> = ValueType extends string
   ? StringQuery
-  : T extends number
+  : ValueType extends number
   ? NumberQuery
-  : T extends Boolean
+  : ValueType extends Boolean
   ? BooleanQuery
-  : T extends Date
+  : ValueType extends Date
   ? DateQuery
-  : T extends Array<infer U>
-  ? QuerySelector<U>['where']
+  : ValueType extends Array<infer ItemType>
+  ? QuerySelector<ItemType>['where']
   : /**
    * Relational `oneOf`/`manyOf` invocation
    * resolves to the `Value` type.
    */
-  T extends Value<any, any>
-  ? QuerySelector<T>['where']
+  ValueType extends Value<any, any>
+  ? QuerySelector<ValueType>['where']
   : never
 
 export interface StringQuery {

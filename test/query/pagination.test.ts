@@ -204,8 +204,8 @@ test('supports single-criteria sorting by relational property in the paginated r
   const john = db.author.create({ firstName: 'John' })
   const george = db.author.create({ firstName: 'George' })
   const nelson = db.author.create({ firstName: 'Nelson' })
-  db.book.create({ title: 'A', author: john })
-  db.book.create({ title: 'B', author: george })
+  const bookByJohn = db.book.create({ title: 'A', author: john })
+  const bookByGeorge = db.book.create({ title: 'B', author: george })
   db.book.create({ title: 'C', author: nelson })
 
   const firstPage = db.book.findMany({
@@ -216,10 +216,8 @@ test('supports single-criteria sorting by relational property in the paginated r
       },
     },
   })
-  const firstPageBooks = firstPage.map((book) => book.title)
-  const firstPageAuthors = firstPage.map((book) => book.author.firstName)
-  expect(firstPageBooks).toEqual(['B', 'A'])
-  expect(firstPageAuthors).toEqual(['George', 'John'])
+
+  expect(firstPage).toEqual([bookByGeorge, bookByJohn])
 })
 
 test('supports multi-criteria sorting by relational property in the paginated results', () => {
@@ -248,9 +246,10 @@ test('supports multi-criteria sorting by relational property in the paginated re
     firstName: 'Nelson',
     bornAt: new Date('1986-09-09'),
   })
-  db.book.create({ title: 'A', author: john })
-  db.book.create({ title: 'B', author: george })
-  db.book.create({ title: 'C', author: nelson })
+
+  const bookByJohn = db.book.create({ title: 'A', author: john })
+  const bookByGeorge = db.book.create({ title: 'B', author: george })
+  const bookByNelson = db.book.create({ title: 'C', author: nelson })
 
   const firstPage = db.book.findMany({
     take: 2,
@@ -267,10 +266,8 @@ test('supports multi-criteria sorting by relational property in the paginated re
       },
     ],
   })
-  const firstPageBooks = firstPage.map((book) => book.title)
-  const firstPageAuthors = firstPage.map((book) => book.author.firstName)
-  expect(firstPageBooks).toEqual(['B', 'A'])
-  expect(firstPageAuthors).toEqual(['George', 'John'])
+
+  expect(firstPage).toEqual([bookByGeorge, bookByJohn])
 
   const secondPage = db.book.findMany({
     skip: 2,
@@ -288,10 +285,8 @@ test('supports multi-criteria sorting by relational property in the paginated re
       },
     ],
   })
-  const secondPageBooks = secondPage.map((book) => book.title)
-  const secondPageAuthors = secondPage.map((book) => book.author.firstName)
-  expect(secondPageBooks).toEqual(['C'])
-  expect(secondPageAuthors).toEqual(['Nelson'])
+
+  expect(secondPage).toEqual([bookByNelson])
 })
 
 test('supports sorting by both direct and relational properties in the paginated results', () => {
@@ -331,4 +326,110 @@ test('supports sorting by both direct and relational properties in the paginated
   const firstPageAuthors = firstPage.map((book) => book.author.firstName)
   expect(firstPageBooks).toEqual(['A', 'A'])
   expect(firstPageAuthors).toEqual(['John', 'Nelson'])
+})
+
+test('supports single-criteria sorting by nested model properties', () => {
+  const db = factory({
+    book: {
+      id: primaryKey(datatype.uuid),
+      publication: {
+        country: String,
+      },
+    },
+  })
+
+  const americanBook = db.book.create({
+    publication: {
+      country: 'us',
+    },
+  })
+
+  const germanBook = db.book.create({
+    publication: {
+      country: 'de',
+    },
+  })
+
+  const result = db.book.findMany({
+    orderBy: {
+      publication: {
+        country: 'asc',
+      },
+    },
+  })
+
+  expect(result).toEqual([germanBook, americanBook])
+})
+
+test('supports multi-criteria sorting by nested model properties', () => {
+  const db = factory({
+    book: {
+      id: primaryKey(datatype.uuid),
+      publication: {
+        year: () => new Date(),
+        pubilsher: {
+          country: String,
+        },
+      },
+    },
+  })
+
+  const americanBookOne = db.book.create({
+    publication: {
+      year: new Date('1997-10-10'),
+      pubilsher: {
+        country: 'us',
+      },
+    },
+  })
+  const americanBookTwo = db.book.create({
+    publication: {
+      year: new Date('2005-04-01'),
+      pubilsher: {
+        country: 'us',
+      },
+    },
+  })
+
+  const germanBookOne = db.book.create({
+    publication: {
+      year: new Date('2011-12-07'),
+      pubilsher: {
+        country: 'de',
+      },
+    },
+  })
+  const germanBookTwo = db.book.create({
+    publication: {
+      year: new Date('2020-06-24'),
+      pubilsher: {
+        country: 'de',
+      },
+    },
+  })
+
+  const result = db.book.findMany({
+    where: {},
+    orderBy: [
+      {
+        publication: {
+          year: 'desc',
+        },
+      },
+      {
+        publication: {
+          pubilsher: {
+            country: 'asc',
+          },
+        },
+      },
+    ],
+  })
+
+  expect(result).toEqual([
+    germanBookTwo,
+    germanBookOne,
+    americanBookTwo,
+    americanBookOne,
+  ])
 })

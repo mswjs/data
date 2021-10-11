@@ -43,7 +43,7 @@ test('supports querying against a many-to-one relation', () => {
   expect(postTitles).toEqual(['First post', 'Second post', 'Third post'])
 })
 
-test('supports querying through nested relational properties', () => {
+test('supports querying through a nested many-to-one relation', () => {
   const db = factory({
     role: {
       id: primaryKey(datatype.uuid),

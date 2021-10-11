@@ -1,4 +1,7 @@
 import { debug } from 'debug'
+import get from 'lodash/get'
+import set from 'lodash/set'
+import isFunction from 'lodash/isFunction'
 import { Database } from '../db/Database'
 import {
   InternalEntity,
@@ -10,12 +13,14 @@ import {
 } from '../glossary'
 import { ParsedModelDefinition } from './parseModelDefinition'
 import { defineRelationalProperties } from './defineRelationalProperties'
+import { PrimaryKey } from '../primaryKey'
+import { Relation } from '../relations/Relation'
 
 const log = debug('createModel')
 
 export function createModel<
   Dictionary extends ModelDictionary,
-  ModelName extends string
+  ModelName extends string,
 >(
   modelName: ModelName,
   definition: ModelDefinition,
@@ -33,52 +38,63 @@ export function createModel<
     initialValues,
   )
 
+  // Internal properties that allow identifying this model
+  // when referenced in other models (i.e. via relatioships).
   const internalProperties: InternalEntityProperties<ModelName> = {
     [InternalEntityProperty.type]: modelName,
     [InternalEntityProperty.primaryKey]: primaryKey,
   }
 
-  const resolvedProperties = properties.reduce<Record<string, any>>(
-    (entity, property) => {
-      const exactValue = initialValues[property]
-      const propertyDefinition = definition[property]
-
-      log(
-        `property definition for "${modelName}.${property}"`,
-        propertyDefinition,
-      )
+  const publicProperties = properties.reduce<Record<string, unknown>>(
+    (properties, propertyName) => {
+      const initialValue = get(initialValues, propertyName)
+      const propertyDefinition = get(definition, propertyName)
 
       // Ignore relational properties at this stage.
-      if ('kind' in propertyDefinition) {
-        return entity
+      if (propertyDefinition instanceof Relation) {
+        return properties
       }
 
-      if ('isPrimaryKey' in propertyDefinition) {
-        entity[property] = exactValue || propertyDefinition.getValue()
-        return entity
+      if (propertyDefinition instanceof PrimaryKey) {
+        set(
+          properties,
+          propertyName,
+          initialValue || propertyDefinition.getValue(),
+        )
+        return properties
       }
 
       if (
-        typeof exactValue === 'string' ||
-        typeof exactValue === 'number' ||
-        typeof exactValue === 'boolean' ||
-        exactValue?.constructor.name === 'Date'
+        typeof initialValue === 'string' ||
+        typeof initialValue === 'number' ||
+        typeof initialValue === 'boolean' ||
+        // @ts-ignore
+        initialValue?.constructor.name === 'Date' ||
+        Array.isArray(initialValue)
       ) {
-        log(`"${modelName}.${property}" has a plain initial value:`, exactValue)
-        entity[property] = exactValue
-        return entity
+        log(
+          '"%s" has a plain initial value:',
+          `${modelName}.${propertyName}`,
+          initialValue,
+        )
+        set(properties, propertyName, initialValue)
+        return properties
       }
 
-      entity[property] = propertyDefinition()
-      return entity
+      if (isFunction(propertyDefinition)) {
+        set(properties, propertyName, propertyDefinition())
+        return properties
+      }
+
+      return properties
     },
     {},
   )
 
-  const entity = Object.assign({}, resolvedProperties, internalProperties)
+  const entity = Object.assign({}, publicProperties, internalProperties)
   defineRelationalProperties(entity, initialValues, relations, db)
 
-  log(`created "${modelName}" entity`, entity)
+  log('created "%s" entity', modelName, entity)
 
   return entity
 }

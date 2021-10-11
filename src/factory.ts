@@ -46,7 +46,7 @@ export function factory<Dictionary extends ModelDictionary>(
 
 function createModelApi<
   Dictionary extends ModelDictionary,
-  ModelName extends string
+  ModelName extends string,
 >(
   dictionary: Dictionary,
   modelName: ModelName,
@@ -80,14 +80,14 @@ function createModelApi<
       ] as string
 
       invariant(
-        !entityId,
+        entityId,
         `Failed to create a "${modelName}" entity: expected the primary key "${primaryKey}" to have a value, but got: ${entityId}`,
         new OperationError(OperationErrorType.MissingPrimaryKey),
       )
 
       // Prevent creation of multiple entities with the same primary key value.
       invariant(
-        db.has(modelName, entityId),
+        !db.has(modelName, entityId),
         `Failed to create a "${modelName}" entity: an entity with the same primary key "${entityId}" ("${
           entity[InternalEntityProperty.primaryKey]
         }") already exists.`,
@@ -109,31 +109,37 @@ function createModelApi<
       const results = executeQuery(modelName, primaryKey, query, db)
       const firstResult = first(results)
 
-      invariant(
-        query.strict && !firstResult,
-        `Failed to execute "findFirst" on the "${modelName}" model: no entity found matching the query "${JSON.stringify(
-          query.where,
-        )}".`,
-        new OperationError(OperationErrorType.EntityNotFound),
-      )
+      if (query.strict) {
+        invariant(
+          firstResult,
+          `Failed to execute "findFirst" on the "${modelName}" model: no entity found matching the query "${JSON.stringify(
+            query.where,
+          )}".`,
+          new OperationError(OperationErrorType.EntityNotFound),
+        )
+      }
 
       return firstResult ? removeInternalProperties(firstResult) : null
     },
     findMany(query) {
       const results = executeQuery(modelName, primaryKey, query, db)
 
-      invariant(
-        query.strict && results.length === 0,
-        `Failed to execute "findMany" on the "${modelName}" model: no entities found matching the query "${JSON.stringify(
-          query.where,
-        )}".`,
-        new OperationError(OperationErrorType.EntityNotFound),
-      )
+      if (query.strict) {
+        invariant(
+          results.length > 0,
+          `Failed to execute "findMany" on the "${modelName}" model: no entities found matching the query "${JSON.stringify(
+            query.where,
+          )}".`,
+          new OperationError(OperationErrorType.EntityNotFound),
+        )
+      }
 
-      return results.map(removeInternalProperties)
+      return results.map((record) => removeInternalProperties(record))
     },
     getAll() {
-      return db.listEntities(modelName).map(removeInternalProperties)
+      return db
+        .listEntities(modelName)
+        .map((entity) => removeInternalProperties(entity))
     },
     update({ strict, ...query }) {
       const results = executeQuery(modelName, primaryKey, query, db)
@@ -141,7 +147,7 @@ function createModelApi<
 
       if (!prevRecord) {
         invariant(
-          strict,
+          !strict,
           `Failed to execute "update" on the "${modelName}" model: no entity found matching the query "${JSON.stringify(
             query.where,
           )}".`,
@@ -158,7 +164,7 @@ function createModelApi<
         prevRecord[prevRecord[InternalEntityProperty.primaryKey]]
       ) {
         invariant(
-          db.has(
+          !db.has(
             modelName,
             nextRecord[prevRecord[InternalEntityProperty.primaryKey]],
           ),
@@ -179,7 +185,7 @@ function createModelApi<
 
       if (records.length === 0) {
         invariant(
-          strict,
+          !strict,
           `Failed to execute "updateMany" on the "${modelName}" model: no entities found matching the query "${JSON.stringify(
             query.where,
           )}".`,
@@ -197,7 +203,7 @@ function createModelApi<
           prevRecord[prevRecord[InternalEntityProperty.primaryKey]]
         ) {
           invariant(
-            db.has(
+            !db.has(
               modelName,
               nextRecord[prevRecord[InternalEntityProperty.primaryKey]],
             ),
@@ -212,7 +218,7 @@ function createModelApi<
         updatedRecords.push(nextRecord)
       })
 
-      return updatedRecords.map(removeInternalProperties)
+      return updatedRecords.map((record) => removeInternalProperties(record))
     },
     delete({ strict, ...query }) {
       const results = executeQuery(modelName, primaryKey, query, db)
@@ -220,7 +226,7 @@ function createModelApi<
 
       if (!record) {
         invariant(
-          strict,
+          !strict,
           `Failed to execute "delete" on the "${modelName}" model: no entity found matching the query "${JSON.stringify(
             query.where,
           )}".`,
@@ -241,7 +247,7 @@ function createModelApi<
 
       if (records.length === 0) {
         invariant(
-          strict,
+          !strict,
           `Failed to execute "deleteMany" on the "${modelName}" model: no entities found matching the query "${JSON.stringify(
             query.where,
           )}".`,
@@ -258,7 +264,7 @@ function createModelApi<
         )
       })
 
-      return records.map(removeInternalProperties)
+      return records.map((record) => removeInternalProperties(record))
     },
     toHandlers(type: 'rest' | 'graphql', baseUrl: string): any {
       if (type === 'graphql') {

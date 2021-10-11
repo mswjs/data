@@ -1,16 +1,27 @@
+import { primaryKey } from '../../src'
 import { findPrimaryKey } from '../../src/utils/findPrimaryKey'
 
 it('returns the primary key property name of the model definition', () => {
-  const primaryKey = findPrimaryKey({
+  const result = findPrimaryKey({
+    id: primaryKey(String),
+  })
+  expect(result).toEqual('id')
+})
+
+it('returns undefined if the model definition contains property-compatible object', () => {
+  const result = findPrimaryKey({
     id: {
-      isPrimaryKey: true,
-      getValue: String,
+      // This object is compatible with the "PrimaryKey" class
+      // but is not an instance of that class.
+      getValue() {
+        return 'abc-123'
+      },
     },
   })
-  expect(primaryKey).toEqual('id')
+  expect(result).toBeUndefined()
 })
 
 it('returns undefined if the model definition has no primary key', () => {
-  const primaryKey = findPrimaryKey({})
-  expect(primaryKey).toBeUndefined()
+  const result = findPrimaryKey({})
+  expect(result).toBeUndefined()
 })

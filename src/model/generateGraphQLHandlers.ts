@@ -17,6 +17,7 @@ import {
 } from 'graphql'
 import { GraphQLHandler, graphql } from 'msw'
 import { ModelAPI, ModelDefinition, ModelDictionary } from '../glossary'
+import { PrimaryKey } from '../primaryKey'
 import { capitalize } from '../utils/capitalize'
 import { QueryToComparator } from '../query/queryTypes'
 import { booleanComparators } from '../comparators/boolean'
@@ -107,8 +108,8 @@ export function definitionToFields(
 ): GraphQLFieldsMap {
   return Object.entries(definition).reduce<GraphQLFieldsMap>(
     (types, [key, value]) => {
-      const isPrimaryKey = 'isPrimaryKey' in value
-      const valueType = isPrimaryKey ? GraphQLID : getGraphQLType(value)
+      const valueType =
+        value instanceof PrimaryKey ? GraphQLID : getGraphQLType(value)
       const queryType = getQueryTypeByValueType(valueType)
 
       // Fields describe an entity type.
@@ -134,7 +135,7 @@ export function definitionToFields(
 
 export function generateGraphQLSchema<
   Dictionary extends ModelDictionary,
-  ModelName extends string
+  ModelName extends string,
 >(
   modelName: ModelName,
   definition: ModelDefinition,
@@ -142,9 +143,8 @@ export function generateGraphQLSchema<
 ): GraphQLSchema {
   const pluralModelName = pluralize(modelName)
   const capitalModelName = capitalize(modelName)
-  const { fields, inputFields, queryInputFields } = definitionToFields(
-    definition,
-  )
+  const { fields, inputFields, queryInputFields } =
+    definitionToFields(definition)
 
   const EntityType = new GraphQLObjectType({
     name: capitalModelName,
@@ -271,7 +271,7 @@ export function generateGraphQLSchema<
 
 export function generateGraphQLHandlers<
   Dictionary extends ModelDictionary,
-  ModelName extends string
+  ModelName extends string,
 >(
   modelName: ModelName,
   definition: ModelDefinition,

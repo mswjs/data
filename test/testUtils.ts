@@ -21,7 +21,7 @@ export async function measurePerformance(
       observer.disconnect()
       resolve(lastEntry)
     })
-    observer.observe({ entryTypes: ['measure'], buffered: false })
+    observer.observe({ entryTypes: ['measure'] })
 
     performance.mark(startEvent)
     await fn()

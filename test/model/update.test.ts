@@ -77,6 +77,64 @@ test('updates the first entity when multiple entities match the query', () => {
   expect(kate).toHaveProperty('firstName', 'Kate')
 })
 
+test('updates a nested property of the model', () => {
+  const db = factory({
+    user: {
+      id: primaryKey(datatype.uuid),
+      address: {
+        billing: {
+          country: String,
+        },
+        shipping: {
+          country: String,
+        },
+      },
+    },
+  })
+
+  db.user.create({
+    id: 'user-1',
+    address: {
+      billing: {
+        country: 'us',
+      },
+      shipping: {
+        country: 'de',
+      },
+    },
+  })
+
+  const updatedUser = db.user.update({
+    where: {
+      id: {
+        equals: 'user-1',
+      },
+    },
+    data: {
+      address: {
+        billing: {
+          country: 'de',
+        },
+      },
+    },
+  })
+
+  expect(updatedUser).toHaveProperty(['address', 'billing', 'country'], 'de')
+
+  const queriedUser = db.user.findFirst({
+    where: {
+      address: {
+        billing: {
+          country: {
+            equals: 'de',
+          },
+        },
+      },
+    },
+  })
+  expect(queriedUser).toEqual(updatedUser)
+})
+
 test('throws an exception when no model matches the query in strict mode', () => {
   const db = factory({
     user: {

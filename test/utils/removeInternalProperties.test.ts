@@ -72,3 +72,31 @@ it('preserves custom properties starting with the double underscore', () => {
     id: 'abc-123',
   })
 })
+
+it('removes internal properties from nested relational nodes', () => {
+  const user: InternalEntity<any, any> = {
+    __primaryKey: 'id',
+    __type: 'user',
+    id: 'abc-123',
+    address: {
+      billing: {
+        country: {
+          __primaryKey: 'code',
+          __type: 'country',
+          code: 'us',
+        },
+      },
+    },
+  }
+
+  expect(removeInternalProperties(user)).toEqual({
+    id: 'abc-123',
+    address: {
+      billing: {
+        country: {
+          code: 'us',
+        },
+      },
+    },
+  })
+})

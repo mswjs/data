@@ -42,6 +42,8 @@ export function executeQuery(
   db: Database<any>,
 ): InternalEntity<any, any>[] {
   log(`${JSON.stringify(query)} on "${modelName}"`)
+  log('using primary key "%s"', primaryKey)
+
   const records = db.getModel(modelName)
 
   // Reduce the query scope if there's a query by primary key of the model.

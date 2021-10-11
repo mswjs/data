@@ -43,8 +43,8 @@ test('properly cleans up relational properties', () => {
     },
     group: {
       id: primaryKey(identity('def-456')),
-      owner: oneOf('user')
-    }
+      owner: oneOf('user'),
+    },
   })
 
   const user = db.user.create()

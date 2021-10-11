@@ -1,12 +1,12 @@
-import { ManyOf, RelationKind, RelationOptions } from '../glossary'
+import { Relation, RelationKind, RelationOptions, ManyOf } from './Relation'
 
 export function manyOf<ModelName extends string>(
   modelName: ModelName,
   options?: RelationOptions,
 ): ManyOf<ModelName> {
-  return {
+  return new Relation({
+    to: modelName,
     kind: RelationKind.ManyOf,
-    modelName,
-    unique: !!options?.unique,
-  }
+    unique: options?.unique,
+  })
 }

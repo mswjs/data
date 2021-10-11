@@ -1,3 +1,4 @@
+import set from 'lodash/set'
 import {
   InternalEntity,
   InternalEntityProperty,
@@ -6,13 +7,11 @@ import {
   Value,
 } from '../glossary'
 import { isInternalEntity } from './isInternalEntity'
+import { isObject } from './isObject'
 
-function isOneOfRelation<
-  Dictionary extends ModelDictionary,
-  ModelName extends keyof Dictionary
->(
-  value: Value<Dictionary[ModelName], Dictionary>,
-): value is InternalEntity<Dictionary, ModelName> {
+function isOneOfRelation(
+  value: Value<any, any>,
+): value is InternalEntity<any, any> {
   return isInternalEntity(value)
 }
 
@@ -27,38 +26,60 @@ function isManyOfRelation(
  */
 export function removeInternalProperties<
   Dictionary extends ModelDictionary,
-  ModelName extends keyof Dictionary
+  ModelName extends keyof Dictionary,
 >(
   entity: InternalEntity<Dictionary, ModelName>,
+  result: Entity<any, ModelName> = {},
 ): Entity<Dictionary, ModelName> {
-  return Object.entries(entity).reduce<Entity<any, ModelName>>(
-    (entity, [property, value]) => {
-      // Remove the internal entity properties.
-      if (
-        property === InternalEntityProperty.type ||
-        property === InternalEntityProperty.primaryKey
-      ) {
-        return entity
-      }
+  for (const [propertyName, value] of Object.entries(entity)) {
+    // Remove the internal entity properties.
+    if (
+      propertyName === InternalEntityProperty.type ||
+      propertyName === InternalEntityProperty.primaryKey
+    ) {
+      continue
+    }
 
-      // Remove the internal properties of a "oneOf" relation.
-      if (isOneOfRelation(value)) {
-        const relationalEntity = removeInternalProperties(value)
-        entity[property] = relationalEntity
-        return entity
-      }
+    // Remove the internal properties of a "oneOf" relation.
+    if (
+      isOneOfRelation(
+        // @ts-ignore
+        value,
+      )
+    ) {
+      const relationalEntity = removeInternalProperties(value)
+      set(result, propertyName, relationalEntity)
+      continue
+    }
 
-      // Remove the internal properties of a "manyOf" relation.
-      if (isManyOfRelation(value)) {
-        const relationalEntityList = value.map(removeInternalProperties)
-        entity[property] = relationalEntityList
-        return entity
-      }
+    // Remove the internal properties of a "manyOf" relation.
+    if (
+      isManyOfRelation(
+        // @ts-ignore
+        value,
+      )
+    ) {
+      const relationalEntityList = value.map(
+        (
+          // @ts-ignore
+          node,
+        ) => removeInternalProperties(node),
+      )
+      set(result, propertyName, relationalEntityList)
+      continue
+    }
 
-      // Otherwise dealing with a base type value, preserving.
-      entity[property] = value
-      return entity
-    },
-    {},
-  )
+    if (isObject(value)) {
+      set(
+        result,
+        propertyName,
+        removeInternalProperties(value as any, result[propertyName]),
+      )
+      continue
+    }
+
+    set(result, propertyName, value)
+  }
+
+  return result
 }
