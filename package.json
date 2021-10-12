@@ -10,7 +10,7 @@
     "start": "tsc -w",
     "format": "prettier src/**/*.ts --write",
     "test": "jest",
-    "test:ts": "tsc -p test/typings/tsconfig.json",
+    "test:ts": "tsc -p test/tsconfig.test-d.json",
     "clean": "rimraf ./lib",
     "build": "yarn clean && tsc",
     "prepublishOnly": "yarn build && yarn test:ts && yarn test"
