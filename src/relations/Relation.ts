@@ -1,7 +1,7 @@
 import { debug } from 'debug'
+import { invariant } from 'outvariant'
 import { KeyType, ModelDictionary, PrimaryKeyType } from '../glossary'
 import { findPrimaryKey } from '../utils/findPrimaryKey'
-import { invariant } from '../utils/invariant'
 
 const log = debug('relation')
 
@@ -85,7 +85,9 @@ export class Relation<Kind extends RelationKind, ModelName extends KeyType> {
 
     invariant(
       primaryKey,
-      `Failed to resolve a "${this.kind}" relation to "${this.modelName}": referenced model does not exist or has no primary key.`,
+      'Failed to resolve a "%s" relation to "%s": referenced model does not exist or has no primary key.',
+      this.kind,
+      this.modelName,
     )
 
     return {

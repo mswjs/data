@@ -1,6 +1,7 @@
 import { debug } from 'debug'
 import get from 'lodash/get'
 import set from 'lodash/set'
+import { invariant } from 'outvariant'
 import { Database } from '../db/Database'
 import {
   Entity,
@@ -11,7 +12,6 @@ import {
 } from '../glossary'
 import { executeQuery } from '../query/executeQuery'
 import { first } from '../utils/first'
-import { invariant } from '../utils/invariant'
 import { definePropertyAtPath } from '../utils/definePropertyAtPath'
 import {
   ProducedRelationsMap,
@@ -21,10 +21,6 @@ import {
 import { QuerySelectorWhere } from '../query/queryTypes'
 
 const log = debug('defineRelationalProperties')
-
-type RelationalPropertyDescriptor = Omit<PropertyDescriptor, 'get'> & {
-  get(): InternalEntity<any, any> | InternalEntity<any, any>[] | null
-}
 
 export function defineRelationalProperties(
   entity: InternalEntity<any, any>,
@@ -79,11 +75,10 @@ export function defineRelationalProperties(
 
       invariant(
         existingEntities.length === 0,
-        `Failed to create a unique "${relation.modelName}" relation for "${
-          entity.__type
-        }.${propertyPath}" (${
-          entity[entity[InternalEntityProperty.primaryKey]]
-        }): the provided entity is already used.`,
+        'Failed to create a unique "%s" relation for "%s" (%s): the provided entity is already used.',
+        relation.modelName,
+        `${entity.__type}.${propertyPath}`,
+        entity[entity[InternalEntityProperty.primaryKey]],
       )
     }
 
@@ -124,7 +119,10 @@ export function addRelation(
     const referenceId = reference[relation.primaryKey]
     invariant(
       referencedModels.has(referenceId),
-      `Failed to add relational property "${propertyPath}" on "${entityType}": referenced entity with the id "${referenceId}" does not exist.`,
+      'Failed to add relational property "%s" on "%s": referenced entity with the id "%s" does not exist.',
+      propertyPath,
+      entityType,
+      referenceId,
     )
   })
 
