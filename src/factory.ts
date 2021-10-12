@@ -157,7 +157,7 @@ function createModelApi<
         return null
       }
 
-      const nextRecord = updateEntity(prevRecord, query.data)
+      const nextRecord = updateEntity(prevRecord, query.data, definition, db)
 
       if (
         nextRecord[prevRecord[InternalEntityProperty.primaryKey]] !==
@@ -196,7 +196,7 @@ function createModelApi<
       }
 
       records.forEach((prevRecord) => {
-        const nextRecord = updateEntity(prevRecord, query.data)
+        const nextRecord = updateEntity(prevRecord, query.data, definition, db)
 
         if (
           nextRecord[prevRecord[InternalEntityProperty.primaryKey]] !==

@@ -13,8 +13,12 @@ import { executeQuery } from '../query/executeQuery'
 import { first } from '../utils/first'
 import { invariant } from '../utils/invariant'
 import { definePropertyAtPath } from '../utils/definePropertyAtPath'
-import { ProducedRelationsMap, RelationKind } from '../relations/Relation'
-import { QuerySelector, QuerySelectorWhere } from 'src/query/queryTypes'
+import {
+  ProducedRelationsMap,
+  ProducedRelation,
+  RelationKind,
+} from '../relations/Relation'
+import { QuerySelectorWhere } from '../query/queryTypes'
 
 const log = debug('defineRelationalProperties')
 
@@ -83,37 +87,81 @@ export function defineRelationalProperties(
       )
     }
 
-    definePropertyAtPath<RelationalPropertyDescriptor>(entity, propertyPath, {
-      enumerable: true,
-      get() {
-        log(`get "${propertyPath}"`, relation)
-
-        const refValue = entityRefs.reduce<InternalEntity<any, any>[]>(
-          (list, entityRef) => {
-            return list.concat(
-              executeQuery(
-                relation.modelName,
-                relation.primaryKey,
-                {
-                  where: {
-                    [relation.primaryKey]: {
-                      equals: entityRef[relation.primaryKey],
-                    },
-                  },
-                },
-                db,
-              ),
-            )
-          },
-          [],
-        )
-
-        log(`resolved "${relation.kind}" "${propertyPath}" to`, refValue)
-
-        return relation.kind === RelationKind.OneOf ? first(refValue) : refValue
-      },
-    })
+    addRelation(entity, propertyPath, relation, entityRefs, db)
 
     log('relation "%s" successfuly set!', propertyPath)
   }
+}
+
+export function addRelation(
+  entity: Entity<any, any>,
+  propertyPath: string,
+  relation: ProducedRelation,
+  references: Value<any, any> | Value<any, any>[],
+  db: Database<any>,
+): void {
+  const entityType = entity[InternalEntityProperty.type]
+  const referencesList = ([] as Value<any, any>[]).concat(references)
+  const referencedModels = db.getModel(relation.modelName)
+
+  log(
+    'adding a "%s" relational property "%s" on "%s" (%j)',
+    relation.kind,
+    propertyPath,
+    entityType,
+    references,
+  )
+  log(
+    'database records for the referenced "%s" model:',
+    relation.modelName,
+    referencedModels,
+  )
+
+  // All referenced entities must exist.
+  // This also guards against providing compatible plain objects as next values,
+  // because they won't have the corresponding records in the database.
+  referencesList.forEach((reference) => {
+    const referenceId = reference[relation.primaryKey]
+    invariant(
+      referencedModels.has(referenceId),
+      `Failed to add relational property "${propertyPath}" on "${entityType}": referenced entity with the id "${referenceId}" does not exist.`,
+    )
+  })
+
+  definePropertyAtPath(entity, propertyPath, {
+    enumerable: true,
+    // Mark the property as configurable so that it can be re-defined.
+    // Relational properties may be re-defined when updated during the
+    // entity update ("update"/"updateMany").
+    configurable: true,
+    get() {
+      log(`get "${propertyPath}"`, relation)
+
+      const queryResult = referencesList.reduce<InternalEntity<any, any>[]>(
+        (result, entityRef) => {
+          return result.concat(
+            executeQuery(
+              relation.modelName,
+              relation.primaryKey,
+              {
+                where: {
+                  [relation.primaryKey]: {
+                    equals: entityRef[relation.primaryKey],
+                  },
+                },
+              },
+              db,
+            ),
+          )
+        },
+        [],
+      )
+
+      log(`resolved "${relation.kind}" "${propertyPath}" to`, queryResult)
+
+      return relation.kind === RelationKind.OneOf
+        ? first(queryResult)
+        : queryResult
+    },
+  })
 }

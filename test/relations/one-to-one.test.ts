@@ -154,10 +154,15 @@ test('allows creating an entity without specifying a value for the one-to-one re
     },
   })
 
-  expect(() => db.country.create({ id: 'country-1' })).not.toThrow()
+  const result = db.country.create({ id: 'country-1' })
+
+  expect(result).toEqual({
+    id: 'country-1',
+    name: '',
+  })
 })
 
-test('updates the relational property to the next entity', () => {
+test('updates the relational property to the next value', () => {
   const db = factory({
     country: {
       id: primaryKey(String),
@@ -221,7 +226,7 @@ test('updates the relational property to the next entity', () => {
   })
 })
 
-test('updates the relational property to a compatible object value', () => {
+test('throws an exception when updating a relation to a compatible plain object', () => {
   const db = factory({
     country: {
       id: primaryKey(String),
@@ -233,15 +238,6 @@ test('updates the relational property to a compatible object value', () => {
       name: String,
     },
   })
-  const refetchCountry = () => {
-    return db.country.findFirst({
-      where: {
-        name: {
-          equals: 'Great Britain',
-        },
-      },
-    })
-  }
 
   db.country.create({
     id: 'country-1',
@@ -252,38 +248,23 @@ test('updates the relational property to a compatible object value', () => {
     }),
   })
 
-  // Update the "country" relational property
-  // to a compatible object value.
-  const updatedCountry = db.country.update({
-    where: {
-      name: {
-        equals: 'Great Britain',
+  expect(() =>
+    db.country.update({
+      where: {
+        name: {
+          equals: 'Great Britain',
+        },
       },
-    },
-    data: {
-      capital: {
-        id: 'city-2',
-        name: 'New Hampshire',
+      data: {
+        capital: {
+          id: 'city-2',
+          name: 'New Hampshire',
+        },
       },
-    },
-  })
-
-  expect(updatedCountry).toEqual({
-    id: 'country-1',
-    name: 'Great Britain',
-    capital: {
-      id: 'city-2',
-      name: 'New Hampshire',
-    },
-  })
-  expect(refetchCountry()).toEqual({
-    id: 'country-1',
-    name: 'Great Britain',
-    capital: {
-      id: 'city-2',
-      name: 'New Hampshire',
-    },
-  })
+    }),
+  ).toThrow(
+    'Failed to add relational property "capital" on "country": referenced entity with the id "city-2" does not exist.',
+  )
 })
 
 test('respects updates to the referenced relational entity', () => {

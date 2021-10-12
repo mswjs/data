@@ -186,38 +186,43 @@ export interface ModelAPI<
 
 export type UpdateManyValue<
   Target extends AnyObject,
-  Parent extends AnyObject,
+  Dictionary extends ModelDictionary,
+  ModelRoot extends AnyObject = Target,
 > =
-  | Value<Target, Parent>
+  | Value<Target, Dictionary>
   | {
       [Key in keyof Target]: Target[Key] extends PrimaryKey
         ? (
             prevValue: ReturnType<Target[Key]['getValue']>,
-            entity: Value<Target, Parent>,
+            entity: Value<Target, Dictionary>,
           ) => ReturnType<Target[Key]['getValue']>
         : Target[Key] extends ModelValueTypeGetter
         ? (
             prevValue: ReturnType<Target[Key]>,
-            entity: Value<Target, Parent>,
+            entity: Value<ModelRoot, Dictionary>,
           ) => ReturnType<Target[Key]>
         : Target[Key] extends AnyObject
-        ? Partial<UpdateManyValue<Target[Key], Target>>
+        ? Partial<UpdateManyValue<Target[Key], Target, ModelRoot>>
         : (
             prevValue: ReturnType<Target[Key]>,
-            entity: Value<Target, Parent>,
+            entity: Value<Target, Dictionary>,
           ) => ReturnType<Target[Key]>
     }
 
-export type Value<Target extends AnyObject, Parent extends AnyObject> = {
+export type Value<
+  Target extends AnyObject,
+  Dictionary extends ModelDictionary,
+> = {
   [Key in keyof Target]: Target[Key] extends PrimaryKey<any>
     ? ReturnType<Target[Key]['getValue']>
     : // Extract value type from relations.
     Target[Key] extends OneOf<any>
-    ? Entity<Parent, Target[Key]['modelName']>
+    ? Entity<Dictionary, Target[Key]['modelName']>
     : Target[Key] extends ManyOf<any>
-    ? Entity<Parent, Target[Key]['modelName']>[]
-    : // Account for pritimive value getters because
-    // native constructors satisfy the "AnyObject" predicate below.
+    ? Entity<Dictionary, Target[Key]['modelName']>[]
+    : // Account for primitive value getters because
+    // native constructors (i.e. StringConstructor) satisfy
+    // the "AnyObject" predicate below.
     Target[Key] extends ModelValueTypeGetter
     ? ReturnType<Target[Key]>
     : // Handle nested objects.

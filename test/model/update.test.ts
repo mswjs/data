@@ -83,6 +83,7 @@ test('updates a nested property of the model', () => {
       id: primaryKey(datatype.uuid),
       address: {
         billing: {
+          street: String,
           country: String,
         },
         shipping: {
@@ -96,6 +97,7 @@ test('updates a nested property of the model', () => {
     id: 'user-1',
     address: {
       billing: {
+        street: 'Baker',
         country: 'us',
       },
       shipping: {
@@ -119,6 +121,7 @@ test('updates a nested property of the model', () => {
     },
   })
 
+  expect(updatedUser).toHaveProperty(['address', 'billing', 'street'], 'Baker')
   expect(updatedUser).toHaveProperty(['address', 'billing', 'country'], 'de')
 
   const queriedUser = db.user.findFirst({
@@ -310,4 +313,48 @@ test('derives next entity values based on the existing ones', () => {
   })
   expect(userResult).toHaveProperty('firstName', 'JOHN')
   expect(userResult).toHaveProperty('role', 'Writer')
+})
+
+test('exposes a root entity for a derivitive value of a nested property', () => {
+  const db = factory({
+    user: {
+      id: primaryKey(datatype.uuid),
+      address: {
+        billing: {
+          country: String,
+        },
+      },
+    },
+  })
+
+  db.user.create({
+    id: 'abc-123',
+    address: {
+      billing: {
+        country: 'us',
+      },
+    },
+  })
+
+  const result = db.user.update({
+    where: {
+      id: {
+        equals: 'abc-123',
+      },
+    },
+    data: {
+      address: {
+        billing: {
+          country(country, user) {
+            expect(user).toHaveProperty('id', 'abc-123')
+            expect(user).toHaveProperty(['address', 'billing', 'country'], 'us')
+
+            return country.toUpperCase()
+          },
+        },
+      },
+    },
+  })
+
+  expect(result).toHaveProperty(['address', 'billing', 'country'], 'US')
 })

@@ -182,7 +182,7 @@ test('updates the relational value via the ".update()" model method', () => {
   })
 })
 
-test('updates the relational value via a compatible object', () => {
+test('throws an exception when updating a relational value via a compatible object', () => {
   const db = factory({
     user: {
       id: primaryKey(datatype.uuid),
@@ -193,7 +193,9 @@ test('updates the relational value via a compatible object', () => {
       title: random.words,
     },
   })
-  const firstPost = db.post.create({ title: 'First post' })
+  const firstPost = db.post.create({
+    title: 'First post',
+  })
   const user = db.user.create({
     id: 'abc-123',
     posts: [firstPost],
@@ -212,28 +214,21 @@ test('updates the relational value via a compatible object', () => {
     posts: [firstPost],
   })
 
-  // Update the "posts" relational property
-  // with a compatible direct Object.
-  const directObject = {
-    id: 'post-1',
-    title: 'Compatible post',
-  }
-
-  const updatedUser = db.user.update({
-    where: {
-      id: { equals: 'abc-123' },
-    },
-    data: {
-      posts: [directObject],
-    },
-  })
-
-  expect(updatedUser).toEqual({
-    id: 'abc-123',
-    posts: [directObject],
-  })
-  expect(refetchUser()).toEqual({
-    id: 'abc-123',
-    posts: [directObject],
-  })
+  expect(() =>
+    db.user.update({
+      where: {
+        id: { equals: 'abc-123' },
+      },
+      data: {
+        posts: [
+          {
+            id: 'post-1',
+            title: 'Compatible object',
+          },
+        ],
+      },
+    }),
+  ).toThrow(
+    'Failed to add relational property "posts" on "user": referenced entity with the id "post-1" does not exist.',
+  )
 })
