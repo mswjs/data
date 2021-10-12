@@ -177,7 +177,7 @@ test('should update many entities with primitive values', () => {
   updateMultiUsers.forEach((user) => expect(user.role).toEqual('Admin'))
 })
 
-test('throw an error when trying entities using a key already used', () => {
+test('throw an error when updating entities with an already existing primary key', () => {
   const db = factory({
     user: {
       id: primaryKey(datatype.uuid),
@@ -200,7 +200,7 @@ test('throw an error when trying entities using a key already used', () => {
   })
 
   const error = getThrownError(() => {
-    db.user.update({
+    db.user.updateMany({
       where: {
         role: {
           equals: 'Auditor',
@@ -216,6 +216,6 @@ test('throw an error when trying entities using a key already used', () => {
   expect(error).toHaveProperty('type', OperationErrorType.DuplicatePrimaryKey)
   expect(error).toHaveProperty(
     'message',
-    'Failed to execute "update" on the "user" model: the entity with a primary key "123" ("id") already exists.',
+    'Failed to execute "updateMany" on the "user" model: the entity with a primary key "123" ("id") already exists.',
   )
 })

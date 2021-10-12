@@ -1,3 +1,4 @@
+import { format } from 'outvariant'
 import {
   InternalEntity,
   FactoryAPI,
@@ -10,7 +11,6 @@ import { first } from './utils/first'
 import { executeQuery } from './query/executeQuery'
 import { parseModelDefinition } from './model/parseModelDefinition'
 import { createModel } from './model/createModel'
-import { invariant } from './utils/invariant'
 import { updateEntity } from './model/updateEntity'
 import { OperationError, OperationErrorType } from './errors/OperationError'
 import { Database } from './db/Database'
@@ -30,7 +30,7 @@ export function factory<Dictionary extends ModelDictionary>(
 ): FactoryAPI<Dictionary> {
   const db = new Database<Dictionary>(dictionary)
 
-  // Jnitialize database extensions.
+  // Initialize database extensions.
   sync(db)
 
   return Object.entries(dictionary).reduce<any>((acc, [modelName, props]) => {
@@ -56,15 +56,6 @@ function createModelApi<
   const parsedModel = parseModelDefinition(dictionary, modelName, definition)
   const { primaryKey } = parsedModel
 
-  if (typeof primaryKey === 'undefined') {
-    throw new OperationError(
-      OperationErrorType.MissingPrimaryKey,
-      `Failed to create a "${modelName}" model: none of the listed properties is marked as a primary key (${Object.keys(
-        definition,
-      ).join()}).`,
-    )
-  }
-
   const api: ModelAPI<Dictionary, ModelName> = {
     create(initialValues = {}) {
       const entity = createModel<Dictionary, ModelName>(
@@ -79,20 +70,30 @@ function createModelApi<
         entity[InternalEntityProperty.primaryKey]
       ] as string
 
-      invariant(
-        entityId,
-        `Failed to create a "${modelName}" entity: expected the primary key "${primaryKey}" to have a value, but got: ${entityId}`,
-        new OperationError(OperationErrorType.MissingPrimaryKey),
-      )
+      if (!entityId) {
+        throw new OperationError(
+          OperationErrorType.MissingPrimaryKey,
+          format(
+            'Failed to create a "%s" entity: expected the primary key "%s" to have a value, but got: %s',
+            modelName,
+            primaryKey,
+            entityId,
+          ),
+        )
+      }
 
       // Prevent creation of multiple entities with the same primary key value.
-      invariant(
-        !db.has(modelName, entityId),
-        `Failed to create a "${modelName}" entity: an entity with the same primary key "${entityId}" ("${
-          entity[InternalEntityProperty.primaryKey]
-        }") already exists.`,
-        new OperationError(OperationErrorType.DuplicatePrimaryKey),
-      )
+      if (db.has(modelName, entityId)) {
+        throw new OperationError(
+          OperationErrorType.DuplicatePrimaryKey,
+          format(
+            'Failed to create a "%s" entity: an entity with the same primary key "%s" ("%s") already exists.',
+            modelName,
+            entityId,
+            entity[InternalEntityProperty.primaryKey],
+          ),
+        )
+      }
 
       db.create(modelName, entity)
       return removeInternalProperties(entity)
@@ -109,13 +110,14 @@ function createModelApi<
       const results = executeQuery(modelName, primaryKey, query, db)
       const firstResult = first(results)
 
-      if (query.strict) {
-        invariant(
-          firstResult,
-          `Failed to execute "findFirst" on the "${modelName}" model: no entity found matching the query "${JSON.stringify(
+      if (query.strict && firstResult == null) {
+        throw new OperationError(
+          OperationErrorType.EntityNotFound,
+          format(
+            'Failed to execute "findFirst" on the "%s" model: no entity found matching the query "%j".',
+            modelName,
             query.where,
-          )}".`,
-          new OperationError(OperationErrorType.EntityNotFound),
+          ),
         )
       }
 
@@ -124,13 +126,14 @@ function createModelApi<
     findMany(query) {
       const results = executeQuery(modelName, primaryKey, query, db)
 
-      if (query.strict) {
-        invariant(
-          results.length > 0,
-          `Failed to execute "findMany" on the "${modelName}" model: no entities found matching the query "${JSON.stringify(
+      if (results.length === 0 && query.strict) {
+        throw new OperationError(
+          OperationErrorType.EntityNotFound,
+          format(
+            'Failed to execute "findMany" on the "%s" model: no entities found matching the query "%j".',
+            modelName,
             query.where,
-          )}".`,
-          new OperationError(OperationErrorType.EntityNotFound),
+          ),
         )
       }
 
@@ -146,13 +149,16 @@ function createModelApi<
       const prevRecord = first(results)
 
       if (!prevRecord) {
-        invariant(
-          !strict,
-          `Failed to execute "update" on the "${modelName}" model: no entity found matching the query "${JSON.stringify(
-            query.where,
-          )}".`,
-          new OperationError(OperationErrorType.EntityNotFound),
-        )
+        if (strict) {
+          throw new OperationError(
+            OperationErrorType.EntityNotFound,
+            format(
+              'Failed to execute "update" on the "%s" model: no entity found matching the query "%j".',
+              modelName,
+              query.where,
+            ),
+          )
+        }
 
         return null
       }
@@ -163,16 +169,22 @@ function createModelApi<
         nextRecord[prevRecord[InternalEntityProperty.primaryKey]] !==
         prevRecord[prevRecord[InternalEntityProperty.primaryKey]]
       ) {
-        invariant(
-          !db.has(
+        if (
+          db.has(
             modelName,
             nextRecord[prevRecord[InternalEntityProperty.primaryKey]],
-          ),
-          `Failed to execute "update" on the "${modelName}" model: the entity with a primary key "${
-            nextRecord[prevRecord[InternalEntityProperty.primaryKey]]
-          }" ("${primaryKey}") already exists.`,
-          new OperationError(OperationErrorType.DuplicatePrimaryKey),
-        )
+          )
+        ) {
+          throw new OperationError(
+            OperationErrorType.DuplicatePrimaryKey,
+            format(
+              'Failed to execute "update" on the "%s" model: the entity with a primary key "%s" ("%s") already exists.',
+              modelName,
+              nextRecord[prevRecord[InternalEntityProperty.primaryKey]],
+              primaryKey,
+            ),
+          )
+        }
       }
 
       db.update(modelName, prevRecord, nextRecord)
@@ -184,13 +196,16 @@ function createModelApi<
       const updatedRecords: InternalEntity<any, any>[] = []
 
       if (records.length === 0) {
-        invariant(
-          !strict,
-          `Failed to execute "updateMany" on the "${modelName}" model: no entities found matching the query "${JSON.stringify(
-            query.where,
-          )}".`,
-          new OperationError(OperationErrorType.EntityNotFound),
-        )
+        if (strict) {
+          throw new OperationError(
+            OperationErrorType.EntityNotFound,
+            format(
+              'Failed to execute "updateMany" on the "%s" model: no entities found matching the query "%j".',
+              modelName,
+              query.where,
+            ),
+          )
+        }
 
         return null
       }
@@ -202,16 +217,22 @@ function createModelApi<
           nextRecord[prevRecord[InternalEntityProperty.primaryKey]] !==
           prevRecord[prevRecord[InternalEntityProperty.primaryKey]]
         ) {
-          invariant(
-            !db.has(
+          if (
+            db.has(
               modelName,
               nextRecord[prevRecord[InternalEntityProperty.primaryKey]],
-            ),
-            `Failed to execute "updateMany" on the "${modelName}" model: no entities found matching the query "${JSON.stringify(
-              query.where,
-            )}".`,
-            new OperationError(OperationErrorType.EntityNotFound),
-          )
+            )
+          ) {
+            throw new OperationError(
+              OperationErrorType.DuplicatePrimaryKey,
+              format(
+                'Failed to execute "updateMany" on the "%s" model: the entity with a primary key "%s" ("%s") already exists.',
+                modelName,
+                nextRecord[prevRecord[InternalEntityProperty.primaryKey]],
+                primaryKey,
+              ),
+            )
+          }
         }
 
         db.update(modelName, prevRecord, nextRecord)
@@ -225,13 +246,16 @@ function createModelApi<
       const record = first(results)
 
       if (!record) {
-        invariant(
-          !strict,
-          `Failed to execute "delete" on the "${modelName}" model: no entity found matching the query "${JSON.stringify(
-            query.where,
-          )}".`,
-          new OperationError(OperationErrorType.EntityNotFound),
-        )
+        if (strict) {
+          throw new OperationError(
+            OperationErrorType.EntityNotFound,
+            format(
+              'Failed to execute "delete" on the "%s" model: no entity found matching the query "%o".',
+              modelName,
+              query.where,
+            ),
+          )
+        }
 
         return null
       }
@@ -246,13 +270,16 @@ function createModelApi<
       const records = executeQuery(modelName, primaryKey, query, db)
 
       if (records.length === 0) {
-        invariant(
-          !strict,
-          `Failed to execute "deleteMany" on the "${modelName}" model: no entities found matching the query "${JSON.stringify(
-            query.where,
-          )}".`,
-          new OperationError(OperationErrorType.EntityNotFound),
-        )
+        if (strict) {
+          throw new OperationError(
+            OperationErrorType.EntityNotFound,
+            format(
+              'Failed to execute "deleteMany" on the "%s" model: no entities found matching the query "%o".',
+              modelName,
+              query.where,
+            ),
+          )
+        }
 
         return null
       }

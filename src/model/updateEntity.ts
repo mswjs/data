@@ -1,4 +1,5 @@
 import { debug } from 'debug'
+import { invariant } from 'outvariant'
 import { Database } from '../db/Database'
 import { Relation } from '../relations/Relation'
 import {
@@ -6,7 +7,6 @@ import {
   InternalEntityProperty,
   ModelDefinition,
 } from '../glossary'
-import { invariant } from '../utils/invariant'
 import { isObject } from '../utils/isObject'
 import { addRelation } from './defineRelationalProperties'
 
@@ -54,7 +54,9 @@ export function updateEntity(
 
           invariant(
             isObject(value) || Array.isArray(value),
-            `Failed to update relational property "${propertyName}" on "${entityType}": the next value must be an entity or a list of entities.`,
+            'Failed to update relational property "%s" on "%s": the next value must be an entity or a list of entities.',
+            propertyName,
+            entityType,
           )
 
           /**

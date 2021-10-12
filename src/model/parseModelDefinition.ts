@@ -1,7 +1,7 @@
 import { debug } from 'debug'
+import { invariant } from 'outvariant'
 import { ModelDefinition, PrimaryKeyType, ModelDictionary } from '../glossary'
 import { PrimaryKey } from '../primaryKey'
-import { invariant } from '../utils/invariant'
 import { isObject } from '../utils/isObject'
 import { Relation, ProducedRelationsMap } from '../relations/Relation'
 
@@ -36,23 +36,30 @@ function deepParseModelDefinition<Dictionary extends ModelDictionary>(
     )
   }
 
-  for (const [property, value] of Object.entries(definition)) {
-    const propertyPath = parentPath ? `${parentPath}.${property}` : property
+  for (const [propertyName, value] of Object.entries(definition)) {
+    const propertyPath = parentPath
+      ? `${parentPath}.${propertyName}`
+      : propertyName
 
     // Primary key.
     if (value instanceof PrimaryKey) {
       invariant(
         !result.primaryKey,
-        `Failed to parse a model definition for "${modelName}": cannot have both properties "${result.primaryKey}" and "${property}" as a primary key.`,
+        'Failed to parse a model definition for "%s": cannot have both properties "%s" and "%s" as a primary key.',
+        modelName,
+        result.primaryKey,
+        propertyName,
       )
 
       invariant(
         !parentPath,
-        `Failed to parse a model definition for "${parentPath}" property of "${modelName}": cannot have a primary key in a nested object.`,
+        'Failed to parse a model definition for "%s" property of "%s": cannot have a primary key in a nested object.',
+        parentPath,
+        modelName,
       )
 
-      result.primaryKey = property
-      result.properties.push(property)
+      result.primaryKey = propertyName
+      result.properties.push(propertyName)
 
       continue
     }
@@ -98,7 +105,8 @@ export function parseModelDefinition<Dictionary extends ModelDictionary>(
 
   invariant(
     result.primaryKey,
-    `Failed to parse a model definition for "${modelName}": model is missing a primary key. Did you forget to mark one of its properties using the "primaryKey" function?`,
+    'Failed to parse a model definition for "%s": model is missing a primary key. Did you forget to mark one of its properties using the "primaryKey" function?',
+    modelName,
   )
 
   return result
