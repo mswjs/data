@@ -24,6 +24,7 @@ export function createModel<
 >(
   modelName: ModelName,
   definition: ModelDefinition,
+  dictionary: Dictionary,
   parsedModel: ParsedModelDefinition,
   initialValues: Partial<Value<Dictionary[ModelName], Dictionary>>,
   db: Database<Dictionary>,
@@ -92,9 +93,9 @@ export function createModel<
   )
 
   const entity = Object.assign({}, publicProperties, internalProperties)
-  defineRelationalProperties(entity, initialValues, relations, db)
+  defineRelationalProperties(entity, initialValues, relations, dictionary, db)
 
-  log('created "%s" entity', modelName, entity)
+  log('created "%s" entity:', modelName, entity)
 
   return entity
 }

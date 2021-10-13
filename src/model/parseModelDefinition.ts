@@ -3,14 +3,14 @@ import { invariant } from 'outvariant'
 import { ModelDefinition, PrimaryKeyType, ModelDictionary } from '../glossary'
 import { PrimaryKey } from '../primaryKey'
 import { isObject } from '../utils/isObject'
-import { Relation, ProducedRelationsMap } from '../relations/Relation'
+import { Relation, RelationsMap } from '../relations/Relation'
 
 const log = debug('parseModelDefinition')
 
 export interface ParsedModelDefinition {
   primaryKey: PrimaryKeyType
   properties: string[]
-  relations: ProducedRelationsMap
+  relations: RelationsMap
 }
 
 /**
@@ -68,7 +68,7 @@ function deepParseModelDefinition<Dictionary extends ModelDictionary>(
     if (value instanceof Relation) {
       // Resolve a relation against the dictionary to collect
       // the primary key names of the referenced models.
-      result.relations[propertyPath] = value.produce(dictionary)
+      result.relations[propertyPath] = value
       continue
     }
 

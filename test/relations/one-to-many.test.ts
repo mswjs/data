@@ -115,7 +115,7 @@ test('supports querying through a nested one-to-many relation', () => {
   expect(result).toEqual(user)
 })
 
-test('does not throw any error if an entity with one-to-many relation is created without it', () => {
+test('supports creating an entity without specifying the value for one-to-many relation', () => {
   const db = factory({
     user: {
       id: primaryKey(datatype.uuid),
@@ -123,11 +123,23 @@ test('does not throw any error if an entity with one-to-many relation is created
     },
     post: {
       id: primaryKey(datatype.uuid),
-      title: random.words,
     },
   })
 
-  expect(() => db.user.create()).not.toThrow()
+  expect(() =>
+    db.user.create({
+      id: 'abc-123',
+    }),
+  ).not.toThrow()
+
+  const user = db.user.findFirst({
+    where: {
+      id: {
+        equals: 'abc-123',
+      },
+    },
+  })
+  expect(user).toBeDefined()
 })
 
 test('updates the relational value via the ".update()" model method', () => {
@@ -229,6 +241,77 @@ test('throws an exception when updating a relational value via a compatible obje
       },
     }),
   ).toThrow(
-    'Failed to add relational property "posts" on "user": referenced entity with the id "post-1" does not exist.',
+    'Failed to define a relational property "posts" on "user": referenced entity "post-1" ("id") does not exist.',
+  )
+})
+
+test('throws an exception when creating a unique one-to-many relation to the already referenced entity', () => {
+  const db = factory({
+    user: {
+      id: primaryKey(datatype.uuid),
+      // One post cannot belong to multiple users.
+      posts: manyOf('post', { unique: true }),
+    },
+    post: {
+      id: primaryKey(datatype.uuid),
+    },
+  })
+
+  const post = db.post.create({ id: 'post-1' })
+
+  db.user.create({
+    id: 'user-1',
+    posts: [post],
+  })
+
+  expect(() =>
+    db.user.create({
+      id: 'user-2',
+      posts: [post],
+    }),
+  ).toThrow(
+    'Failed to create a unique "MANY_OF" relation to "post" ("user.posts") for "user-2": referenced post "post-1" belongs to another user ("user-1").',
+  )
+})
+
+test('throws an exception when updating a unique one-to-many relation to the already referenced entity', () => {
+  const db = factory({
+    user: {
+      id: primaryKey(datatype.uuid),
+      // One post cannot belong to multiple users.
+      posts: manyOf('post', { unique: true }),
+    },
+    post: {
+      id: primaryKey(datatype.uuid),
+    },
+  })
+
+  const post = db.post.create({
+    id: 'post-1',
+  })
+
+  db.user.create({
+    id: 'user-1',
+    posts: [post],
+  })
+
+  db.user.create({
+    id: 'user-2',
+  })
+
+  expect(() =>
+    db.user.update({
+      where: {
+        id: {
+          equals: 'user-2',
+        },
+      },
+      data: {
+        posts: [post],
+      },
+      strict: true,
+    }),
+  ).toThrow(
+    'Failed to create a unique "MANY_OF" relation to "post" ("user.posts") for "user-2": referenced post "post-1" belongs to another user ("user-1").',
   )
 })

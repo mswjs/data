@@ -4,7 +4,7 @@ import {
 } from '../../src/model/parseModelDefinition'
 import { manyOf, oneOf, primaryKey } from '../../src'
 import { ModelDictionary } from '../../src/glossary'
-import { RelationKind } from '../../src/relations/Relation'
+import { Relation, RelationKind } from '../../src/relations/Relation'
 
 it('parses a plain model definition', () => {
   const dictionary = {
@@ -43,18 +43,17 @@ it('parses a model definition with relations', () => {
     primaryKey: 'id',
     properties: ['id', 'firstName'],
     relations: {
-      country: {
+      country: new Relation({
+        to: 'country',
         kind: RelationKind.OneOf,
-        modelName: 'country',
-        unique: true,
-        primaryKey: 'code',
-      },
-      posts: {
+        attributes: {
+          unique: true,
+        },
+      }),
+      posts: new Relation({
+        to: 'post',
         kind: RelationKind.ManyOf,
-        modelName: 'post',
-        unique: false,
-        primaryKey: 'id',
-      },
+      }),
     },
   } as ParsedModelDefinition)
 })
@@ -88,18 +87,17 @@ it('parses a model definition with nested objects', () => {
     primaryKey: 'id',
     properties: ['id', 'address.billing.street', 'address.billing.houseNumber'],
     relations: {
-      'address.billing.country': {
+      'address.billing.country': new Relation({
+        to: 'country',
         kind: RelationKind.OneOf,
-        modelName: 'country',
-        unique: false,
-        primaryKey: 'code',
-      },
-      'activity.posts': {
+      }),
+      'activity.posts': new Relation({
+        to: 'post',
         kind: RelationKind.ManyOf,
-        modelName: 'post',
-        unique: true,
-        primaryKey: 'id',
-      },
+        attributes: {
+          unique: true,
+        },
+      }),
     },
   } as ParsedModelDefinition)
 })

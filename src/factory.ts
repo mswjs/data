@@ -61,6 +61,7 @@ function createModelApi<
       const entity = createModel<Dictionary, ModelName>(
         modelName,
         definition,
+        dictionary,
         parsedModel,
         initialValues,
         db,
@@ -163,7 +164,7 @@ function createModelApi<
         return null
       }
 
-      const nextRecord = updateEntity(prevRecord, query.data, definition, db)
+      const nextRecord = updateEntity(prevRecord, query.data, definition)
 
       if (
         nextRecord[prevRecord[InternalEntityProperty.primaryKey]] !==
@@ -211,7 +212,7 @@ function createModelApi<
       }
 
       records.forEach((prevRecord) => {
-        const nextRecord = updateEntity(prevRecord, query.data, definition, db)
+        const nextRecord = updateEntity(prevRecord, query.data, definition)
 
         if (
           nextRecord[prevRecord[InternalEntityProperty.primaryKey]] !==

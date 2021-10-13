@@ -31,6 +31,7 @@ test('emits the "create" event when a new entity is created', (done) => {
     createModel(
       'user',
       dictionary.user,
+      dictionary,
       parseModelDefinition(dictionary, 'user', dictionary.user),
       {
         id: 'abc-123',
@@ -75,6 +76,7 @@ test('emits the "update" event when an existing entity is updated', (done) => {
     createModel(
       'user',
       dictionary.user,
+      dictionary,
       parseModelDefinition(dictionary, 'user', dictionary.user),
       { id: 'abc-123', firstName: 'John' },
       db,
@@ -86,6 +88,7 @@ test('emits the "update" event when an existing entity is updated', (done) => {
     createModel(
       'user',
       dictionary.user,
+      dictionary,
       parseModelDefinition(dictionary, 'user', dictionary.user),
       { id: 'def-456', firstName: 'Kate' },
       db,
@@ -117,6 +120,7 @@ test('emits the "delete" event when an existing entity is deleted', (done) => {
     createModel(
       'user',
       dictionary.user,
+      dictionary,
       parseModelDefinition(dictionary, 'user', dictionary.user),
       { id: 'abc-123', firstName: 'John' },
       db,
