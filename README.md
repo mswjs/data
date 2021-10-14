@@ -47,7 +47,7 @@ Throughout this document native JavaScript constructors (i.e. String, Number) wi
 
 #### Using the primary key
 
-Each model **must have a primary key**. That is a single key that can be used to reference an entity of that model. Think of it as an ID column for a particular table in a database.
+Each model **must have a primary key**. That is a root-level property representing the model's identity. Think of it as an "id" column for a particular table in a database.
 
 Declare a primary key by using the `primaryKey` helper function:
 
@@ -61,7 +61,7 @@ factory({
 })
 ```
 
-In the example above the `id` is the primary key for the `user` model. This means that whenever a `user` is created it must have the `id` property that equals a unique `String`.
+In the example above, the `id` is the primary key for the `user` model. This means that whenever a `user` is created it must have the `id` property that equals a unique `String`.
 
 ### Integrate with mocks
 
@@ -107,11 +107,14 @@ setupWorker(
 ## Recipes
 
 - [Model methods](#model-methods)
-- [Querying data](#querying-data)
-- [Strict mode](#strict-mode)
-- [Model relationships](#model-relationships)
-- [Pagination](#pagination)
-- [Sorting](#sorting)
+- **Modeling:**
+  - [Nested structures](#nested-structures)
+  - [Model relationships](#model-relationships)
+- **Querying:**
+  - [Querying data](#querying-data)
+  - [Strict mode](#strict-mode)
+  - [Pagination](#pagination)
+  - [Sorting](#sorting)
 
 ### Model methods
 
@@ -381,63 +384,9 @@ db.user.toHandlers('rest', 'https://example.com')
 db.user.toHandlers('graphql', 'https://example.com/graphql')
 ```
 
-### Querying data
+### Nested structures
 
-This library supports querying of the seeded data similar to how one would query a SQL database. The data is queried based on its properties. A query you construct depends on the value type you are querying.
-
-#### String operators
-
-- `equals`
-- `notEquals`
-- `contains`
-- `notContains`
-- `in`
-- `notIn`
-
-#### Number operators
-
-- `equals`
-- `notEquals`
-- `gt`
-- `gte`
-- `lt`
-- `lte`
-- `between`
-- `notBetween`
-
-#### Boolean operators
-
-- `equals`
-- `notEquals`
-
-#### Query example
-
-```js
-const db = factory({
-  post: {
-    id: String,
-    likes: Number,
-    isDraft: Boolean,
-  },
-})
-
-// Returns the list of `post` entities
-// that satisfy the given query.
-const popularPosts = db.post.findMany({
-  where: {
-    likes: {
-      gte: 1000,
-    },
-    isDraft: {
-      equals: false,
-    },
-  },
-})
-```
-
-### Strict mode
-
-When querying or updating the entities you can supply the `strict: boolean` property on the query. When supplied, if a query operation fails (i.e. no entity found), the library will throw an exception.
+You may use nested objects to design a complex structure of your model:
 
 ```js
 import { factory, primaryKey } from '@mswjs/data'
@@ -445,22 +394,63 @@ import { factory, primaryKey } from '@mswjs/data'
 const db = factory({
   user: {
     id: primaryKey(String),
-  },
-})
-
-db.user.create({ id: 'abc-123' })
-
-// This will throw an exception, because there are
-// no "user" entities matching this query.
-db.user.findFirst({
-  where: {
-    id: {
-      equals: 'def-456',
+    address: {
+      billing: {
+        street: String,
+      },
     },
   },
-  strict: true,
+})
+
+// You can then create and query your data
+// based on the nested properties.
+
+db.user.create({
+  id: 'user-1',
+  address: {
+    billing: {
+      street: 'Baker st.',
+    },
+  },
+})
+
+db.user.update({
+  where: {
+    id: {
+      equals: 'user-1',
+    },
+  },
+  data: {
+    address: {
+      billing: {
+        street: 'Sunwell ave.',
+      },
+    },
+  },
 })
 ```
+
+> Note that you **cannot** mark a nested property as the [primary key](#using-the-primary-key).
+
+You may also specify _relationships_ nested deeply in your model:
+
+```js
+factory({
+  user: {
+    id: primaryKey(String),
+    address: {
+      billing: {
+        country: oneOf('country'),
+      },
+    },
+  },
+  country: {
+    code: primaryKey(String),
+  },
+})
+```
+
+> Learn more about [Model relationships](#model-relationships).
 
 ### Model relationships
 
@@ -581,6 +571,87 @@ const john = db.user.create({ invitation })
 // Assigning the invitation already used by "john"
 // will throw an exception when creating this entity.
 const karl = db.user.create({ invitation })
+```
+
+### Querying data
+
+This library supports querying of the seeded data similar to how one would query a SQL database. The data is queried based on its properties. A query you construct depends on the value type you are querying.
+
+#### String operators
+
+- `equals`
+- `notEquals`
+- `contains`
+- `notContains`
+- `in`
+- `notIn`
+
+#### Number operators
+
+- `equals`
+- `notEquals`
+- `gt`
+- `gte`
+- `lt`
+- `lte`
+- `between`
+- `notBetween`
+
+#### Boolean operators
+
+- `equals`
+- `notEquals`
+
+#### Query example
+
+```js
+const db = factory({
+  post: {
+    id: String,
+    likes: Number,
+    isDraft: Boolean,
+  },
+})
+
+// Returns the list of `post` entities
+// that satisfy the given query.
+const popularPosts = db.post.findMany({
+  where: {
+    likes: {
+      gte: 1000,
+    },
+    isDraft: {
+      equals: false,
+    },
+  },
+})
+```
+
+### Strict mode
+
+When querying or updating the entities you can supply the `strict: boolean` property on the query. When supplied, if a query operation fails (i.e. no entity found), the library will throw an exception.
+
+```js
+import { factory, primaryKey } from '@mswjs/data'
+
+const db = factory({
+  user: {
+    id: primaryKey(String),
+  },
+})
+
+db.user.create({ id: 'abc-123' })
+
+// This will throw an exception, because there are
+// no "user" entities matching this query.
+db.user.findFirst({
+  where: {
+    id: {
+      equals: 'def-456',
+    },
+  },
+  strict: true,
+})
 ```
 
 ### Pagination
