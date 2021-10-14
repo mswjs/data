@@ -1,6 +1,11 @@
 import { debug } from 'debug'
 import { invariant } from 'outvariant'
-import { ModelDefinition, PrimaryKeyType, ModelDictionary } from '../glossary'
+import {
+  ModelDefinition,
+  PrimaryKeyType,
+  ModelDictionary,
+  NestedModelDefinition,
+} from '../glossary'
 import { PrimaryKey } from '../primaryKey'
 import { isObject } from '../utils/isObject'
 import { Relation, RelationsMap } from '../relations/Relation'
@@ -73,14 +78,11 @@ function deepParseModelDefinition<Dictionary extends ModelDictionary>(
     }
 
     // Nested objects.
-    if (isObject(value)) {
+    if (isObject<NestedModelDefinition>(value)) {
       deepParseModelDefinition(
         dictionary,
         modelName,
-        /**
-         * @fixme Extend the "ModelDefinition" type to denote nested objects as values.
-         */
-        value as any,
+        value,
         propertyPath,
         result,
       )

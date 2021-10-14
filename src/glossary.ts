@@ -33,7 +33,7 @@ export type ModelDefinitionValue =
   | ManyOf<any>
   | NestedModelDefinition
 
-type NestedModelDefinition = {
+export type NestedModelDefinition = {
   [propertyName: string]:
     | ModelValueTypeGetter
     | OneOf<any>

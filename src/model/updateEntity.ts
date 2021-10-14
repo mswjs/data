@@ -2,7 +2,7 @@ import { debug } from 'debug'
 import get from 'lodash/get'
 import { invariant } from 'outvariant'
 import { Relation } from '../relations/Relation'
-import { InternalEntity, ModelDefinition } from '../glossary'
+import { InternalEntity, ModelDefinition, Value } from '../glossary'
 import { isObject } from '../utils/isObject'
 
 const log = debug('updateEntity')
@@ -38,12 +38,11 @@ export function updateEntity(
           entityChunk,
         )
 
-        const propertyDefinition = get(definition, propertyPath)
-
         /**
-         * @note Entity chunk in the scope is always flat.
+         * @note Entity chunk in this scope is always flat.
          */
         const prevValue = entityChunk[propertyName]
+        const propertyDefinition = get(definition, propertyPath)
 
         log('definition for "%s":', propertyPath, propertyDefinition)
         log('previous value for "%s":', propertyName, prevValue)
@@ -73,11 +72,8 @@ export function updateEntity(
 
           log('updating the relation to resolve with:', value)
 
-          /**
-           * @fixme TypeScript.
-           */
           // Re-define the relational property to now point at the next value.
-          propertyDefinition.resolveWith(entity, value as any)
+          propertyDefinition.resolveWith(entity, value as Value<any, any>[])
 
           return entityChunk
         }
