@@ -226,6 +226,80 @@ test('updates the relational property to the next value', () => {
   })
 })
 
+test('throws an exception when creating a unique one-to-one relation to the already referenced entity', () => {
+  const db = factory({
+    user: {
+      id: primaryKey(String),
+      // There can only be 1 invite associated with 1 user.
+      invitation: oneOf('invite', { unique: true }),
+    },
+    invite: {
+      code: primaryKey(String),
+    },
+  })
+
+  const invitation = db.invite.create({
+    code: 'abc-123',
+  })
+
+  // Create a user with a different invite.
+  db.user.create({
+    id: 'user-1',
+    invitation,
+  })
+
+  expect(() =>
+    db.user.create({
+      id: 'user-2',
+      invitation,
+    }),
+  ).toThrow(
+    'Failed to create a unique "ONE_OF" relation to "invite" ("user.invitation") for "user-2": referenced invite "abc-123" belongs to another user ("user-1").',
+  )
+})
+
+test('throws an exception when updating a unique one-to-one relation to the already referenced entity', () => {
+  const db = factory({
+    user: {
+      id: primaryKey(String),
+      // There can only be 1 invite associated with 1 user.
+      invitation: oneOf('invite', { unique: true }),
+    },
+    invite: {
+      code: primaryKey(String),
+    },
+  })
+
+  const firstInvite = db.invite.create({ code: 'abc-123' })
+  const secondInvite = db.invite.create({ code: 'def-456' })
+
+  db.user.create({
+    id: 'user-1',
+    invitation: firstInvite,
+  })
+
+  db.user.create({
+    id: 'user-2',
+    invitation: secondInvite,
+  })
+
+  expect(() =>
+    db.user.update({
+      where: {
+        id: {
+          equals: 'user-1',
+        },
+      },
+      data: {
+        invitation: secondInvite,
+      },
+      strict: true,
+    }),
+  ).toThrow(
+    'Failed to create a unique "ONE_OF" relation to "invite" ("user.invitation") for "user-1": referenced invite "def-456" belongs to another user ("user-2").',
+  )
+})
+
 test('throws an exception when updating a relation to a compatible plain object', () => {
   const db = factory({
     country: {
@@ -263,11 +337,11 @@ test('throws an exception when updating a relation to a compatible plain object'
       },
     }),
   ).toThrow(
-    'Failed to add relational property "capital" on "country": referenced entity with the id "city-2" does not exist.',
+    'Failed to define a relational property "capital" on "country": referenced entity "city-2" ("id") does not exist.',
   )
 })
 
-test('respects updates to the referenced relational entity', () => {
+test('supports updating the value of the relational property', () => {
   const db = factory({
     country: {
       id: primaryKey(String),
@@ -313,4 +387,71 @@ test('respects updates to the referenced relational entity', () => {
       name: 'New Hampshire',
     },
   })
+})
+
+test('supports updating the values of multiple relational properties', () => {
+  const db = factory({
+    user: {
+      id: primaryKey(String),
+      country: oneOf('country'),
+    },
+    country: {
+      code: primaryKey(String),
+    },
+  })
+
+  // Initial entities.
+  db.user.create({
+    id: 'user-1',
+    country: db.country.create({
+      code: 'us',
+    }),
+  })
+  db.user.create({
+    id: 'user-2',
+    country: db.country.create({
+      code: 'de',
+    }),
+  })
+
+  // Update entities.
+  expect(
+    db.user.update({
+      where: {
+        id: { equals: 'user-1' },
+      },
+      data: {
+        country: db.country.create({
+          code: 'uk',
+        }),
+      },
+    }),
+  ).toHaveProperty(['country', 'code'], 'uk')
+  expect(
+    db.user.findFirst({
+      where: {
+        id: { equals: 'user-1' },
+      },
+    }),
+  ).toEqual({ id: 'user-1', country: { code: 'uk' } })
+
+  expect(
+    db.user.update({
+      where: {
+        id: { equals: 'user-2' },
+      },
+      data: {
+        country: db.country.create({
+          code: 'ua',
+        }),
+      },
+    }),
+  ).toHaveProperty(['country', 'code'], 'ua')
+  expect(
+    db.user.findFirst({
+      where: {
+        id: { equals: 'user-2' },
+      },
+    }),
+  ).toEqual({ id: 'user-2', country: { code: 'ua' } })
 })

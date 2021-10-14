@@ -1,14 +1,9 @@
 import { debug } from 'debug'
+import get from 'lodash/get'
 import { invariant } from 'outvariant'
-import { Database } from '../db/Database'
 import { Relation } from '../relations/Relation'
-import {
-  InternalEntity,
-  InternalEntityProperty,
-  ModelDefinition,
-} from '../glossary'
+import { InternalEntity, ModelDefinition, Value } from '../glossary'
 import { isObject } from '../utils/isObject'
-import { addRelation } from './defineRelationalProperties'
 
 const log = debug('updateEntity')
 
@@ -20,29 +15,40 @@ export function updateEntity(
   entity: InternalEntity<any, any>,
   data: any,
   definition: ModelDefinition,
-  db: Database<any>,
 ): InternalEntity<any, any> {
   log('updating entity: %j, with data: %s', entity, data)
+  log('model definition:', definition)
 
   const updateRecursively = (
     entityChunk: InternalEntity<any, any>,
     data: any,
+    parentPath: string = '',
   ): InternalEntity<any, any> => {
     const result = Object.entries(data).reduce<InternalEntity<any, any>>(
       (nextEntity, [propertyName, value]) => {
+        const propertyPath = parentPath
+          ? `${parentPath}.${propertyName}`
+          : propertyName
+
         log(
-          'updating propety "%s" to "%s" on: %j',
+          'updating propety "%s" ("%s") to "%s" on: %j',
           propertyName,
+          propertyPath,
           value,
           entityChunk,
         )
 
-        const propertyDefinition = definition[propertyName]
+        /**
+         * @note Entity chunk in this scope is always flat.
+         */
         const prevValue = entityChunk[propertyName]
+        const propertyDefinition = get(definition, propertyPath)
 
+        log('definition for "%s":', propertyPath, propertyDefinition)
         log('previous value for "%s":', propertyName, prevValue)
 
-        if (!entityChunk.hasOwnProperty(propertyName)) {
+        // Skip the properties not specified in the model definition.
+        if (propertyDefinition == null) {
           log('unknown property "%s" on the entity, skipping...', propertyName)
           return nextEntity
         }
@@ -50,44 +56,35 @@ export function updateEntity(
         // When updating a relational property,
         // re-define the relation instead of using the actual value.
         if (propertyDefinition instanceof Relation) {
-          const entityType = entity[InternalEntityProperty.type]
+          log(
+            'property "%s" is a "%s" relation to "%s"!',
+            propertyName,
+            propertyDefinition.kind,
+            propertyDefinition.target.modelName,
+          )
 
           invariant(
             isObject(value) || Array.isArray(value),
             'Failed to update relational property "%s" on "%s": the next value must be an entity or a list of entities.',
             propertyName,
-            entityType,
+            propertyDefinition.source.modelName,
           )
 
-          /**
-           * @fixme Design a better interface for relations
-           * so that it holds the referenced model's primary key
-           * without the need to look it up every time.
-           */
-          // In "manyOf" relation the previous value will be an array of entities.
-          // Get the first entity and its primary key property name.
-          const primaryKey = [].concat(prevValue)[0][
-            InternalEntityProperty.primaryKey
-          ]
+          log('updating the relation to resolve with:', value)
 
           // Re-define the relational property to now point at the next value.
-          addRelation(
-            entityChunk,
-            propertyName,
-            {
-              ...propertyDefinition,
-              primaryKey,
-            },
-            value,
-            db,
-          )
+          propertyDefinition.resolveWith(entity, value as Value<any, any>[])
 
           return entityChunk
         }
 
         if (isObject(value)) {
           log('value is a plain object (%s), recursively updating...', value)
-          entityChunk[propertyName] = updateRecursively(prevValue, value)
+          entityChunk[propertyName] = updateRecursively(
+            prevValue,
+            value,
+            propertyPath,
+          )
           return entityChunk
         }
 

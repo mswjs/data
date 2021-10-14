@@ -6,7 +6,7 @@ import {
   QuerySelector,
   WeakQuerySelector,
 } from './query/queryTypes'
-import { RelationKind, ManyOf, OneOf } from './relations/Relation'
+import { OneOf, ManyOf } from './relations/Relation'
 
 export type KeyType = string | number | symbol
 export type AnyObject = Record<KeyType, any>
@@ -14,19 +14,6 @@ export type PrimaryKeyType = string | number
 export type PrimitiveValueType = string | number | boolean | Date
 export type ModelValueType = PrimitiveValueType | PrimitiveValueType[]
 export type ModelValueTypeGetter = () => ModelValueType
-
-/**
- * Definition of the relation.
- * @example factory({ user: { post: oneOf('post') } })
- */
-export interface RelationDefinition<
-  Kind extends RelationKind,
-  ModelName extends KeyType,
-> {
-  kind: Kind
-  unique: boolean
-  modelName: ModelName
-}
 
 /**
  * Minimal representation of an entity to look it up
@@ -46,7 +33,7 @@ export type ModelDefinitionValue =
   | ManyOf<any>
   | NestedModelDefinition
 
-type NestedModelDefinition = {
+export type NestedModelDefinition = {
   [propertyName: string]:
     | ModelValueTypeGetter
     | OneOf<any>
@@ -216,10 +203,10 @@ export type Value<
   [Key in keyof Target]: Target[Key] extends PrimaryKey<any>
     ? ReturnType<Target[Key]['getValue']>
     : // Extract value type from relations.
-    Target[Key] extends OneOf<any>
-    ? Entity<Dictionary, Target[Key]['modelName']>
-    : Target[Key] extends ManyOf<any>
-    ? Entity<Dictionary, Target[Key]['modelName']>[]
+    Target[Key] extends OneOf<infer ModelName>
+    ? Entity<Dictionary, ModelName>
+    : Target[Key] extends ManyOf<infer ModelName>
+    ? Entity<Dictionary, ModelName>[]
     : // Account for primitive value getters because
     // native constructors (i.e. StringConstructor) satisfy
     // the "AnyObject" predicate below.

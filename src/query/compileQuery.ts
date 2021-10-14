@@ -1,4 +1,5 @@
 import { debug } from 'debug'
+import { invariant } from 'outvariant'
 import { ComparatorFn, QuerySelector } from './queryTypes'
 import { getComparatorsForValue } from './getComparatorsForValue'
 import { isObject } from '../utils/isObject'
@@ -12,18 +13,29 @@ const log = debug('compileQuery')
 export function compileQuery<Data extends Record<string, any>>(
   query: QuerySelector<any>,
 ) {
-  log(JSON.stringify(query))
+  log('%j', query)
 
   return (data: Data): boolean => {
     return Object.entries(query.where)
       .map<boolean>(([property, queryChunk]) => {
         const actualValue = data[property]
 
-        log('executing query chunk', queryChunk, data)
-        log('actual value for "%s"', property, actualValue)
+        log(
+          'executing query chunk on "%s":\n\n%j\n\non data:\n\n%j\n',
+          property,
+          queryChunk,
+          data,
+        )
+        log('actual value for "%s":', property, actualValue)
 
         if (!queryChunk) {
           return true
+        }
+
+        // If an entity doesn't have any value for the property
+        // is being queried for, treat it as non-matching.
+        if (typeof actualValue === 'undefined') {
+          return false
         }
 
         return Object.entries(queryChunk).reduce<boolean>(
@@ -61,6 +73,20 @@ export function compileQuery<Data extends Record<string, any>>(
             const comparatorFn = (comparatorSet as any)[
               comparatorName
             ] as ComparatorFn<any, any>
+
+            log(
+              'using comparator function for "%s":',
+              comparatorName,
+              comparatorFn,
+            )
+
+            invariant(
+              comparatorFn,
+              'Failed to compile the query "%j": no comparator found for the chunk "%s". Please check the validity of the query.',
+              query,
+              comparatorName,
+            )
+
             return comparatorFn(expectedValue, actualValue)
           },
           true,

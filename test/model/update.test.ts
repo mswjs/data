@@ -39,6 +39,48 @@ test('updates a unique entity that matches the query', () => {
   expect(userResult).toHaveProperty('firstName', 'John')
 })
 
+test('updates a property that had no initial value', () => {
+  const db = factory({
+    user: {
+      id: primaryKey(datatype.uuid),
+      firstName: String,
+    },
+  })
+
+  db.user.create({
+    id: 'abc-123',
+  })
+
+  expect(
+    db.user.update({
+      where: {
+        id: {
+          equals: 'abc-123',
+        },
+      },
+      data: {
+        firstName: 'John',
+      },
+    }),
+  ).toEqual({
+    id: 'abc-123',
+    firstName: 'John',
+  })
+
+  expect(
+    db.user.findFirst({
+      where: {
+        id: {
+          equals: 'abc-123',
+        },
+      },
+    }),
+  ).toEqual({
+    id: 'abc-123',
+    firstName: 'John',
+  })
+})
+
 test('updates the first entity when multiple entities match the query', () => {
   const db = factory({
     user: {
