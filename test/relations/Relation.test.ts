@@ -204,3 +204,43 @@ it('throws an exception when applying a unique relation that references an alrea
     'Failed to create a unique "ONE_OF" relation to "country" ("user.birthPlace") for "user-2": referenced country "us" belongs to another user ("user-1").',
   )
 })
+
+it('does not throw an exception when updating the relational reference to the same reference', () => {
+  const relation = new Relation({
+    to: 'country',
+    kind: RelationKind.OneOf,
+    attributes: {
+      unique: true,
+    },
+  })
+  const dictionary: ModelDictionary = {
+    user: {
+      birthPlace: relation,
+    },
+    country: {
+      code: primaryKey(String),
+    },
+  }
+  const db = new Database(dictionary)
+  const users = db.create('user', {
+    [InternalEntityProperty.type]: 'user',
+    [InternalEntityProperty.primaryKey]: 'id',
+    id: 'user-1',
+  })
+  const user = users.get('user-1')!
+
+  const countries = db.create('country', {
+    [InternalEntityProperty.type]: 'country',
+    [InternalEntityProperty.primaryKey]: 'code',
+    code: 'us',
+  })
+  const country = countries.get('us')
+
+  // First, apply a new relation to the first user.
+  relation.apply(user, 'birthPlace', { code: 'us' }, dictionary, db)
+
+  // Update the relational reference to the same referenced country.
+  relation.resolveWith(user, { code: 'us' })
+
+  expect(user.birthPlace).toEqual(country)
+})

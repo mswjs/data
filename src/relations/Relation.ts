@@ -88,7 +88,7 @@ export class Relation<
     primaryKey: PrimaryKeyType
   }
 
-  private ready: boolean = false
+  // These lazy properties are set after calling the ".apply()" method.
   private dictionary: Dictionary = null as any
   private db: Database<Dictionary> = null as any
 
@@ -111,6 +111,12 @@ export class Relation<
     }
   }
 
+  /**
+   * Applies the relation to the given entity.
+   * Creates a connection between the relation's target and source.
+   * Defines a proxy property to resolve the relation value
+   * whenever refenreced at the given path on the entity.
+   */
   public apply(
     entity: Entity<any, any>,
     propertyPath: string,
@@ -142,11 +148,16 @@ export class Relation<
     )
     this.target.primaryKey = targetPrimaryKey
 
-    this.ready = true
     this.resolveWith(entity, refs)
   }
 
-  public resolveWith(entity: Entity<any, any>, refs: ReferenceType): void {
+  /**
+   * Updates the relation references (values) to resolve the relation with.
+   */
+  public resolveWith(
+    entity: Entity<Dictionary, ModelName>,
+    refs: ReferenceType,
+  ): void {
     log(
       'resolving a "%s" relational property to "%s" on "%s.%s"',
       this.kind,
@@ -157,14 +168,14 @@ export class Relation<
     log('entity of this relation:', entity)
 
     invariant(
-      this.ready,
+      this.target.primaryKey,
       'Failed to define a "%s" relation to "%s" on "%s": relation is not applied to a dictionary.',
       this.kind,
       this.source.propertyPath,
       this.source.modelName,
     )
 
-    const referencesList = ([] as Value<any, any>[]).concat(refs)
+    const referencesList = ([] as Value<any, Dictionary>[]).concat(refs)
     const records = this.db.getModel(this.target.modelName)
 
     log('records in the referenced model', records.keys())
@@ -195,15 +206,20 @@ export class Relation<
         this.source.propertyPath,
       )
 
+      // Get the list of entities of the same entity type
+      // that reference the same relational values.
       const extraneousEntities = executeQuery(
         this.source.modelName,
         this.source.primaryKey,
         {
           where: set<QuerySelectorWhere<any>>(
             {
-              // [this.source.primaryKey]: {
-              //   notEquals: this.source.entity[this.source.primaryKey],
-              // },
+              // Omit the current entity when querying
+              // the list of other entities that reference
+              // the same value.
+              [this.source.primaryKey]: {
+                notEquals: entity[this.source.primaryKey],
+              },
             },
             this.source.propertyPath,
             {
@@ -258,8 +274,8 @@ export class Relation<
     }
 
     definePropertyAtPath(entity, this.source.propertyPath, {
-      // Mark the property as enumerable so it gets listed when listing
-      // this entity's properties.
+      // Mark the property as enumerable so it gets listed
+      // like a regular property on the entity.
       enumerable: true,
       // Mark the property as configurable so it could be re-defined
       // when updating it during the entity update ("update"/"updateMany").
