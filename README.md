@@ -63,9 +63,11 @@ factory({
 
 In the example above, the `id` is the primary key for the `user` model. This means that whenever a `user` is created it must have the `id` property that equals a unique `String`.
 
-### Integrate with mocks
+### Integrate with API mocks
 
-Although this library can be used standalone, it's specifically fine-tuned to integrate with [Mock Service Worker](https://github.com/mswjs/msw) to compose an unrivaled API mocking experience for both testing and development of your JavaScript applications.
+This library is designed and written to be standalone. However, being in the [Mock Service Worker](https://github.com/mswjs/msw) ecosystem, it features a
+
+- Learn more about [**integrating modeled data into API mocks**](#integrating-with-api-mocks)
 
 ```js
 // src/mocks/browser.js
@@ -291,7 +293,6 @@ Generates request handlers for the given model to use with [Mock Service Worker]
 
 ```js
 import { factory, primaryKey } from '@mswjs/data'
-import { setupWorker } from 'msw'
 
 const db = factory({
   user: {
@@ -300,80 +301,29 @@ const db = factory({
   },
 })
 
-const worker = setupWorker(...db.user.toHandlers('rest'))
-
-worker.start()
+// Generates REST API request handlers.
+db.user.toHandlers('rest')
 ```
 
-The following request handlers are generated and connected to the respective database operations:
-
-- `GET /users`, returns all users (supports [pagination](#pagination)).
-- `GET /users/:id` (where "id" is your model's primary key), returns a user by primary key.
-- `POST /users`, creates a new user.
-- `PUT /users/:id`, updates an existing user by primary key.
-- `DELETE /users/:id`, deletes an existing user by primary key.
-
-The "/user" part of the route is derived from your model name. For example, if you have a "post" model defined in your `factory`, then the generated handlers will be `/posts`, `/posts/:id`, etc.
-
-With the handlers generated and MSW configured, you can start querying the database:
-
-```js
-// Create a new user in the database.
-fetch('/users', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  body: JSON.stringify({
-    id: 'abc-123',
-    firstName: 'John',
-  }),
-})
-```
+- Learn more about [REST API mocking integration](#generate-rest-api).
 
 ##### GraphQL handlers
 
 ```js
-setupWorker(...db.user.toHandlers('graphql'))
-```
+import { factory, primaryKey } from '@mswjs/data'
 
-The following GraphQL queries and mutations are generated:
-
-- `user(where: UserQueryInput): User`, returns a user matching the query.
-- `users(where: UserQueryInput, cursor: ID, skip: Int, take: Int): [User!]`, returns all users matching the query (supports [pagination](#pagination)).
-- `createUser(data: UserInput!): User!`, creates a new user.
-- `updateUser(where: UserQueryInput!, data: UserInput!): User!`, updates a user.
-- `updateUsers(where: UserQueryInput!, data: UserInput!): [User!]`, updates multiple users.
-- `deleteUser(where: UserQueryInput!): User!`, deletes a user.
-- `deleteUsers(where: UserQueryInput!): [User!]`, deletes multiple users.
-
-> Notice how some operation names contain the plural model name to emphasize that they work on a collection of entities.
-
-The "User" part of operation names is derived from your model name. For example, if you have a "post" model defined in your `factory`, then the generated handlers will have operations like `post`, `createPost`, `updatePosts`, etc.
-
-With the handlers generated and MSW configured, you can start querying the database:
-
-```js
-import { gql, useQuery } from '@apollo/client'
-
-const CREATE_USER = gql`
-  query CreateUser($initialValues: UserInput!) {
-    createUser(data: $initialValues) {
-      firstName
-    }
-  }
-`
-
-useQuery(CREATE_USER, {
-  variables: {
-    initialValues: {
-      firstName: 'John',
-    },
+const db = factory({
+  user: {
+    id: primaryKey(String),
+    firstName: String,
   },
 })
+
+// Generates GraphQL API request handlers.
+db.user.toHandlers('graphql')
 ```
 
-> Note that GraphQL queries **must be named** in order to be intercepted.
+- Learn more about [GraphQL API mocking integration](#generate-graphql-api).
 
 ##### Scoping handlers
 
@@ -459,7 +409,7 @@ factory({
 - [Many-to-One](#many-to-one)
 - [Unique relationships](#unique-relationships)
 
-Defining relationships is a way for one model to reference another. Models are flat by design, so if you wish to have a property that equals an object or an array, you create a relationship of the proper type to another existing model.
+Relationship is a way for a model to reference another model.
 
 #### One-to-One
 
@@ -841,6 +791,158 @@ factory({
     firstName: name.firstName,
   },
 })
+```
+
+## Usage with API mocks
+
+This library is designed and implemented as a standalone solution. However, being a part of the [Mock Service Worker](https://github.com/mswjs), it provides an opt-in API for integrating the modeled data into the API mocks that you write.
+
+### Generate request handlers
+
+Both REST and GraphQL [request handlers]() can be generated from a model using the `.toHandlers()` method of that model. When generated, request handlers automatically have that model's CRUD methods like `POST /user` or `mutation CreateUser`.
+
+- Learn more about the [`.toHandlers()`](#tohandlers) API.
+
+#### Generate REST API
+
+REST API request handlers can be generated by calling the `.toHandlers('rest')` method on the respective factory model.
+
+```ts
+import { setupServer } from 'msw/node'
+import { factory, primaryKey } from '@mswjs/data'
+
+const db = factory({
+  user: {
+    id: primaryKey(String),
+    firstName: String,
+  },
+})
+
+const handlers = [...db.user.toHandlers('rest')]
+
+// Establish requests interception.
+const server = setupServer(...handlers)
+server.listen()
+```
+
+Given the "user" model definition above, the following request handlers are generated and connected to the respective database operations:
+
+- `GET /users/:id` (where "id" is your model's primary key), returns a user by ID;
+- `GET /users`, returns all users (supports [pagination](#pagination));
+- `POST /users`, creates a new user;
+- `PUT /users/:id`, updates an existing user by ID;
+- `DELETE /users/:id`, deletes an existing user by ID;
+
+The "/user" part of the route is derived from your model name. For example, if you had a "post" model defined in your `factory`, then the generated handlers would be `/posts`, `/posts/:id`, etc.
+
+With the request handlers generated and MSW configured, you can query the "database" using REST API:
+
+```js
+// Create a new user in the database.
+fetch('/users', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    id: 'abc-123',
+    firstName: 'John',
+  }),
+})
+```
+
+#### Generate GraphQL API
+
+GraphQL API request handlers can be generated by calling the `.toHandlers('graphql')` method on the respective factory model.
+
+```js
+import { setupServer } from 'msw/node'
+import { factory, primaryKey } from '@mswjs/data'
+
+const db = factory({
+  user: {
+    id: primaryKey(String),
+    firstName: String,
+  },
+})
+
+const handlers = [...db.user.toHandlers('graphql')]
+
+// Establish requests interception.
+const server = setupServer(...handlers)
+server.listen()
+```
+
+Given the "user" model definition above, the following request handlers are generated and connected to the respective database operations:
+
+- `user(where: UserQueryInput): User`, returns a user matching the query;
+- `users(where: UserQueryInput, cursor: ID, skip: Int, take: Int): [User!]`, returns all users matching the query (supports [pagination](#pagination));
+- `createUser(data: UserInput!): User!`, creates a new user;
+- `updateUser(where: UserQueryInput!, data: UserInput!): User!`, updates a user that match the `where` query;
+- `updateUsers(where: UserQueryInput!, data: UserInput!): [User!]`, updates multiple users that match the `where` query;
+- `deleteUser(where: UserQueryInput!): User!`, deletes a user that match the `where` query;
+- `deleteUsers(where: UserQueryInput!): [User!]`, deletes multiple users that match the `where` query.
+
+The "User" part of the GraphQL operation names is derived from your model's name. For example, if you had a "post" model defined in your `factory`, then the generated handlers would have operations like `post`, `createPost`, `updatePosts`, etc.
+
+With the request handlers generated and MSW configured, you can query the database using GraphQL API:
+
+```js
+import { gql, useQuery } from '@apollo/client'
+
+const CREATE_USER = gql`
+  query CreateUser($initialValues: UserInput!) {
+    createUser(data: $initialValues) {
+      firstName
+    }
+  }
+`
+
+useQuery(CREATE_USER, {
+  variables: {
+    initialValues: {
+      firstName: 'John',
+    },
+  },
+})
+```
+
+### Manual integration
+
+To gain more control over the mocks and implement more complex mocking scenarios (like authentication), consider manual integration of this library with your API mocking solution.
+
+Take a look at how you can create an entity based on the user's authentication status in a test:
+
+```js
+import { rest } from 'msw'
+import { setupServer } from 'msw/node'
+import { factory, primaryKey } from '@mswjs/data'
+
+const db = factory({
+  post: {
+    id: primaryKey(String),
+    title: String,
+  },
+})
+
+const handlers = [
+  rest.post('/post', (req, res, cxt) => {
+    // Only authenticated users can create new posts.
+    if (req.headers.get('authorization') === 'Bearer AUTH_TOKEN') {
+      return res(ctx.status(403))
+    }
+
+    // Create a new entity for the "post" model.
+    const newPost = db.post.create(req.body)
+
+    // Respond with a mocked response.
+    return res(ctx.status(201), ctx.json({ post: newPost }))
+  }),
+]
+
+// Establish requests interception.
+const server = setupServer(...handlers)
+server.listen()
 ```
 
 ## Honorable mentions
