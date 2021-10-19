@@ -1,6 +1,6 @@
 import { debug } from 'debug'
 import get from 'lodash/get'
-import { Entity, InternalEntity } from 'src/glossary'
+import { Entity } from 'src/glossary'
 import { OrderBy, SortDirection } from './queryTypes'
 
 const log = debug('sortResults')
@@ -52,7 +52,7 @@ function flattenSortCriteria<EntityType extends Entity<any, any>>(
  */
 export function sortResults<EntityType extends Entity<any, any>>(
   orderBy: OrderBy<EntityType> | OrderBy<EntityType>[],
-  data: InternalEntity<any, any>[],
+  data: Entity<any, any>[],
 ): void {
   log('sorting data:', data)
   log('order by:', orderBy)

@@ -1,6 +1,6 @@
 import { primaryKey } from '../../src'
+import { ENTITY_TYPE, PRIMARY_KEY, ModelDictionary } from '../../src/glossary'
 import { Database } from '../../src/db/Database'
-import { InternalEntityProperty, ModelDictionary } from '../../src/glossary'
 import {
   Relation,
   RelationAttributes,
@@ -54,15 +54,15 @@ it('applies a "ONE_OF" relation to an entity', () => {
   const db = new Database(dictionary)
 
   db.create('country', {
-    [InternalEntityProperty.type]: 'country',
-    [InternalEntityProperty.primaryKey]: 'code',
+    [ENTITY_TYPE]: 'country',
+    [PRIMARY_KEY]: 'code',
     code: 'us',
   })
   const country = db.getModel('country').get('us')!
 
   const users = db.create('user', {
-    [InternalEntityProperty.type]: 'user',
-    [InternalEntityProperty.primaryKey]: 'id',
+    [ENTITY_TYPE]: 'user',
+    [PRIMARY_KEY]: 'id',
     id: 'user-1',
   })
   const user = users.get('user-1')!
@@ -95,20 +95,20 @@ it('applies a "MANY_OF" relation to an entity', () => {
   const db = new Database(dictionary)
 
   const users = db.create('user', {
-    [InternalEntityProperty.type]: 'user',
-    [InternalEntityProperty.primaryKey]: 'id',
+    [ENTITY_TYPE]: 'user',
+    [PRIMARY_KEY]: 'id',
     id: 'user-1',
   })
   const user = users.get('user-1')!
 
   db.create('post', {
-    [InternalEntityProperty.type]: 'post',
-    [InternalEntityProperty.primaryKey]: 'id',
+    [ENTITY_TYPE]: 'post',
+    [PRIMARY_KEY]: 'id',
     id: 'post-1',
   })
   db.create('post', {
-    [InternalEntityProperty.type]: 'post',
-    [InternalEntityProperty.primaryKey]: 'id',
+    [ENTITY_TYPE]: 'post',
+    [PRIMARY_KEY]: 'id',
     id: 'post-2',
   })
   const firstPost = db.getModel('post').get('post-1')!
@@ -144,8 +144,8 @@ it('throws an exception when applying a relation that references a non-existing 
   }
   const db = new Database(dictionary)
   const users = db.create('user', {
-    [InternalEntityProperty.type]: 'user',
-    [InternalEntityProperty.primaryKey]: 'id',
+    [ENTITY_TYPE]: 'user',
+    [PRIMARY_KEY]: 'id',
     id: 'user-1',
   })
   const user = users.get('user-1')!
@@ -175,21 +175,21 @@ it('throws an exception when applying a unique relation that references an alrea
   }
   const db = new Database(dictionary)
   db.create('user', {
-    [InternalEntityProperty.type]: 'user',
-    [InternalEntityProperty.primaryKey]: 'id',
+    [ENTITY_TYPE]: 'user',
+    [PRIMARY_KEY]: 'id',
     id: 'user-1',
   })
   db.create('user', {
-    [InternalEntityProperty.type]: 'user',
-    [InternalEntityProperty.primaryKey]: 'id',
+    [ENTITY_TYPE]: 'user',
+    [PRIMARY_KEY]: 'id',
     id: 'user-2',
   })
   const firstUser = db.getModel('user').get('user-1')!
   const secondUser = db.getModel('user').get('user-2')!
 
   db.create('country', {
-    [InternalEntityProperty.type]: 'country',
-    [InternalEntityProperty.primaryKey]: 'code',
+    [ENTITY_TYPE]: 'country',
+    [PRIMARY_KEY]: 'code',
     code: 'us',
   })
 
@@ -223,15 +223,15 @@ it('does not throw an exception when updating the relational reference to the sa
   }
   const db = new Database(dictionary)
   const users = db.create('user', {
-    [InternalEntityProperty.type]: 'user',
-    [InternalEntityProperty.primaryKey]: 'id',
+    [ENTITY_TYPE]: 'user',
+    [PRIMARY_KEY]: 'id',
     id: 'user-1',
   })
   const user = users.get('user-1')!
 
   const countries = db.create('country', {
-    [InternalEntityProperty.type]: 'country',
-    [InternalEntityProperty.primaryKey]: 'code',
+    [ENTITY_TYPE]: 'country',
+    [PRIMARY_KEY]: 'code',
     code: 'us',
   })
   const country = countries.get('us')

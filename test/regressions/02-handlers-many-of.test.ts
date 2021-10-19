@@ -2,6 +2,7 @@ import fetch from 'node-fetch'
 import { rest } from 'msw'
 import { setupServer } from 'msw/node'
 import { factory, manyOf, primaryKey } from '@mswjs/data'
+import { ENTITY_TYPE, PRIMARY_KEY } from '../../lib/glossary'
 
 const server = setupServer()
 
@@ -13,7 +14,7 @@ afterAll(() => {
   server.close()
 })
 
-it('updates database entity modified via a generated handler', async () => {
+it('updates database entity modified via a generated request handler', async () => {
   const db = factory({
     user: {
       id: primaryKey(String),
@@ -86,6 +87,8 @@ it('updates database entity modified via a generated handler', async () => {
       },
     }),
   ).toEqual({
+    [ENTITY_TYPE]: 'note',
+    [PRIMARY_KEY]: 'id',
     id: 'note-2',
     title: 'Updated title',
   })
@@ -101,13 +104,19 @@ it('updates database entity modified via a generated handler', async () => {
       },
     }),
   ).toEqual({
+    [ENTITY_TYPE]: 'user',
+    [PRIMARY_KEY]: 'id',
     id: 'user-1',
     notes: [
       {
+        [ENTITY_TYPE]: 'note',
+        [PRIMARY_KEY]: 'id',
         id: 'note-1',
         title: 'First note',
       },
       {
+        [ENTITY_TYPE]: 'note',
+        [PRIMARY_KEY]: 'id',
         id: 'note-2',
         title: 'Updated title',
       },

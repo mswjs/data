@@ -1,5 +1,6 @@
 import { datatype, name } from 'faker'
 import { factory, primaryKey } from '@mswjs/data'
+import { ENTITY_TYPE, PRIMARY_KEY } from '../../lib/glossary'
 import { OperationErrorType } from '../../src/errors/OperationError'
 import { getThrownError } from '../testUtils'
 
@@ -63,6 +64,8 @@ test('updates a property that had no initial value', () => {
       },
     }),
   ).toEqual({
+    [ENTITY_TYPE]: 'user',
+    [PRIMARY_KEY]: 'id',
     id: 'abc-123',
     firstName: 'John',
   })
@@ -76,6 +79,8 @@ test('updates a property that had no initial value', () => {
       },
     }),
   ).toEqual({
+    [ENTITY_TYPE]: 'user',
+    [PRIMARY_KEY]: 'id',
     id: 'abc-123',
     firstName: 'John',
   })

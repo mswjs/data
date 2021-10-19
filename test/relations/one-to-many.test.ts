@@ -1,5 +1,6 @@
 import { random, datatype } from 'faker'
 import { factory, primaryKey, manyOf } from '@mswjs/data'
+import { ENTITY_TYPE, PRIMARY_KEY } from '../../lib/glossary'
 
 test('supports one-to-many relation', () => {
   const db = factory({
@@ -27,6 +28,48 @@ test('supports one-to-many relation', () => {
 
   const posts = user.posts.map((post) => post.title)
   expect(posts).toEqual(['First post', 'Second post'])
+})
+
+test('supports a recusrive one-to-many relation', () => {
+  const db = factory({
+    user: {
+      id: primaryKey(String),
+      firstName: String,
+      friends: manyOf('user'),
+    },
+  })
+
+  const john = db.user.create({
+    id: 'john',
+    firstName: 'John',
+    friends: [],
+  })
+
+  const kate = db.user.create({
+    id: 'kate',
+    firstName: 'Kate',
+    friends: [john],
+  })
+
+  db.user.findFirst({
+    where: { id: { equals: 'john' } },
+    strict: true,
+  })
+
+  const updatedJohn = db.user.update({
+    where: {
+      id: {
+        equals: john.id,
+      },
+    },
+    data: {
+      friends: [kate],
+    },
+    strict: true,
+  })!
+
+  expect(updatedJohn.friends).toHaveLength(1)
+  expect(updatedJohn.friends[0]).toHaveProperty('firstName', 'Kate')
 })
 
 test('supports querying through one-to-many relation', () => {
@@ -170,6 +213,8 @@ test('updates the relational value via the ".update()" model method', () => {
 
   expect(user.posts).toEqual([firstPost])
   expect(refetchUser()).toEqual({
+    [ENTITY_TYPE]: 'user',
+    [PRIMARY_KEY]: 'id',
     id: 'abc-123',
     posts: [firstPost],
   })
@@ -185,10 +230,14 @@ test('updates the relational value via the ".update()" model method', () => {
   })
 
   expect(updatedUser).toEqual({
+    [ENTITY_TYPE]: 'user',
+    [PRIMARY_KEY]: 'id',
     id: 'abc-123',
     posts: [secondPost],
   })
   expect(refetchUser()).toEqual({
+    [ENTITY_TYPE]: 'user',
+    [PRIMARY_KEY]: 'id',
     id: 'abc-123',
     posts: [secondPost],
   })
@@ -222,6 +271,8 @@ test('throws an exception when updating a relational value via a compatible obje
 
   expect(user.posts).toEqual([firstPost])
   expect(refetchUser()).toEqual({
+    [ENTITY_TYPE]: 'user',
+    [PRIMARY_KEY]: 'id',
     id: 'abc-123',
     posts: [firstPost],
   })

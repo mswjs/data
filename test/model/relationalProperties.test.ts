@@ -5,7 +5,7 @@ import {
   RelationsMap,
 } from '../../src/relations/Relation'
 import { Database } from '../../src/db/Database'
-import { InternalEntityProperty, ModelDictionary } from '../../src/glossary'
+import { ENTITY_TYPE, ModelDictionary, PRIMARY_KEY } from '../../src/glossary'
 import { defineRelationalProperties } from '../../src/model/defineRelationalProperties'
 
 it('marks relational properties as enumerable', () => {
@@ -24,8 +24,8 @@ it('marks relational properties as enumerable', () => {
   const db = new Database(dictionary)
 
   db.create('user', {
-    [InternalEntityProperty.primaryKey]: 'id',
-    [InternalEntityProperty.type]: 'user',
+    [ENTITY_TYPE]: 'user',
+    [PRIMARY_KEY]: 'id',
     id: 'abc-123',
     name: 'Test User',
   })
@@ -38,8 +38,8 @@ it('marks relational properties as enumerable', () => {
   }
 
   const post = {
-    [InternalEntityProperty.primaryKey]: 'id',
-    [InternalEntityProperty.type]: 'post',
+    [ENTITY_TYPE]: 'post',
+    [PRIMARY_KEY]: 'id',
     id: '234',
     title: 'Test Post',
   }

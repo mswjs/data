@@ -4,11 +4,12 @@ import set from 'lodash/set'
 import isFunction from 'lodash/isFunction'
 import { Database } from '../db/Database'
 import {
-  InternalEntity,
+  ENTITY_TYPE,
+  Entity,
   InternalEntityProperties,
-  InternalEntityProperty,
   ModelDefinition,
   ModelDictionary,
+  PRIMARY_KEY,
   Value,
 } from '../glossary'
 import { ParsedModelDefinition } from './parseModelDefinition'
@@ -28,7 +29,7 @@ export function createModel<
   parsedModel: ParsedModelDefinition,
   initialValues: Partial<Value<Dictionary[ModelName], Dictionary>>,
   db: Database<Dictionary>,
-): InternalEntity<any, any> {
+): Entity<Dictionary, ModelName> {
   const { primaryKey, properties, relations } = parsedModel
 
   log(
@@ -39,11 +40,9 @@ export function createModel<
     initialValues,
   )
 
-  // Internal properties that allow identifying this model
-  // when referenced in other models (i.e. via relatioships).
   const internalProperties: InternalEntityProperties<ModelName> = {
-    [InternalEntityProperty.type]: modelName,
-    [InternalEntityProperty.primaryKey]: primaryKey,
+    [ENTITY_TYPE]: modelName,
+    [PRIMARY_KEY]: primaryKey,
   }
 
   const publicProperties = properties.reduce<Record<string, unknown>>(
@@ -92,7 +91,12 @@ export function createModel<
     {},
   )
 
-  const entity = Object.assign({}, publicProperties, internalProperties)
+  const entity = Object.assign(
+    {},
+    publicProperties,
+    internalProperties,
+  ) as Entity<Dictionary, ModelName>
+
   defineRelationalProperties(entity, initialValues, relations, dictionary, db)
 
   log('created "%s" entity:', modelName, entity)

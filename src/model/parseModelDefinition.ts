@@ -71,8 +71,7 @@ function deepParseModelDefinition<Dictionary extends ModelDictionary>(
 
     // Relations.
     if (value instanceof Relation) {
-      // Resolve a relation against the dictionary to collect
-      // the primary key names of the referenced models.
+      // Store the relations in a separate object.
       result.relations[propertyPath] = value
       continue
     }

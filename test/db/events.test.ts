@@ -1,7 +1,12 @@
-import { Database } from '../../src/db/Database'
+import {
+  Database,
+  SerializedEntity,
+  SERIALIZED_INTERNAL_PROPERTIES_KEY,
+} from '../../src/db/Database'
 import { createModel } from '../../src/model/createModel'
 import { primaryKey } from '../../src/primaryKey'
 import { parseModelDefinition } from '../../src/model/parseModelDefinition'
+import { ENTITY_TYPE, PRIMARY_KEY } from '../../src/glossary'
 
 test('emits the "create" event when a new entity is created', (done) => {
   const dictionary = {
@@ -14,14 +19,25 @@ test('emits the "create" event when a new entity is created', (done) => {
     user: dictionary.user,
   })
 
-  db.events.on('create', (id, modelName, entity, primaryKey) => {
+  db.events.on('create', (id, [modelName, entity, primaryKey]) => {
     expect(id).toEqual(db.id)
     expect(modelName).toEqual('user')
     expect(entity).toEqual({
-      __type: 'user',
-      __primaryKey: 'id',
+      /**
+       * @note Entity reference in the database event listener
+       * contains its serialized internal properties.
+       * This allows for this listener to re-create the entity
+       * when the data is transferred over other channels
+       * (i.e. via "BroadcastChannel" which strips object symbols).
+       */
+      [SERIALIZED_INTERNAL_PROPERTIES_KEY]: {
+        entityType: 'user',
+        primaryKey: 'id',
+      },
+      [ENTITY_TYPE]: 'user',
+      [PRIMARY_KEY]: 'id',
       id: 'abc-123',
-    })
+    } as SerializedEntity)
     expect(primaryKey).toBeUndefined()
     done()
   })
@@ -53,21 +69,30 @@ test('emits the "update" event when an existing entity is updated', (done) => {
     user: dictionary.user,
   })
 
-  db.events.on('update', (id, modelName, prevEntity, nextEntity) => {
+  db.events.on('update', (id, [modelName, prevEntity, nextEntity]) => {
     expect(id).toEqual(db.id)
     expect(modelName).toEqual('user')
     expect(prevEntity).toEqual({
-      __type: 'user',
-      __primaryKey: 'id',
+      [SERIALIZED_INTERNAL_PROPERTIES_KEY]: {
+        entityType: 'user',
+        primaryKey: 'id',
+      },
+      [ENTITY_TYPE]: 'user',
+      [PRIMARY_KEY]: 'id',
       id: 'abc-123',
       firstName: 'John',
-    })
+    } as SerializedEntity)
+
     expect(nextEntity).toEqual({
-      __type: 'user',
-      __primaryKey: 'id',
+      [SERIALIZED_INTERNAL_PROPERTIES_KEY]: {
+        entityType: 'user',
+        primaryKey: 'id',
+      },
+      [ENTITY_TYPE]: 'user',
+      [PRIMARY_KEY]: 'id',
       id: 'def-456',
       firstName: 'Kate',
-    })
+    } as SerializedEntity)
     done()
   })
 
@@ -108,7 +133,7 @@ test('emits the "delete" event when an existing entity is deleted', (done) => {
     user: dictionary.user,
   })
 
-  db.events.on('delete', (id, modelName, primaryKey) => {
+  db.events.on('delete', (id, [modelName, primaryKey]) => {
     expect(id).toEqual(db.id)
     expect(modelName).toEqual('user')
     expect(primaryKey).toEqual('abc-123')
