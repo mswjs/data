@@ -3,7 +3,7 @@
   "compilerOptions": {
     "declaration": false,
     "noEmit": true,
-    "baseUrl": "../"
+    "baseUrl": "../",
   },
   "include": ["**/*.ts"]
 }

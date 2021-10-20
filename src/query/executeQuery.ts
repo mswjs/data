@@ -1,9 +1,5 @@
 import { debug } from 'debug'
-import {
-  InternalEntity,
-  InternalEntityProperty,
-  PrimaryKeyType,
-} from '../glossary'
+import { Entity, PrimaryKeyType, PRIMARY_KEY } from '../glossary'
 import { compileQuery } from './compileQuery'
 import {
   BulkQueryOptions,
@@ -14,21 +10,34 @@ import * as iteratorUtils from '../utils/iteratorUtils'
 import { paginateResults } from './paginateResults'
 import { Database } from '../db/Database'
 import { sortResults } from './sortResults'
+import { invariant } from 'outvariant'
 
 const log = debug('executeQuery')
 
 function queryByPrimaryKey(
-  records: Map<PrimaryKeyType, InternalEntity<any, any>>,
+  records: Map<PrimaryKeyType, Entity<any, any>>,
   query: QuerySelector<any>,
 ) {
   log('querying by primary key')
+  log('query by primary key', { query, records })
+
   const matchPrimaryKey = compileQuery(query)
 
-  return iteratorUtils.filter((id, value) => {
-    return matchPrimaryKey({
-      [value[InternalEntityProperty.primaryKey]]: id,
-    })
+  const result = iteratorUtils.filter((id, value) => {
+    const primaryKey = value[PRIMARY_KEY]
+
+    invariant(
+      primaryKey,
+      'Failed to query by primary key using "%j": record (%j) has no primary key set.',
+      query,
+      value,
+    )
+
+    return matchPrimaryKey({ [primaryKey]: id })
   }, records)
+
+  log('result of querying by primary key:', result)
+  return result
 }
 
 /**
@@ -40,7 +49,7 @@ export function executeQuery(
   primaryKey: PrimaryKeyType,
   query: WeakQuerySelector<any> & BulkQueryOptions<any>,
   db: Database<any>,
-): InternalEntity<any, any>[] {
+): Entity<any, any>[] {
   log(`${JSON.stringify(query)} on "${modelName}"`)
   log('using primary key "%s"', primaryKey)
 
@@ -52,7 +61,7 @@ export function executeQuery(
   log('primary key query', primaryKeyComparator)
 
   const scopedRecords = primaryKeyComparator
-    ? queryByPrimaryKey(db.getModel(modelName), {
+    ? queryByPrimaryKey(records, {
         where: { [primaryKey]: primaryKeyComparator },
       })
     : records

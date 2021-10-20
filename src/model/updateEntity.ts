@@ -2,8 +2,15 @@ import { debug } from 'debug'
 import get from 'lodash/get'
 import { invariant } from 'outvariant'
 import { Relation } from '../relations/Relation'
-import { InternalEntity, ModelDefinition, Value } from '../glossary'
+import {
+  ENTITY_TYPE,
+  Entity,
+  ModelDefinition,
+  PRIMARY_KEY,
+  Value,
+} from '../glossary'
 import { isObject } from '../utils/isObject'
+import { inheritInternalProperties } from '../utils/inheritInternalProperties'
 
 const log = debug('updateEntity')
 
@@ -12,29 +19,30 @@ const log = debug('updateEntity')
  * it based on the existing values.
  */
 export function updateEntity(
-  entity: InternalEntity<any, any>,
+  entity: Entity<any, any>,
   data: any,
   definition: ModelDefinition,
-): InternalEntity<any, any> {
+): Entity<any, any> {
   log('updating entity: %j, with data: %s', entity, data)
   log('model definition:', definition)
 
   const updateRecursively = (
-    entityChunk: InternalEntity<any, any>,
+    entityChunk: Entity<any, any>,
     data: any,
     parentPath: string = '',
-  ): InternalEntity<any, any> => {
-    const result = Object.entries(data).reduce<InternalEntity<any, any>>(
+  ): Entity<any, any> => {
+    const result = Object.entries(data).reduce<Entity<any, any>>(
       (nextEntity, [propertyName, value]) => {
         const propertyPath = parentPath
           ? `${parentPath}.${propertyName}`
           : propertyName
 
         log(
-          'updating propety "%s" ("%s") to "%s" on: %j',
-          propertyName,
+          'updating propety "%s" to "%s" on "%s" ("%s"): %j',
           propertyPath,
           value,
+          entity[ENTITY_TYPE],
+          entity[entity[PRIMARY_KEY]],
           entityChunk,
         )
 
@@ -102,5 +110,16 @@ export function updateEntity(
     return result
   }
 
-  return updateRecursively(entity, data)
+  const result = updateRecursively(entity, data)
+
+  /**
+   * @note Inherit the internal properties (type, primary key)
+   * from the source (previous) entity.
+   * Spreading the entity chunk strips off its symbols.
+   */
+  inheritInternalProperties(result, entity)
+
+  log('successfully updated to:', result)
+
+  return result
 }

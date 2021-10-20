@@ -1,11 +1,11 @@
 import { format } from 'outvariant'
 import {
-  InternalEntity,
+  Entity,
   FactoryAPI,
   ModelAPI,
   ModelDefinition,
   ModelDictionary,
-  InternalEntityProperty,
+  PRIMARY_KEY,
 } from './glossary'
 import { first } from './utils/first'
 import { executeQuery } from './query/executeQuery'
@@ -20,7 +20,6 @@ import {
   generateGraphQLSchema,
 } from './model/generateGraphQLHandlers'
 import { sync } from './extensions/sync'
-import { removeInternalProperties } from './utils/removeInternalProperties'
 
 /**
  * Create a database with the given models.
@@ -67,9 +66,7 @@ function createModelApi<
         db,
       )
 
-      const entityId = entity[
-        entity[InternalEntityProperty.primaryKey]
-      ] as string
+      const entityId = entity[entity[PRIMARY_KEY]] as string
 
       if (!entityId) {
         throw new OperationError(
@@ -91,13 +88,13 @@ function createModelApi<
             'Failed to create a "%s" entity: an entity with the same primary key "%s" ("%s") already exists.',
             modelName,
             entityId,
-            entity[InternalEntityProperty.primaryKey],
+            entity[PRIMARY_KEY],
           ),
         )
       }
 
       db.create(modelName, entity)
-      return removeInternalProperties(entity)
+      return entity
     },
     count(query) {
       if (!query) {
@@ -122,7 +119,7 @@ function createModelApi<
         )
       }
 
-      return firstResult ? removeInternalProperties(firstResult) : null
+      return firstResult
     },
     findMany(query) {
       const results = executeQuery(modelName, primaryKey, query, db)
@@ -138,12 +135,10 @@ function createModelApi<
         )
       }
 
-      return results.map((record) => removeInternalProperties(record))
+      return results
     },
     getAll() {
-      return db
-        .listEntities(modelName)
-        .map((entity) => removeInternalProperties(entity))
+      return db.listEntities(modelName)
     },
     update({ strict, ...query }) {
       const results = executeQuery(modelName, primaryKey, query, db)
@@ -167,21 +162,16 @@ function createModelApi<
       const nextRecord = updateEntity(prevRecord, query.data, definition)
 
       if (
-        nextRecord[prevRecord[InternalEntityProperty.primaryKey]] !==
-        prevRecord[prevRecord[InternalEntityProperty.primaryKey]]
+        nextRecord[prevRecord[PRIMARY_KEY]] !==
+        prevRecord[prevRecord[PRIMARY_KEY]]
       ) {
-        if (
-          db.has(
-            modelName,
-            nextRecord[prevRecord[InternalEntityProperty.primaryKey]],
-          )
-        ) {
+        if (db.has(modelName, nextRecord[prevRecord[PRIMARY_KEY]])) {
           throw new OperationError(
             OperationErrorType.DuplicatePrimaryKey,
             format(
               'Failed to execute "update" on the "%s" model: the entity with a primary key "%s" ("%s") already exists.',
               modelName,
-              nextRecord[prevRecord[InternalEntityProperty.primaryKey]],
+              nextRecord[prevRecord[PRIMARY_KEY]],
               primaryKey,
             ),
           )
@@ -190,11 +180,11 @@ function createModelApi<
 
       db.update(modelName, prevRecord, nextRecord)
 
-      return removeInternalProperties(nextRecord)
+      return nextRecord
     },
     updateMany({ strict, ...query }) {
       const records = executeQuery(modelName, primaryKey, query, db)
-      const updatedRecords: InternalEntity<any, any>[] = []
+      const updatedRecords: Entity<any, any>[] = []
 
       if (records.length === 0) {
         if (strict) {
@@ -215,21 +205,16 @@ function createModelApi<
         const nextRecord = updateEntity(prevRecord, query.data, definition)
 
         if (
-          nextRecord[prevRecord[InternalEntityProperty.primaryKey]] !==
-          prevRecord[prevRecord[InternalEntityProperty.primaryKey]]
+          nextRecord[prevRecord[PRIMARY_KEY]] !==
+          prevRecord[prevRecord[PRIMARY_KEY]]
         ) {
-          if (
-            db.has(
-              modelName,
-              nextRecord[prevRecord[InternalEntityProperty.primaryKey]],
-            )
-          ) {
+          if (db.has(modelName, nextRecord[prevRecord[PRIMARY_KEY]])) {
             throw new OperationError(
               OperationErrorType.DuplicatePrimaryKey,
               format(
                 'Failed to execute "updateMany" on the "%s" model: the entity with a primary key "%s" ("%s") already exists.',
                 modelName,
-                nextRecord[prevRecord[InternalEntityProperty.primaryKey]],
+                nextRecord[prevRecord[PRIMARY_KEY]],
                 primaryKey,
               ),
             )
@@ -240,7 +225,7 @@ function createModelApi<
         updatedRecords.push(nextRecord)
       })
 
-      return updatedRecords.map((record) => removeInternalProperties(record))
+      return updatedRecords
     },
     delete({ strict, ...query }) {
       const results = executeQuery(modelName, primaryKey, query, db)
@@ -261,11 +246,8 @@ function createModelApi<
         return null
       }
 
-      db.delete(
-        modelName,
-        record[record[InternalEntityProperty.primaryKey]] as string,
-      )
-      return removeInternalProperties(record)
+      db.delete(modelName, record[record[PRIMARY_KEY]] as string)
+      return record
     },
     deleteMany({ strict, ...query }) {
       const records = executeQuery(modelName, primaryKey, query, db)
@@ -286,13 +268,10 @@ function createModelApi<
       }
 
       records.forEach((record) => {
-        db.delete(
-          modelName,
-          record[record[InternalEntityProperty.primaryKey]] as string,
-        )
+        db.delete(modelName, record[record[PRIMARY_KEY]] as string)
       })
 
-      return records.map((record) => removeInternalProperties(record))
+      return records
     },
     toHandlers(type: 'rest' | 'graphql', baseUrl: string): any {
       if (type === 'graphql') {

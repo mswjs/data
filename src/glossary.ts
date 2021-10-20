@@ -15,15 +15,6 @@ export type PrimitiveValueType = string | number | boolean | Date
 export type ModelValueType = PrimitiveValueType | PrimitiveValueType[]
 export type ModelValueTypeGetter = () => ModelValueType
 
-/**
- * Minimal representation of an entity to look it up
- * in the database and resolve upon reference.
- */
-export type RelationRef<ModelName extends string> =
-  InternalEntityProperties<ModelName> & {
-    [InternalEntityProperty.nodeId]: PrimaryKeyType
-  }
-
 export type ModelDefinition = Record<string, ModelDefinitionValue>
 
 export type ModelDefinitionValue =
@@ -55,26 +46,23 @@ export type Limit<Definition extends ModelDefinition> = {
       }
 }
 
-export enum InternalEntityProperty {
-  type = '__type',
-  nodeId = '__nodeId',
-  primaryKey = '__primaryKey',
-}
+export const PRIMARY_KEY = Symbol('primaryKey')
+export const ENTITY_TYPE = Symbol('type')
 
 export interface InternalEntityProperties<ModelName extends KeyType> {
-  readonly [InternalEntityProperty.type]: ModelName
-  readonly [InternalEntityProperty.primaryKey]: PrimaryKeyType
+  readonly [ENTITY_TYPE]: ModelName
+  readonly [PRIMARY_KEY]: PrimaryKeyType
 }
 
 export type Entity<
   Dictionary extends ModelDictionary,
   ModelName extends keyof Dictionary,
-> = Value<Dictionary[ModelName], Dictionary>
+> = PublicEntity<Dictionary, ModelName> & InternalEntityProperties<ModelName>
 
-export type InternalEntity<
+export type PublicEntity<
   Dictionary extends ModelDictionary,
   ModelName extends keyof Dictionary,
-> = InternalEntityProperties<ModelName> & Entity<Dictionary, ModelName>
+> = Value<Dictionary[ModelName], Dictionary>
 
 export type RequiredExactlyOne<
   ObjectType,
@@ -178,7 +166,7 @@ export type UpdateManyValue<
 > =
   | Value<Target, Dictionary>
   | {
-      [Key in keyof Target]: Target[Key] extends PrimaryKey
+      [Key in keyof Target]?: Target[Key] extends PrimaryKey
         ? (
             prevValue: ReturnType<Target[Key]['getValue']>,
             entity: Value<Target, Dictionary>,
@@ -204,9 +192,9 @@ export type Value<
     ? ReturnType<Target[Key]['getValue']>
     : // Extract value type from relations.
     Target[Key] extends OneOf<infer ModelName>
-    ? Entity<Dictionary, ModelName>
+    ? PublicEntity<Dictionary, ModelName>
     : Target[Key] extends ManyOf<infer ModelName>
-    ? Entity<Dictionary, ModelName>[]
+    ? PublicEntity<Dictionary, ModelName>[]
     : // Account for primitive value getters because
     // native constructors (i.e. StringConstructor) satisfy
     // the "AnyObject" predicate below.

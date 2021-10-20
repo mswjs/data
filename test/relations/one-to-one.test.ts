@@ -1,4 +1,5 @@
 import { factory, primaryKey, oneOf } from '@mswjs/data'
+import { ENTITY_TYPE, PRIMARY_KEY } from '../../lib/glossary'
 
 test('supports one-to-one relationship', () => {
   const db = factory({
@@ -23,9 +24,12 @@ test('supports one-to-one relationship', () => {
   })
 
   expect(britain.capital).toEqual({
+    [ENTITY_TYPE]: 'city',
+    [PRIMARY_KEY]: 'id',
     id: 'city-1',
     name: 'London',
   })
+
   expect(
     db.country.findFirst({
       where: {
@@ -35,9 +39,13 @@ test('supports one-to-one relationship', () => {
       },
     }),
   ).toEqual({
+    [ENTITY_TYPE]: 'country',
+    [PRIMARY_KEY]: 'id',
     id: 'country-1',
     name: 'Great Britain',
     capital: {
+      [ENTITY_TYPE]: 'city',
+      [PRIMARY_KEY]: 'id',
       id: 'city-1',
       name: 'London',
     },
@@ -77,9 +85,13 @@ test('supports querying through a one-to-one relational property', () => {
       },
     }),
   ).toEqual({
+    [ENTITY_TYPE]: 'country',
+    [PRIMARY_KEY]: 'id',
     id: 'country-1',
     name: 'Great Britain',
     capital: {
+      [ENTITY_TYPE]: 'city',
+      [PRIMARY_KEY]: 'id',
       id: 'city-1',
       name: 'London',
     },
@@ -157,6 +169,8 @@ test('allows creating an entity without specifying a value for the one-to-one re
   const result = db.country.create({ id: 'country-1' })
 
   expect(result).toEqual({
+    [ENTITY_TYPE]: 'country',
+    [PRIMARY_KEY]: 'id',
     id: 'country-1',
     name: '',
   })
@@ -209,17 +223,25 @@ test('updates the relational property to the next value', () => {
   })
 
   expect(updatedCountry).toEqual({
+    [ENTITY_TYPE]: 'country',
+    [PRIMARY_KEY]: 'id',
     id: 'country-1',
     name: 'Great Britain',
     capital: {
+      [ENTITY_TYPE]: 'city',
+      [PRIMARY_KEY]: 'id',
       id: 'city-2',
       name: 'New Hampshire',
     },
   })
   expect(refetchCountry()).toEqual({
+    [ENTITY_TYPE]: 'country',
+    [PRIMARY_KEY]: 'id',
     id: 'country-1',
     name: 'Great Britain',
     capital: {
+      [ENTITY_TYPE]: 'city',
+      [PRIMARY_KEY]: 'id',
       id: 'city-2',
       name: 'New Hampshire',
     },
@@ -380,9 +402,13 @@ test('supports updating the value of the relational property', () => {
   })
 
   expect(country).toEqual({
+    [ENTITY_TYPE]: 'country',
+    [PRIMARY_KEY]: 'id',
     id: 'country-1',
     name: 'Great Britain',
     capital: {
+      [ENTITY_TYPE]: 'city',
+      [PRIMARY_KEY]: 'id',
       id: 'city-1',
       name: 'New Hampshire',
     },
@@ -427,13 +453,23 @@ test('supports updating the values of multiple relational properties', () => {
       },
     }),
   ).toHaveProperty(['country', 'code'], 'uk')
+
   expect(
     db.user.findFirst({
       where: {
         id: { equals: 'user-1' },
       },
     }),
-  ).toEqual({ id: 'user-1', country: { code: 'uk' } })
+  ).toEqual({
+    [ENTITY_TYPE]: 'user',
+    [PRIMARY_KEY]: 'id',
+    id: 'user-1',
+    country: {
+      [ENTITY_TYPE]: 'country',
+      [PRIMARY_KEY]: 'code',
+      code: 'uk',
+    },
+  })
 
   expect(
     db.user.update({
@@ -447,11 +483,21 @@ test('supports updating the values of multiple relational properties', () => {
       },
     }),
   ).toHaveProperty(['country', 'code'], 'ua')
+
   expect(
     db.user.findFirst({
       where: {
         id: { equals: 'user-2' },
       },
     }),
-  ).toEqual({ id: 'user-2', country: { code: 'ua' } })
+  ).toEqual({
+    [ENTITY_TYPE]: 'user',
+    [PRIMARY_KEY]: 'id',
+    id: 'user-2',
+    country: {
+      [ENTITY_TYPE]: 'country',
+      [PRIMARY_KEY]: 'code',
+      code: 'ua',
+    },
+  })
 })

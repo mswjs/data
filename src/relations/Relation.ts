@@ -5,11 +5,11 @@ import { invariant } from 'outvariant'
 import { Database } from '../db/Database'
 import {
   Entity,
-  InternalEntity,
-  InternalEntityProperty,
+  ENTITY_TYPE,
   KeyType,
   ModelDictionary,
   PrimaryKeyType,
+  PRIMARY_KEY,
   Value,
 } from '../glossary'
 import { executeQuery } from '../query/executeQuery'
@@ -93,13 +93,6 @@ export class Relation<
   private db: Database<Dictionary> = null as any
 
   constructor(definition: RelationDefinition<Kind, ModelName>) {
-    log(
-      'constructing a "%s" relation to "%s" with attributes: %o',
-      definition.kind,
-      definition.to,
-      definition.attributes,
-    )
-
     this.kind = definition.kind
     this.attributes = {
       ...DEFAULT_RELATION_ATTRIBUTES,
@@ -109,6 +102,13 @@ export class Relation<
       modelName: definition.to.toString(),
       primaryKey: null as any,
     }
+
+    log(
+      'constructing a "%s" relation to "%s" with attributes: %o',
+      this.kind,
+      definition.to,
+      this.attributes,
+    )
   }
 
   /**
@@ -127,8 +127,8 @@ export class Relation<
     this.dictionary = dictionary
     this.db = db
 
-    const sourceModelName = entity[InternalEntityProperty.type]
-    const sourcePrimaryKey = entity[InternalEntityProperty.primaryKey]
+    const sourceModelName = entity[ENTITY_TYPE]
+    const sourcePrimaryKey = entity[PRIMARY_KEY]
 
     this.source = {
       modelName: sourceModelName,
@@ -140,6 +140,7 @@ export class Relation<
     const targetPrimaryKey = findPrimaryKey(
       this.dictionary[this.target.modelName],
     )
+
     invariant(
       targetPrimaryKey,
       'Failed to create a "%s" relation to "%s": referenced model does not exist or has no primary key.',
@@ -155,15 +156,16 @@ export class Relation<
    * Updates the relation references (values) to resolve the relation with.
    */
   public resolveWith(
-    entity: Entity<Dictionary, ModelName>,
+    entity: Entity<Dictionary, string>,
     refs: ReferenceType,
   ): void {
     log(
-      'resolving a "%s" relational property to "%s" on "%s.%s"',
+      'resolving a "%s" relational property to "%s" on "%s.%s" ("%s")',
       this.kind,
       this.target.modelName,
       this.source.modelName,
       this.source.propertyPath,
+      entity[this.source.primaryKey],
     )
     log('entity of this relation:', entity)
 
@@ -282,13 +284,16 @@ export class Relation<
       configurable: true,
       get: () => {
         log(
-          'GET "%s.%s"',
+          'GET "%s.%s" on "%s" ("%s")',
           this.source.modelName,
           this.source.propertyPath,
+          this.source.modelName,
+          entity[this.source.primaryKey],
           this,
         )
+        log('GET using referenced values', referencesList)
 
-        const queryResult = referencesList.reduce<InternalEntity<any, any>[]>(
+        const queryResult = referencesList.reduce<Entity<any, any>[]>(
           (result, ref) => {
             return result.concat(
               executeQuery(
@@ -309,10 +314,11 @@ export class Relation<
         )
 
         log(
-          'resolved "%s" relation at "%s.%s" to:',
+          'resolved "%s" relation at "%s.%s" ("%s") to:',
           this.kind,
           this.source.modelName,
           this.source.propertyPath,
+          entity[this.source.primaryKey],
           queryResult,
         )
 

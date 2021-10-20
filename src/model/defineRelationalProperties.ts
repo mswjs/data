@@ -1,13 +1,13 @@
 import { debug } from 'debug'
 import get from 'lodash/get'
 import { Database } from '../db/Database'
-import { InternalEntity, ModelDictionary, Value } from '../glossary'
+import { Entity, ModelDictionary, Value } from '../glossary'
 import { RelationsMap } from '../relations/Relation'
 
 const log = debug('defineRelationalProperties')
 
 export function defineRelationalProperties(
-  entity: InternalEntity<any, any>,
+  entity: Entity<any, any>,
   initialValues: Partial<Value<any, ModelDictionary>>,
   relations: RelationsMap,
   dictionary: ModelDictionary,
@@ -30,6 +30,7 @@ export function defineRelationalProperties(
       initialValues,
       propertyPath,
     )
+
     relation.apply(entity, propertyPath, references, dictionary, db)
   }
 }
