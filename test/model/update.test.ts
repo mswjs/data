@@ -1,5 +1,5 @@
 import { datatype, name } from 'faker'
-import { factory, primaryKey } from '@mswjs/data'
+import { factory, oneOf, primaryKey } from '@mswjs/data'
 import { ENTITY_TYPE, PRIMARY_KEY } from '../../lib/glossary'
 import { OperationErrorType } from '../../src/errors/OperationError'
 import { getThrownError } from '../testUtils'
@@ -183,6 +183,111 @@ test('updates a nested property of the model', () => {
     },
   })
   expect(queriedUser).toEqual(updatedUser)
+})
+
+test('updates root and nested properties of the model simultaneously', () => {
+  const db = factory({
+    user: {
+      id: primaryKey(datatype.uuid),
+      firstName: String,
+      address: {
+        shipping: {
+          country: String,
+        },
+      },
+    },
+  })
+
+  db.user.create({
+    id: 'user-1',
+    firstName: 'Lora',
+    address: {
+      shipping: {
+        country: 'de',
+      },
+    },
+  })
+
+  const updatedUser = db.user.update({
+    where: {
+      id: {
+        equals: 'user-1',
+      },
+    },
+    data: {
+      firstName: 'Bob',
+      address: {
+        shipping: {
+          country: 'fr',
+        },
+      },
+    },
+  })
+
+  expect(updatedUser).toEqual({
+    [ENTITY_TYPE]: 'user',
+    [PRIMARY_KEY]: 'id',
+    id: 'user-1',
+    firstName: 'Bob',
+    address: {
+      shipping: {
+        country: 'fr',
+      },
+    },
+  })
+})
+
+test('updates both properties and relations', () => {
+  const db = factory({
+    user: {
+      id: primaryKey(datatype.uuid),
+      firstName: String,
+      address: oneOf('address'),
+    },
+    address: {
+      id: primaryKey(datatype.uuid),
+      country: String,
+    },
+  })
+
+  db.user.create({
+    id: 'user-1',
+    firstName: 'Lora',
+    address: db.address.create({
+      id: 'address-1',
+      country: 'de',
+    }),
+  })
+
+  const newAddress = db.address.create({
+    id: 'address-2',
+    country: 'us',
+  })
+
+  const updatedUser = db.user.update({
+    where: {
+      id: {
+        equals: 'user-1',
+      },
+    },
+    data: {
+      firstName: 'Bob',
+      address: newAddress,
+    },
+  })
+
+  expect(updatedUser).toEqual({
+    [ENTITY_TYPE]: 'user',
+    [PRIMARY_KEY]: 'id',
+    id: 'user-1',
+    firstName: 'Bob',
+    address: {
+      [ENTITY_TYPE]: 'address',
+      [PRIMARY_KEY]: 'id',
+      id: 'address-2',
+      country: 'us',
+    },
+  })
 })
 
 test('throws an exception when no model matches the query in strict mode', () => {

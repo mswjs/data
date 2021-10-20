@@ -102,6 +102,8 @@ export function updateEntity(
         log('setting a value at "%s" to: %s', propertyName, nextValue)
         nextEntity[propertyName] = nextValue
 
+        log('next entity:', nextEntity)
+
         return nextEntity
       },
       { ...entityChunk },
