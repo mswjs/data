@@ -81,19 +81,19 @@ export function updateEntity(
           log('updating the relation to resolve with:', value)
 
           // Re-define the relational property to now point at the next value.
-          propertyDefinition.resolveWith(entity, value as Value<any, any>[])
+          propertyDefinition.resolveWith(nextEntity, value as Value<any, any>[])
 
-          return entityChunk
+          return nextEntity
         }
 
         if (isObject(value)) {
           log('value is a plain object (%s), recursively updating...', value)
-          entityChunk[propertyName] = updateRecursively(
+          nextEntity[propertyName] = updateRecursively(
             prevValue,
             value,
             propertyPath,
           )
-          return entityChunk
+          return nextEntity
         }
 
         const nextValue =
