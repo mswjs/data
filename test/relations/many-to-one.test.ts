@@ -1,128 +1,229 @@
-import { datatype, random, name } from 'faker'
 import { factory, oneOf, primaryKey } from '@mswjs/data'
+import { ENTITY_TYPE, PRIMARY_KEY } from '../../lib/glossary'
 
-test('supports querying against a many-to-one relation', () => {
+test('supports querying by a many-to-one relation', () => {
   const db = factory({
     user: {
-      id: primaryKey(datatype.uuid),
-      firstName: name.firstName,
+      id: primaryKey(String),
     },
     post: {
-      id: primaryKey(datatype.uuid),
-      title: random.words,
+      id: primaryKey(String),
+      title: String,
       author: oneOf('user'),
     },
   })
 
-  const user = db.user.create()
+  const author = db.user.create({
+    id: 'user-1',
+  })
+
   db.post.create({
+    id: 'post-1',
     title: 'First post',
-    author: user,
+    author,
   })
   db.post.create({
+    id: 'post-2',
     title: 'Second post',
-    author: user,
+    author,
   })
   db.post.create({
+    id: 'post-3',
     title: 'Third post',
-    author: user,
+    author,
   })
 
   const userPosts = db.post.findMany({
     where: {
       author: {
         id: {
-          equals: user.id,
+          equals: author.id,
         },
       },
     },
   })
 
-  expect(userPosts).toHaveLength(3)
-  const postTitles = userPosts.map((post) => post.title)
-  expect(postTitles).toEqual(['First post', 'Second post', 'Third post'])
+  expect(userPosts).toEqual([
+    {
+      [ENTITY_TYPE]: 'post',
+      [PRIMARY_KEY]: 'id',
+      id: 'post-1',
+      title: 'First post',
+      author: author,
+    },
+    {
+      [ENTITY_TYPE]: 'post',
+      [PRIMARY_KEY]: 'id',
+      id: 'post-2',
+      title: 'Second post',
+      author: author,
+    },
+    {
+      [ENTITY_TYPE]: 'post',
+      [PRIMARY_KEY]: 'id',
+      id: 'post-3',
+      title: 'Third post',
+      author: author,
+    },
+  ])
 })
 
-test('supports querying through a nested many-to-one relation', () => {
+test('supports querying by a nested many-to-one relation', () => {
   const db = factory({
     role: {
-      id: primaryKey(datatype.uuid),
-      title: random.word,
+      name: primaryKey(String),
     },
     user: {
-      id: primaryKey(datatype.uuid),
-      firstName: name.firstName,
+      id: primaryKey(String),
       role: oneOf('role'),
     },
     post: {
-      id: primaryKey(datatype.uuid),
-      title: random.words,
+      id: primaryKey(String),
       author: oneOf('user'),
     },
   })
 
   const editor = db.role.create({
-    title: 'Editor',
+    name: 'editor',
   })
   const reader = db.role.create({
-    title: 'Reader',
+    name: 'reader',
   })
 
-  const firstUser = db.user.create({
-    firstName: 'John',
+  const john = db.user.create({
+    id: 'john',
     role: editor,
   })
-  const secondUser = db.user.create({
+  const kate = db.user.create({
+    id: 'kate',
     role: reader,
   })
   db.user.create({
+    id: 'joseph',
     role: reader,
   })
 
   db.post.create({
-    title: 'First post',
-    author: firstUser,
+    id: 'post-1',
+    author: john,
   })
   db.post.create({
-    title: 'Second post',
-    author: firstUser,
+    id: 'post-2',
+    author: john,
   })
   db.post.create({
-    title: 'Third post',
-    author: firstUser,
+    id: 'post-3',
+    author: kate,
   })
   db.post.create({
-    title: 'Fourth post',
-    author: secondUser,
+    id: 'post-4',
+    author: john,
   })
 
-  const result = db.post.findMany({
+  const posts = db.post.findMany({
     where: {
       author: {
         role: {
-          title: {
-            equals: 'Editor',
+          name: {
+            equals: 'editor',
           },
         },
       },
     },
   })
 
-  expect(result).toHaveLength(3)
+  expect(posts).toEqual([
+    {
+      [ENTITY_TYPE]: 'post',
+      [PRIMARY_KEY]: 'id',
+      id: 'post-1',
+      author: john,
+    },
+    {
+      [ENTITY_TYPE]: 'post',
+      [PRIMARY_KEY]: 'id',
+      id: 'post-2',
+      author: john,
+    },
+    {
+      [ENTITY_TYPE]: 'post',
+      [PRIMARY_KEY]: 'id',
+      id: 'post-4',
+      author: john,
+    },
+  ])
+})
+
+test('updates a many-to-one relational property without initial value', () => {
+  const db = factory({
+    user: {
+      id: primaryKey(String),
+    },
+    post: {
+      id: primaryKey(String),
+      author: oneOf('user'),
+    },
+  })
+
+  db.post.create({
+    id: 'post-1',
+  })
+
+  const updatedPost = db.post.update({
+    where: {
+      id: {
+        equals: 'post-1',
+      },
+    },
+    data: {
+      author: db.user.create({ id: 'john' }),
+    },
+  })
+
+  expect(updatedPost).toEqual({
+    [ENTITY_TYPE]: 'post',
+    [PRIMARY_KEY]: 'id',
+    id: 'post-1',
+    author: {
+      [ENTITY_TYPE]: 'user',
+      [PRIMARY_KEY]: 'id',
+      id: 'john',
+    },
+  })
+
+  expect(
+    db.post.findFirst({
+      where: {
+        id: {
+          equals: 'post-1',
+        },
+      },
+    }),
+  ).toEqual(updatedPost)
 })
 
 test('does not throw any error when a many-to-one entity is created without a relation', () => {
   const db = factory({
     user: {
-      id: primaryKey(datatype.uuid),
-      firstName: name.firstName,
+      id: primaryKey(String),
+      firstName: String,
     },
     post: {
-      id: primaryKey(datatype.uuid),
-      title: random.words,
+      id: primaryKey(String),
+      title: String,
       author: oneOf('user'),
     },
   })
 
-  expect(() => db.post.create()).not.toThrow()
+  const post = db.post.create({
+    id: 'post-1',
+    title: 'First post',
+  })
+
+  expect(post).toEqual({
+    [ENTITY_TYPE]: 'post',
+    [PRIMARY_KEY]: 'id',
+    id: 'post-1',
+    title: 'First post',
+  })
 })

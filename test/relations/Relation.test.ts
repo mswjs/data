@@ -67,16 +67,15 @@ it('applies a "ONE_OF" relation to an entity', () => {
   })
   const user = users.get('user-1')!
 
-  relation.apply(user, 'birthPlace', { code: 'us' }, dictionary, db)
+  relation.apply(user, 'birthPlace', dictionary, db)
 
   // When applied, relation is updated with the additional info.
   expect(relation.target.primaryKey).toEqual('code')
   expect(relation.source.modelName).toEqual('user')
   expect(relation.source.primaryKey).toEqual('id')
 
-  // When applied, relation defined a proxy property on the entity
-  // to resolve the relational value whenever accessed.
-  expect(user.birthPlace).toEqual(country)
+  // Applying a relation does NOT define the proxy getter.
+  expect(user.birthPlace).toEqual(undefined)
 })
 
 it('applies a "MANY_OF" relation to an entity', () => {
@@ -111,25 +110,20 @@ it('applies a "MANY_OF" relation to an entity', () => {
     [PRIMARY_KEY]: 'id',
     id: 'post-2',
   })
-  const firstPost = db.getModel('post').get('post-1')!
-  const secondPost = db.getModel('post').get('post-2')!
+  db.getModel('post').get('post-1')!
+  db.getModel('post').get('post-2')!
 
-  relation.apply(
-    user,
-    'posts',
-    [{ id: 'post-1' }, { id: 'post-2' }],
-    dictionary,
-    db,
-  )
+  relation.apply(user, 'posts', dictionary, db)
 
   expect(relation.source.modelName).toEqual('user')
   expect(relation.source.primaryKey).toEqual('id')
   expect(relation.target.primaryKey).toEqual('id')
 
-  expect(user.posts).toEqual([firstPost, secondPost])
+  // Applying a relation does NOT define the proxy getter.
+  expect(user.posts).toEqual(undefined)
 })
 
-it('throws an exception when applying a relation that references a non-existing entity', () => {
+it('throws an exception when resolving a relation with a non-existing reference', () => {
   const relation = new Relation({
     to: 'country',
     kind: RelationKind.OneOf,
@@ -150,14 +144,16 @@ it('throws an exception when applying a relation that references a non-existing 
   })
   const user = users.get('user-1')!
 
+  relation.apply(user, 'birthPlace', dictionary, db)
+
   expect(() => {
-    relation.apply(user, 'birthPlace', { code: 'us' }, dictionary, db)
+    relation.resolveWith(user, { code: 'us' })
   }).toThrow(
     'Failed to define a relational property "birthPlace" on "user": referenced entity "us" ("code") does not exist.',
   )
 })
 
-it('throws an exception when applying a unique relation that references an already references entity', () => {
+it('throws an exception when resolving a unique relation that references an already references entity', () => {
   const relation = new Relation({
     to: 'country',
     kind: RelationKind.OneOf,
@@ -194,12 +190,13 @@ it('throws an exception when applying a unique relation that references an alrea
   })
 
   // First, apply a new relation to the first user.
-  relation.apply(firstUser, 'birthPlace', { code: 'us' }, dictionary, db)
+  relation.apply(firstUser, 'birthPlace', dictionary, db)
+  relation.resolveWith(firstUser, { code: 'us' })
 
   // Then, apply the relation t othe second user
   // referencing the same country (the relation is unique).
   expect(() => {
-    relation.apply(secondUser, 'birthPlace', { code: 'us' }, dictionary, db)
+    relation.resolveWith(secondUser, { code: 'us' })
   }).toThrow(
     'Failed to create a unique "ONE_OF" relation to "country" ("user.birthPlace") for "user-2": referenced country "us" belongs to another user ("user-1").',
   )
@@ -236,8 +233,9 @@ it('does not throw an exception when updating the relational reference to the sa
   })
   const country = countries.get('us')
 
-  // First, apply a new relation to the first user.
-  relation.apply(user, 'birthPlace', { code: 'us' }, dictionary, db)
+  // First, apply and resolve a new relation for the first user.
+  relation.apply(user, 'birthPlace', dictionary, db)
+  relation.resolveWith(user, { code: 'us' })
 
   // Update the relational reference to the same referenced country.
   relation.resolveWith(user, { code: 'us' })

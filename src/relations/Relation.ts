@@ -114,13 +114,11 @@ export class Relation<
   /**
    * Applies the relation to the given entity.
    * Creates a connection between the relation's target and source.
-   * Defines a proxy property to resolve the relation value
-   * whenever refenreced at the given path on the entity.
+   * Does not define the proxy property getter.
    */
   public apply(
     entity: Entity<any, any>,
     propertyPath: string,
-    refs: ReferenceType,
     dictionary: Dictionary,
     db: Database<Dictionary>,
   ) {
@@ -148,8 +146,6 @@ export class Relation<
       this.target.modelName,
     )
     this.target.primaryKey = targetPrimaryKey
-
-    this.resolveWith(entity, refs)
   }
 
   /**
@@ -159,6 +155,13 @@ export class Relation<
     entity: Entity<Dictionary, string>,
     refs: ReferenceType,
   ): void {
+    invariant(
+      this.source,
+      'Failed to resolve a "%s" relational property to "%s": relation has not been applied.',
+      this.kind,
+      this.target.modelName,
+    )
+
     log(
       'resolving a "%s" relational property to "%s" on "%s.%s" ("%s")',
       this.kind,
@@ -171,7 +174,7 @@ export class Relation<
 
     invariant(
       this.target.primaryKey,
-      'Failed to define a "%s" relation to "%s" on "%s": relation is not applied to a dictionary.',
+      'Failed to define a "%s" relation to "%s" on "%s": referenced target model has no primary key set.',
       this.kind,
       this.source.propertyPath,
       this.source.modelName,

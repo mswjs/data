@@ -1,7 +1,8 @@
 import { debug } from 'debug'
 import get from 'lodash/get'
+import { invariant } from 'outvariant'
 import { Database } from '../db/Database'
-import { Entity, ModelDictionary, Value } from '../glossary'
+import { Entity, ENTITY_TYPE, ModelDictionary, Value } from '../glossary'
 import { RelationsMap } from '../relations/Relation'
 
 const log = debug('defineRelationalProperties')
@@ -16,21 +17,30 @@ export function defineRelationalProperties(
   log('defining relational properties...', { entity, initialValues, relations })
 
   for (const [propertyPath, relation] of Object.entries(relations)) {
-    log(
-      `setting relational property "${entity.__type}.${propertyPath}"`,
-      relation,
+    invariant(
+      dictionary[relation.target.modelName],
+      'Failed to define a "%s" relational property to "%s" on "%s": cannot find a model by the name "%s".',
+      relation.kind,
+      propertyPath,
+      entity[ENTITY_TYPE],
+      relation.target.modelName,
     )
 
-    if (!get(initialValues, propertyPath)) {
-      log('relation has no initial value, skipping...')
-      continue
-    }
-
-    const references: Value<any, ModelDictionary> = get(
+    const references: Value<any, ModelDictionary> | undefined = get(
       initialValues,
       propertyPath,
     )
 
-    relation.apply(entity, propertyPath, references, dictionary, db)
+    log(
+      `setting relational property "${entity.__type}.${propertyPath}" with references: %j`,
+      relation,
+      references,
+    )
+
+    relation.apply(entity, propertyPath, dictionary, db)
+
+    if (references) {
+      relation.resolveWith(entity, references)
+    }
   }
 }
