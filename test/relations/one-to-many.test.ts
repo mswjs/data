@@ -1,36 +1,45 @@
-import { random, datatype } from 'faker'
 import { factory, primaryKey, manyOf } from '@mswjs/data'
 import { ENTITY_TYPE, PRIMARY_KEY } from '../../lib/glossary'
 
 test('supports one-to-many relation', () => {
   const db = factory({
     user: {
-      id: primaryKey(datatype.uuid),
+      id: primaryKey(String),
       posts: manyOf('post'),
     },
     post: {
-      id: primaryKey(datatype.uuid),
-      title: random.words,
+      id: primaryKey(String),
+      title: String,
     },
   })
 
   const firstPost = db.post.create({
+    id: 'post-1',
     title: 'First post',
   })
   const secondPost = db.post.create({
+    id: 'post-2',
     title: 'Second post',
   })
   const user = db.user.create({
+    id: 'user-1',
     posts: [firstPost, secondPost],
   })
 
-  expect(user.posts).toHaveLength(2)
+  expect(user.posts).toEqual([firstPost, secondPost])
 
-  const posts = user.posts.map((post) => post.title)
-  expect(posts).toEqual(['First post', 'Second post'])
+  expect(
+    db.user.findFirst({
+      where: {
+        id: {
+          equals: 'user-1',
+        },
+      },
+    }),
+  ).toEqual(user)
 })
 
-test('supports a recusrive one-to-many relation', () => {
+test('supports updating a recusrive one-to-many relation', () => {
   const db = factory({
     user: {
       id: primaryKey(String),
@@ -79,30 +88,44 @@ test('supports querying through one-to-many relation', () => {
       posts: manyOf('post'),
     },
     post: {
-      id: primaryKey(datatype.uuid),
-      title: random.words,
+      id: primaryKey(String),
+      title: String,
     },
   })
 
+  const firstUserPosts = [
+    db.post.create({
+      id: 'post-1-1',
+      title: 'First post',
+    }),
+    db.post.create({
+      id: 'post-1-2',
+      title: 'Second post',
+    }),
+  ]
+
   db.user.create({
     id: 'user-1',
-    posts: [
-      db.post.create({ title: 'First post' }),
-      db.post.create({ title: 'Second post' }),
-    ],
+    posts: firstUserPosts,
   })
 
   db.user.create({
     id: 'user-2',
-    posts: [db.post.create({ title: 'Third post' })],
+    posts: [
+      db.post.create({
+        id: 'post-2-1',
+        title: 'Third post',
+      }),
+    ],
   })
 
+  const thirdUserPosts = [
+    db.post.create({ id: 'post-3-1', title: 'Second post' }),
+    db.post.create({ id: 'post-3-2', title: 'Fourth post' }),
+  ]
   db.user.create({
     id: 'user-3',
-    posts: [
-      db.post.create({ title: 'Second post' }),
-      db.post.create({ title: 'Fourth post' }),
-    ],
+    posts: thirdUserPosts,
   })
 
   const users = db.user.findMany({
@@ -114,10 +137,21 @@ test('supports querying through one-to-many relation', () => {
       },
     },
   })
-  expect(users).toHaveLength(2)
 
-  const userIds = users.map((user) => user.id)
-  expect(userIds).toEqual(['user-1', 'user-3'])
+  expect(users).toEqual([
+    {
+      [ENTITY_TYPE]: 'user',
+      [PRIMARY_KEY]: 'id',
+      id: 'user-1',
+      posts: firstUserPosts,
+    },
+    {
+      [ENTITY_TYPE]: 'user',
+      [PRIMARY_KEY]: 'id',
+      id: 'user-3',
+      posts: thirdUserPosts,
+    },
+  ])
 })
 
 test('supports querying through a nested one-to-many relation', () => {
@@ -161,44 +195,49 @@ test('supports querying through a nested one-to-many relation', () => {
 test('supports creating an entity without specifying the value for one-to-many relation', () => {
   const db = factory({
     user: {
-      id: primaryKey(datatype.uuid),
+      id: primaryKey(String),
       posts: manyOf('post'),
     },
     post: {
-      id: primaryKey(datatype.uuid),
+      id: primaryKey(String),
     },
   })
 
-  expect(() =>
-    db.user.create({
-      id: 'abc-123',
-    }),
-  ).not.toThrow()
+  const user = db.user.create({
+    id: 'abc-123',
+  })
 
-  const user = db.user.findFirst({
-    where: {
-      id: {
-        equals: 'abc-123',
+  expect(
+    db.user.findFirst({
+      where: {
+        id: {
+          equals: 'abc-123',
+        },
       },
-    },
-  })
-  expect(user).toBeDefined()
+    }),
+  ).toEqual(user)
 })
 
-test('updates the relational value via the ".update()" model method', () => {
+test('updates a one-to-many relational property', () => {
   const db = factory({
     user: {
-      id: primaryKey(datatype.uuid),
+      id: primaryKey(String),
       posts: manyOf('post'),
     },
     post: {
-      id: primaryKey(datatype.uuid),
-      title: random.words,
+      id: primaryKey(String),
+      title: String,
     },
   })
 
-  const firstPost = db.post.create({ title: 'First post' })
-  const secondPost = db.post.create({ title: 'Second post' })
+  const firstPost = db.post.create({
+    id: 'post-1',
+    title: 'First post',
+  })
+  const secondPost = db.post.create({
+    id: 'post-2',
+    title: 'Second post',
+  })
   const user = db.user.create({
     id: 'abc-123',
     posts: [firstPost],
@@ -206,7 +245,9 @@ test('updates the relational value via the ".update()" model method', () => {
   const refetchUser = () => {
     return db.user.findFirst({
       where: {
-        id: { equals: 'abc-123' },
+        id: {
+          equals: 'abc-123',
+        },
       },
     })
   }
@@ -243,18 +284,80 @@ test('updates the relational value via the ".update()" model method', () => {
   })
 })
 
-test('throws an exception when updating a relational value via a compatible object', () => {
+test('updates a one-to-many relational property without initial value', () => {
   const db = factory({
     user: {
-      id: primaryKey(datatype.uuid),
+      id: primaryKey(String),
       posts: manyOf('post'),
     },
     post: {
-      id: primaryKey(datatype.uuid),
-      title: random.words,
+      id: primaryKey(String),
+      title: String,
+    },
+  })
+
+  db.user.create({
+    id: 'user-1',
+  })
+
+  const updatedUser = db.user.update({
+    where: {
+      id: {
+        equals: 'user-1',
+      },
+    },
+    data: {
+      posts: [
+        db.post.create({ id: 'post-1', title: 'First post' }),
+        db.post.create({ id: 'post-2', title: 'Second post' }),
+      ],
+    },
+  })
+
+  expect(updatedUser).toEqual({
+    [ENTITY_TYPE]: 'user',
+    [PRIMARY_KEY]: 'id',
+    id: 'user-1',
+    posts: [
+      {
+        [ENTITY_TYPE]: 'post',
+        [PRIMARY_KEY]: 'id',
+        id: 'post-1',
+        title: 'First post',
+      },
+      {
+        [ENTITY_TYPE]: 'post',
+        [PRIMARY_KEY]: 'id',
+        id: 'post-2',
+        title: 'Second post',
+      },
+    ],
+  })
+
+  expect(
+    db.user.findFirst({
+      where: {
+        id: {
+          equals: 'user-1',
+        },
+      },
+    }),
+  ).toEqual(updatedUser)
+})
+
+test('throws an exception when updating a relational value via a compatible object', () => {
+  const db = factory({
+    user: {
+      id: primaryKey(String),
+      posts: manyOf('post'),
+    },
+    post: {
+      id: primaryKey(String),
+      title: String,
     },
   })
   const firstPost = db.post.create({
+    id: 'post-1',
     title: 'First post',
   })
   const user = db.user.create({
@@ -264,7 +367,9 @@ test('throws an exception when updating a relational value via a compatible obje
   const refetchUser = () => {
     return db.user.findFirst({
       where: {
-        id: { equals: 'abc-123' },
+        id: {
+          equals: 'abc-123',
+        },
       },
     })
   }
@@ -280,35 +385,39 @@ test('throws an exception when updating a relational value via a compatible obje
   expect(() =>
     db.user.update({
       where: {
-        id: { equals: 'abc-123' },
+        id: {
+          equals: 'abc-123',
+        },
       },
       data: {
         posts: [
           {
-            id: 'post-1',
+            id: 'post-2',
             title: 'Compatible object',
           },
         ],
       },
     }),
   ).toThrow(
-    'Failed to define a relational property "posts" on "user": referenced entity "post-1" ("id") does not exist.',
+    'Failed to define a relational property "posts" on "user": referenced entity "post-2" ("id") does not exist.',
   )
 })
 
 test('throws an exception when creating a unique one-to-many relation to the already referenced entity', () => {
   const db = factory({
     user: {
-      id: primaryKey(datatype.uuid),
+      id: primaryKey(String),
       // One post cannot belong to multiple users.
       posts: manyOf('post', { unique: true }),
     },
     post: {
-      id: primaryKey(datatype.uuid),
+      id: primaryKey(String),
     },
   })
 
-  const post = db.post.create({ id: 'post-1' })
+  const post = db.post.create({
+    id: 'post-1',
+  })
 
   db.user.create({
     id: 'user-1',
@@ -328,12 +437,12 @@ test('throws an exception when creating a unique one-to-many relation to the alr
 test('throws an exception when updating a unique one-to-many relation to the already referenced entity', () => {
   const db = factory({
     user: {
-      id: primaryKey(datatype.uuid),
+      id: primaryKey(String),
       // One post cannot belong to multiple users.
       posts: manyOf('post', { unique: true }),
     },
     post: {
-      id: primaryKey(datatype.uuid),
+      id: primaryKey(String),
     },
   })
 

@@ -153,7 +153,7 @@ test('supports querying through a nested one-to-one relation', () => {
   expect(result).toEqual(user)
 })
 
-test('allows creating an entity without specifying a value for the one-to-one relational property', () => {
+test('creates an entity without specifying initial value for the one-to-one relational property', () => {
   const db = factory({
     country: {
       id: primaryKey(String),
@@ -320,6 +320,62 @@ test('throws an exception when updating a unique one-to-one relation to the alre
   ).toThrow(
     'Failed to create a unique "ONE_OF" relation to "invite" ("user.invitation") for "user-1": referenced invite "def-456" belongs to another user ("user-2").',
   )
+})
+
+test('updates a relational property without initial value', () => {
+  const db = factory({
+    country: {
+      id: primaryKey(String),
+      name: String,
+      capital: oneOf('city'),
+    },
+    city: {
+      id: primaryKey(String),
+      name: String,
+    },
+  })
+
+  db.country.create({
+    id: 'country-1',
+    name: 'Great Britain',
+  })
+
+  const updatedCountry = db.country.update({
+    where: {
+      id: {
+        equals: 'country-1',
+      },
+    },
+    data: {
+      capital: db.city.create({
+        id: 'city-1',
+        name: 'London',
+      }),
+    },
+  })
+
+  expect(updatedCountry).toEqual({
+    [ENTITY_TYPE]: 'country',
+    [PRIMARY_KEY]: 'id',
+    id: 'country-1',
+    name: 'Great Britain',
+    capital: {
+      [ENTITY_TYPE]: 'city',
+      [PRIMARY_KEY]: 'id',
+      id: 'city-1',
+      name: 'London',
+    },
+  })
+
+  expect(
+    db.country.findFirst({
+      where: {
+        id: {
+          equals: 'country-1',
+        },
+      },
+    }),
+  ).toEqual(updatedCountry)
 })
 
 test('throws an exception when updating a relation to a compatible plain object', () => {
