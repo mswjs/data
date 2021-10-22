@@ -5,6 +5,7 @@ import { NullableProperty } from './nullable'
 import { PrimaryKey } from './primaryKey'
 import {
   BulkQueryOptions,
+  QueryOptions,
   QuerySelector,
   WeakQuerySelector,
 } from './query/queryTypes'
@@ -92,6 +93,11 @@ export type InitialValues<
   ModelName extends keyof Dictionary,
 > = Partial<Value<Dictionary[ModelName], Dictionary>>
 
+export type StrictQueryReturnType<
+  Options extends QueryOptions,
+  ValueType extends unknown,
+> = Options['strict'] extends true ? ValueType : ValueType | null
+
 export interface ModelAPI<
   Dictionary extends ModelDictionary,
   ModelName extends keyof Dictionary,
@@ -105,18 +111,21 @@ export interface ModelAPI<
   /**
    * Return the total number of entities.
    */
-  count(query?: QuerySelector<InitialValues<Dictionary, ModelName>>): number
+  count(
+    query?: QueryOptions & QuerySelector<InitialValues<Dictionary, ModelName>>,
+  ): number
   /**
    * Find a first entity matching the query.
    */
-  findFirst(
-    query: QuerySelector<InitialValues<Dictionary, ModelName>>,
-  ): Entity<Dictionary, ModelName> | null
+  findFirst<Options extends QueryOptions>(
+    query: Options & QuerySelector<InitialValues<Dictionary, ModelName>>,
+  ): StrictQueryReturnType<Options, Entity<Dictionary, ModelName>>
   /**
    * Find multiple entities.
    */
   findMany(
-    query: WeakQuerySelector<InitialValues<Dictionary, ModelName>> &
+    query: QueryOptions &
+      WeakQuerySelector<InitialValues<Dictionary, ModelName>> &
       BulkQueryOptions<InitialValues<Dictionary, ModelName>>,
   ): Entity<Dictionary, ModelName>[]
   /**
@@ -126,31 +135,33 @@ export interface ModelAPI<
   /**
    * Update a single entity with the next data.
    */
-  update(
-    query: QuerySelector<InitialValues<Dictionary, ModelName>> & {
-      data: Partial<UpdateManyValue<Dictionary[ModelName], Dictionary>>
-    },
-  ): Entity<Dictionary, ModelName> | null
+  update<Options extends QueryOptions>(
+    query: Options &
+      QuerySelector<InitialValues<Dictionary, ModelName>> & {
+        data: Partial<UpdateManyValue<Dictionary[ModelName], Dictionary>>
+      },
+  ): StrictQueryReturnType<Options, Entity<Dictionary, ModelName>>
   /**
    * Update many entities with the next data.
    */
-  updateMany(
-    query: QuerySelector<InitialValues<Dictionary, ModelName>> & {
-      data: Partial<UpdateManyValue<Dictionary[ModelName], Dictionary>>
-    },
-  ): Entity<Dictionary, ModelName>[] | null
+  updateMany<Options extends QueryOptions>(
+    query: Options &
+      QuerySelector<InitialValues<Dictionary, ModelName>> & {
+        data: Partial<UpdateManyValue<Dictionary[ModelName], Dictionary>>
+      },
+  ): StrictQueryReturnType<Options, Entity<Dictionary, ModelName>[]>
   /**
    * Delete a single entity.
    */
-  delete(
-    query: QuerySelector<InitialValues<Dictionary, ModelName>>,
-  ): Entity<Dictionary, ModelName> | null
+  delete<Options extends QueryOptions>(
+    query: Options & QuerySelector<InitialValues<Dictionary, ModelName>>,
+  ): StrictQueryReturnType<Options, Entity<Dictionary, ModelName>>
   /**
    * Delete multiple entities.
    */
-  deleteMany(
-    query: QuerySelector<InitialValues<Dictionary, ModelName>>,
-  ): Entity<Dictionary, ModelName>[] | null
+  deleteMany<Options extends QueryOptions>(
+    query: Options & QuerySelector<InitialValues<Dictionary, ModelName>>,
+  ): StrictQueryReturnType<Options, Entity<Dictionary, ModelName>[]>
   /**
    * Generate request handlers of the given type based on the model definition.
    */
