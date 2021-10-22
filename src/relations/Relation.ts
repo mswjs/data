@@ -38,9 +38,11 @@ export interface RelationSource {
 export interface RelationDefinition<
   Kind extends RelationKind,
   ModelName extends KeyType,
+  Nullable extends boolean,
 > {
   to: ModelName
   kind: Kind
+  nullable?: Nullable
   attributes?: Partial<RelationAttributes>
 }
 
@@ -53,22 +55,21 @@ export type LazyRelation<
   propertyPath: string,
   dictionary: Dictionary,
   db: Database<Dictionary>,
-) => Relation<Kind, ModelName, Dictionary>
+) => Relation<Kind, ModelName, Dictionary, any>
 
-export type OneOf<ModelName extends KeyType> = Relation<
-  RelationKind.OneOf,
-  ModelName,
-  any
->
-export type ManyOf<ModelName extends KeyType> = Relation<
-  RelationKind.ManyOf,
-  ModelName,
-  any
->
+export type OneOf<
+  ModelName extends KeyType,
+  Nullable extends boolean = false,
+> = Relation<RelationKind.OneOf, ModelName, any, Nullable>
+
+export type ManyOf<
+  ModelName extends KeyType,
+  Nullable extends boolean = false,
+> = Relation<RelationKind.ManyOf, ModelName, any, Nullable>
 
 export type RelationsList = Array<{
   propertyPath: string[]
-  relation: Relation<any, any, any>
+  relation: Relation<any, any, any, any>
 }>
 
 const DEFAULT_RELATION_ATTRIBUTES: RelationAttributes = {
@@ -79,6 +80,7 @@ export class Relation<
   Kind extends RelationKind,
   ModelName extends KeyType,
   Dictionary extends ModelDictionary,
+  Nullable extends boolean,
   ReferenceType = Kind extends RelationKind.OneOf
     ? Value<Dictionary[ModelName], Dictionary>
     : Value<Dictionary[ModelName], Dictionary>[],
@@ -91,11 +93,14 @@ export class Relation<
     primaryKey: PrimaryKeyType
   }
 
+  // These readonly properties should never be changed to avoid errors
+  readonly nullable?: Nullable
+
   // These lazy properties are set after calling the ".apply()" method.
   private dictionary: Dictionary = null as any
   private db: Database<Dictionary> = null as any
 
-  constructor(definition: RelationDefinition<Kind, ModelName>) {
+  constructor(definition: RelationDefinition<Kind, ModelName, Nullable>) {
     this.kind = definition.kind
     this.attributes = {
       ...DEFAULT_RELATION_ATTRIBUTES,
@@ -105,6 +110,7 @@ export class Relation<
       modelName: definition.to.toString(),
       primaryKey: null as any,
     }
+    this.nullable = definition.nullable
 
     log(
       'constructing a "%s" relation to "%s" with attributes: %o',
@@ -156,7 +162,7 @@ export class Relation<
    */
   public resolveWith(
     entity: Entity<Dictionary, string>,
-    refs: ReferenceType,
+    refs: ReferenceType | null,
   ): void {
     invariant(
       this.source,
@@ -174,6 +180,45 @@ export class Relation<
       entity[this.source.primaryKey],
     )
     log('entity of this relation:', entity)
+
+    if (refs === null) {
+      invariant(
+        this.nullable,
+        'Failed to resolve a "%s" relational property to "%s": only nullable relations can resolve with null. Use the "nullable" function when defining your relation',
+        this.kind,
+        this.target.modelName,
+      )
+      log('this relation resolves with null')
+
+      return definePropertyAtPath(entity, this.source.propertyPath, {
+        // Mark the property as enumerable so it gets listed
+        // like a regular property on the entity.
+        enumerable: true,
+        // Mark the property as configurable so it could be re-defined
+        // when updating it during the entity update ("update"/"updateMany").
+        configurable: true,
+        get: () => {
+          log(
+            'GET "%s.%s" on "%s" ("%s")',
+            this.source.modelName,
+            this.source.propertyPath,
+            this.source.modelName,
+            entity[this.source.primaryKey],
+            this,
+          )
+
+          log(
+            'resolved "%s" relation at "%s.%s" ("%s") to null',
+            this.kind,
+            this.source.modelName,
+            this.source.propertyPath,
+            entity[this.source.primaryKey],
+          )
+
+          return null
+        },
+      })
+    }
 
     invariant(
       this.target.primaryKey,

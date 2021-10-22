@@ -1,5 +1,5 @@
 import { datatype, name } from 'faker'
-import { factory, oneOf, primaryKey } from '@mswjs/data'
+import { factory, oneOf, primaryKey, nullable } from '@mswjs/data'
 import { ENTITY_TYPE, PRIMARY_KEY } from '../../lib/glossary'
 import { OperationErrorType } from '../../src/errors/OperationError'
 import { getThrownError } from '../testUtils'
@@ -509,4 +509,87 @@ test('exposes a root entity for a derivitive value of a nested property', () => 
   })
 
   expect(result).toHaveProperty(['address', 'billing', 'country'], 'US')
+})
+
+test('supports updating a nullable property to a non-null value', () => {
+  const db = factory({
+    user: {
+      id: primaryKey(datatype.uuid),
+      firstName: nullable(name.firstName),
+    },
+  })
+
+  db.user.create({
+    id: 'abc-123',
+    firstName: null,
+  })
+
+  expect(
+    db.user.update({
+      where: {
+        id: {
+          equals: 'abc-123',
+        },
+      },
+      data: {
+        firstName: 'John',
+      },
+    }),
+  ).toHaveProperty('firstName', 'John')
+})
+
+test('supports updating a nullable property with a value to null', () => {
+  const db = factory({
+    user: {
+      id: primaryKey(datatype.uuid),
+      firstName: nullable(name.firstName),
+    },
+  })
+
+  db.user.create({
+    id: 'abc-123',
+    firstName: 'John',
+  })
+
+  expect(
+    db.user.update({
+      where: {
+        id: {
+          equals: 'abc-123',
+        },
+      },
+      data: {
+        firstName: null,
+      },
+    }),
+  ).toHaveProperty('firstName', null)
+})
+
+test('throws when setting a non-nullable property to null', () => {
+  const db = factory({
+    user: {
+      id: primaryKey(datatype.uuid),
+      firstName: name.firstName,
+    },
+  })
+
+  db.user.create({
+    id: 'abc-123',
+  })
+
+  expect(() =>
+    db.user.update({
+      where: {
+        id: {
+          equals: 'abc-123',
+        },
+      },
+      data: {
+        // @ts-expect-error types don't allow updating normal properties to null
+        firstName: null,
+      },
+    }),
+  ).toThrowError(
+    /Failed to set value at "firstName" to null as the property is not nullable/,
+  )
 })

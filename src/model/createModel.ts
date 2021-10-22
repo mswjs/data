@@ -16,6 +16,8 @@ import { ParsedModelDefinition } from './parseModelDefinition'
 import { defineRelationalProperties } from './defineRelationalProperties'
 import { PrimaryKey } from '../primaryKey'
 import { Relation } from '../relations/Relation'
+import { NullableProperty } from '../nullable'
+import { isModelValueType } from '../utils/isModelValueType'
 
 const log = debug('createModel')
 
@@ -64,14 +66,17 @@ export function createModel<
         return properties
       }
 
-      if (
-        typeof initialValue === 'string' ||
-        typeof initialValue === 'number' ||
-        typeof initialValue === 'boolean' ||
-        // @ts-ignore
-        initialValue?.constructor.name === 'Date' ||
-        Array.isArray(initialValue)
-      ) {
+      if (propertyDefinition instanceof NullableProperty) {
+        const value =
+          initialValue === null || isModelValueType(initialValue)
+            ? initialValue
+            : propertyDefinition.getValue()
+
+        set(properties, propertyName, value)
+        return properties
+      }
+
+      if (isModelValueType(initialValue)) {
         log(
           '"%s" has a plain initial value:',
           `${modelName}.${propertyName}`,

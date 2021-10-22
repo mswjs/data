@@ -1,5 +1,5 @@
 import { datatype } from 'faker'
-import { factory, primaryKey } from '@mswjs/data'
+import { factory, primaryKey, nullable } from '@mswjs/data'
 
 const setup = () => {
   const db = factory({
@@ -7,15 +7,18 @@ const setup = () => {
       id: primaryKey(datatype.uuid),
       firstName: String,
       age: Number,
+      height: nullable<number>(() => null),
     },
   })
   db.user.create({
     firstName: 'John',
     age: 16,
+    height: 200,
   })
   db.user.create({
     firstName: 'Alice',
     age: 24,
+    height: 165,
   })
   db.user.create({
     firstName: 'Kate',
@@ -189,4 +192,18 @@ test('queries entities where property is contained into the array', () => {
   })
   const names = users.map((user) => user.firstName)
   expect(names).toEqual(['John', 'Alice'])
+})
+
+test('ignores entities with missing values when querying using number', () => {
+  const db = setup()
+
+  const height = 180
+  const shorterUsers = db.user.findMany({ where: { height: { lt: height } } })
+  const tallerUsers = db.user.findMany({ where: { height: { gte: height } } })
+  const userNames = [...shorterUsers, ...tallerUsers].map(
+    (user) => user.firstName,
+  )
+
+  expect(userNames).toHaveLength(2)
+  expect(userNames).toEqual(['Alice', 'John'])
 })

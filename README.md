@@ -110,6 +110,7 @@ setupWorker(
 
 - [Model methods](#model-methods)
 - **Modeling:**
+  - [Nullable properties](#nullable-properties)
   - [Nested structures](#nested-structures)
   - [Model relationships](#model-relationships)
 - **Querying:**
@@ -334,12 +335,63 @@ db.user.toHandlers('rest', 'https://example.com')
 db.user.toHandlers('graphql', 'https://example.com/graphql')
 ```
 
+### Nullable properties
+
+You may use the `nullable` function to define properties that can be null:
+
+```js
+import { factory, primaryKey, nullable } from '@mswjs/data'
+
+const db = factory({
+  user: {
+    id: primaryKey(String),
+    name: nullable(String),
+    age: nullable(Number),
+  },
+})
+
+// age can now be set as null
+db.user.create({
+  id: 'user-1',
+  name: 'John',
+  age: null,
+})
+
+// we can update nullable fields to null, or their underlying type later
+db.user.update({
+  where: {
+    id: {
+      equals: 'user-1',
+    },
+  },
+  data: {
+    age: 23,
+    name: null
+  },
+})
+```
+
+When using Typescript you can manually set the type of the property when it is
+not possible to infer it from the factory function, such as when you want the
+property to default to null:
+
+```typescript
+import { factory, primaryKey, nullable } from '@mswjs/data'
+
+const db = factory({
+  user: {
+    id: primaryKey(String),
+    age: nullable<number>(() => null),
+  },
+})
+```
+
 ### Nested structures
 
 You may use nested objects to design a complex structure of your model:
 
 ```js
-import { factory, primaryKey } from '@mswjs/data'
+import { factory, primaryKey, nullable } from '@mswjs/data'
 
 const db = factory({
   user: {
@@ -347,6 +399,7 @@ const db = factory({
     address: {
       billing: {
         street: String,
+        city: nullable(String)
       },
     },
   },
@@ -360,6 +413,7 @@ db.user.create({
   address: {
     billing: {
       street: 'Baker st.',
+      city: 'London',
     },
   },
 })
@@ -374,6 +428,7 @@ db.user.update({
     address: {
       billing: {
         street: 'Sunwell ave.',
+        city: null,
       },
     },
   },
@@ -408,6 +463,7 @@ factory({
 - [One-to-Many](#one-to-many)
 - [Many-to-One](#many-to-one)
 - [Unique relationships](#unique-relationships)
+- [Nullable relationships](#nullable-relationships)
 
 Relationship is a way for a model to reference another model.
 
@@ -521,6 +577,44 @@ const john = db.user.create({ invitation })
 // Assigning the invitation already used by "john"
 // will throw an exception when creating this entity.
 const karl = db.user.create({ invitation })
+```
+
+#### Nullable relationships
+
+Both `oneOf` and `manyOf` relationships may be passed to `nullable` to allow
+setting the relation to null.
+
+```js
+import { factory, primaryKey, oneOf, nullable } from '@mswjs/data'
+
+const db = factory({
+  user: {
+    id: primaryKey(String),
+    invitation: nullable(oneOf('invitation')),
+    friends: nullable(manyOf('user')),
+  },
+  invitation: {
+    id: primaryKey(String),
+  },
+})
+
+const invitation = db.invitation.create()
+
+const john = db.user.create({ invitation }) // john.friends === null
+const kate = db.user.create({ friends: [john] }) // kate.invitation === null
+
+// this makes it possible to update the relationships to null
+db.user.updateMany({
+  where: {
+    id: {
+      in: [john.id, kate.id],
+    },
+  },
+  data: {
+    invitation: null,
+    friends: null
+  },
+})
 ```
 
 ### Querying data

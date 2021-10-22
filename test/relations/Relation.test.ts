@@ -242,3 +242,76 @@ it('does not throw an exception when updating the relational reference to the sa
 
   expect(user.birthPlace).toEqual(country)
 })
+
+it('supports creating nullable relations', () => {
+  const relation = new Relation({
+    to: 'country',
+    kind: RelationKind.OneOf,
+    nullable: true,
+  })
+
+  expect(relation.nullable).toBe(true)
+})
+
+it('throws an exception when resolving a non-nullable relation with null', () => {
+  const relation = new Relation({
+    to: 'country',
+    kind: RelationKind.OneOf,
+  })
+  const dictionary: ModelDictionary = {
+    user: {
+      birthPlace: relation,
+    },
+    country: {
+      code: primaryKey(String),
+    },
+  }
+  const db = new Database(dictionary)
+  db.create('user', {
+    [ENTITY_TYPE]: 'user',
+    [PRIMARY_KEY]: 'id',
+    id: 'user-1',
+  })
+  const user = db.getModel('user').get('user-1')!
+
+  // First, apply a new relation to the user.
+  relation.apply(user, ['birthPlace'], dictionary, db)
+
+  // Then try to resolve with null
+  expect(() => {
+    relation.resolveWith(user, null)
+  }).toThrow(
+    'Failed to resolve a "ONE_OF" relational property to "country": only nullable relations can resolve with null. Use the "nullable" function when defining your relation',
+  )
+})
+
+it('does not throw an exception when resolving a nullable relation with null', () => {
+  const relation = new Relation({
+    to: 'country',
+    kind: RelationKind.OneOf,
+    nullable: true,
+  })
+  const dictionary: ModelDictionary = {
+    user: {
+      birthPlace: relation,
+    },
+    country: {
+      code: primaryKey(String),
+    },
+  }
+  const db = new Database(dictionary)
+  db.create('user', {
+    [ENTITY_TYPE]: 'user',
+    [PRIMARY_KEY]: 'id',
+    id: 'user-1',
+  })
+  const user = db.getModel('user').get('user-1')!
+
+  // First, apply a new relation to the user.
+  relation.apply(user, ['birthPlace'], dictionary, db)
+
+  // Then try to resolve with null
+  expect(() => {
+    relation.resolveWith(user, null)
+  }).not.toThrow()
+})

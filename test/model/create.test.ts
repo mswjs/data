@@ -1,5 +1,5 @@
-import { datatype } from 'faker'
-import { factory, primaryKey, oneOf } from '@mswjs/data'
+import { datatype, name } from 'faker'
+import { factory, primaryKey, oneOf, nullable } from '@mswjs/data'
 import { identity } from '../../src/utils/identity'
 
 test('creates a new entity', () => {
@@ -44,6 +44,29 @@ test('creates a new entity with an array property', () => {
   })
   expect(exactUser).toHaveProperty('id', 'abc-123')
   expect(exactUser).toHaveProperty('arrayProp', [1, 2, 3])
+})
+
+test('creates a new entity with nullable properties', () => {
+  const db = factory({
+    user: {
+      id: primaryKey(datatype.uuid),
+      name: nullable(name.findName),
+      age: nullable<number>(() => null),
+      address: {
+        street: String,
+        number: nullable<number>(() => null),
+      },
+    },
+  })
+
+  const user = db.user.create({
+    id: 'abc-123',
+    name: null,
+  })
+
+  expect(user).toHaveProperty('name', null)
+  expect(user).toHaveProperty('age', null)
+  expect(user.address).toHaveProperty('number', null)
 })
 
 test('supports nested objects in the model definition', () => {

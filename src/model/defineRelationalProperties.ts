@@ -41,6 +41,8 @@ export function defineRelationalProperties(
 
     if (references) {
       relation.resolveWith(entity, references)
+    } else if (relation.nullable) {
+      relation.resolveWith(entity, null)
     }
   }
 }
