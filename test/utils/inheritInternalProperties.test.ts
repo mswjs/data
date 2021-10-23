@@ -30,7 +30,7 @@ it('throws an exception given a corrupted source entity', () => {
   expect(() =>
     inheritInternalProperties(
       { firstName: 'John' },
-      // @ts-expect-error
+      // @ts-expect-error Intentionally corrupt entity.
       { id: 'abc-123' },
     ),
   ).toThrow(
@@ -42,7 +42,7 @@ it('throws an exception given a corrupted source entity', () => {
       {
         firstName: 'John',
       },
-      // @ts-expect-error
+      // @ts-expect-error Intentionally corrupt entity.
       {
         [ENTITY_TYPE]: 'user',
         id: 'abc-123',

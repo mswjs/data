@@ -39,8 +39,12 @@ describe('getResponseStatusByErrorType', () => {
 
   it('returns 500 for any other operation error', () => {
     const unknownError = new OperationError('UNKNOWN')
-    // @ts-expect-error
-    expect(getResponseStatusByErrorType(unknownError)).toEqual(500)
+    expect(
+      getResponseStatusByErrorType(
+        // @ts-expect-error Runtime unknown error instance.
+        unknownError,
+      ),
+    ).toEqual(500)
   })
 })
 
