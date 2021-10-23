@@ -38,7 +38,8 @@ describe('getResponseStatusByErrorType', () => {
   })
 
   it('returns 500 for any other operation error', () => {
-    const unknownError = new OperationError('UNKNOWN' as any)
+    const unknownError = new OperationError('UNKNOWN')
+    // @ts-expect-error
     expect(getResponseStatusByErrorType(unknownError)).toEqual(500)
   })
 })
@@ -48,7 +49,12 @@ describe('withErrors', () => {
     const handler = withErrors((req, res, ctx) => {
       return res(ctx.text('ok'))
     })
-    const result = await handler({} as any, response, restContext)
+    const result = await handler(
+      // @ts-expect-error
+      {},
+      response,
+      restContext,
+    )
 
     expect(result).toHaveProperty('status', 200)
     expect(result).toHaveProperty('body', 'ok')
@@ -58,7 +64,12 @@ describe('withErrors', () => {
     const handler = withErrors(() => {
       throw new OperationError(OperationErrorType.EntityNotFound, 'Not found')
     })
-    const result = await handler({} as any, response, restContext)
+    const result = await handler(
+      // @ts-expect-error
+      {},
+      response,
+      restContext,
+    )
 
     expect(result).toHaveProperty('status', 404)
     expect(result).toHaveProperty(
@@ -74,7 +85,12 @@ describe('withErrors', () => {
         'Duplicate key',
       )
     })
-    const result = await handler({} as any, response, restContext)
+    const result = await handler(
+      // @ts-expect-error
+      {},
+      response,
+      restContext,
+    )
 
     expect(result).toHaveProperty('status', 409)
     expect(result).toHaveProperty(
@@ -87,7 +103,12 @@ describe('withErrors', () => {
     const handler = withErrors(() => {
       throw new Error('Arbitrary error')
     })
-    const result = await handler({} as any, response, restContext)
+    const result = await handler(
+      // @ts-expect-error
+      {},
+      response,
+      restContext,
+    )
 
     expect(result).toHaveProperty('status', 500)
     expect(result).toHaveProperty(

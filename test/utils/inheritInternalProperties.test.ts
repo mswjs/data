@@ -28,7 +28,11 @@ it('inherits internal properties from the given entity', () => {
 
 it('throws an exception given a corrupted source entity', () => {
   expect(() =>
-    inheritInternalProperties({ firstName: 'John' }, { id: 'abc-123' } as any),
+    inheritInternalProperties(
+      { firstName: 'John' },
+      // @ts-expect-error
+      { id: 'abc-123' },
+    ),
   ).toThrow(
     'Failed to inherit internal properties from ({"id":"abc-123"}) to ({"firstName":"John"}): provided source entity has no entity type specified.',
   )
@@ -38,10 +42,11 @@ it('throws an exception given a corrupted source entity', () => {
       {
         firstName: 'John',
       },
+      // @ts-expect-error
       {
         [ENTITY_TYPE]: 'user',
         id: 'abc-123',
-      } as any,
+      },
     ),
   ).toThrow(
     'Failed to inherit internal properties from ({"id":"abc-123"}) to ({"firstName":"John"}): provided source entity has no primary key specified.',
