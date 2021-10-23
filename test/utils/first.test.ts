@@ -13,6 +13,16 @@ test('returns null given an empty array', () => {
 })
 
 test('returns null given a falsy value', () => {
-  expect(first(null as any)).toBeNull()
-  expect(first(undefined as any)).toBeNull()
+  expect(
+    first(
+      // @ts-expect-error Runtime null value.
+      null,
+    ),
+  ).toBeNull()
+  expect(
+    first(
+      // @ts-expect-error Runtime undefined value.
+      undefined,
+    ),
+  ).toBeNull()
 })
