@@ -35,8 +35,8 @@ test('generates a graphql schema', () => {
       notEquals: ID
       contains: ID
       notContains: ID
-      in: ID
-      notIn: ID
+      in: [ID]
+      notIn: [ID]
     }
 
     input StringQueryType {
@@ -44,21 +44,21 @@ test('generates a graphql schema', () => {
       notEquals: String
       contains: String
       notContains: String
-      in: String
-      notIn: String
+      in: [String]
+      notIn: [String]
     }
 
     input IntQueryType {
       equals: Int
       notEquals: Int
-      between: Int
-      notBetween: Int
+      between: [Int]
+      notBetween: [Int]
       gt: Int
       gte: Int
       lt: Int
       lte: Int
-      in: Int
-      notIn: Int
+      in: [Int]
+      notIn: [Int]
     }
 
     type Mutation {
