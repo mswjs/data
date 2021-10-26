@@ -26,4 +26,10 @@ export const numberComparators: QueryToComparator<NumberQuery> = {
   lte(expected, actual) {
     return actual <= expected
   },
+  in(expected, actual) {
+    return expected.includes(actual)
+  },
+  notIn(expected, actual) {
+    return !numberComparators.in(expected, actual)
+  },
 }

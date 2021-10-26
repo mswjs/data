@@ -57,6 +57,8 @@ test('generates a graphql schema', () => {
       gte: Int
       lt: Int
       lte: Int
+      in: Int
+      notIn: Int
     }
 
     type Mutation {
