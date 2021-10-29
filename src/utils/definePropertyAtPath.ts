@@ -13,17 +13,16 @@ import get from 'lodash/get'
  */
 export function definePropertyAtPath<AttributesType extends PropertyDescriptor>(
   target: Record<string, unknown>,
-  propertyPath: string,
+  propertyPath: string[],
   attributes: AttributesType,
 ) {
-  const segments = propertyPath.split('.')
-  const propertyName = segments[segments.length - 1]
-  const parentPath = segments.slice(0, -1).join('.')
+  const propertyName = propertyPath[propertyPath.length - 1]
+  const parentPath = propertyPath.slice(0, -1)
 
-  if (parentPath && !has(target, parentPath)) {
+  if (parentPath.length && !has(target, parentPath)) {
     set(target, parentPath, {})
   }
 
-  const parent = parentPath ? get(target, parentPath) : target
+  const parent = parentPath.length ? get(target, parentPath) : target
   Object.defineProperty(parent, propertyName, attributes)
 }

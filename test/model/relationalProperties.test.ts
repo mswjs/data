@@ -2,7 +2,7 @@ import { oneOf, primaryKey } from '../../src'
 import {
   Relation,
   RelationKind,
-  RelationsMap,
+  RelationsList,
 } from '../../src/relations/Relation'
 import { Database } from '../../src/db/Database'
 import { ENTITY_TYPE, ModelDictionary, PRIMARY_KEY } from '../../src/glossary'
@@ -30,12 +30,15 @@ it('marks relational properties as enumerable', () => {
     name: 'Test User',
   })
 
-  const relations: RelationsMap = {
-    author: new Relation({
-      to: 'user',
-      kind: RelationKind.OneOf,
-    }),
-  }
+  const relations: RelationsList = [
+    {
+      path: ['author'],
+      relation: new Relation({
+        to: 'user',
+        kind: RelationKind.OneOf,
+      }),
+    },
+  ]
 
   const post = {
     [ENTITY_TYPE]: 'post',

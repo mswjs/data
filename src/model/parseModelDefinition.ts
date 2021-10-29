@@ -8,14 +8,14 @@ import {
 } from '../glossary'
 import { PrimaryKey } from '../primaryKey'
 import { isObject } from '../utils/isObject'
-import { Relation, RelationsMap } from '../relations/Relation'
+import { Relation, RelationsList } from '../relations/Relation'
 
 const log = debug('parseModelDefinition')
 
 export interface ParsedModelDefinition {
   primaryKey: PrimaryKeyType
-  properties: string[]
-  relations: RelationsMap
+  properties: Array<string[]>
+  relations: RelationsList
 }
 
 /**
@@ -25,11 +25,11 @@ function deepParseModelDefinition<Dictionary extends ModelDictionary>(
   dictionary: Dictionary,
   modelName: string,
   definition: ModelDefinition,
-  parentPath?: string,
+  parentPath?: string[],
   result: ParsedModelDefinition = {
     primaryKey: undefined!,
     properties: [],
-    relations: {},
+    relations: [],
   },
 ) {
   if (parentPath) {
@@ -43,8 +43,8 @@ function deepParseModelDefinition<Dictionary extends ModelDictionary>(
 
   for (const [propertyName, value] of Object.entries(definition)) {
     const propertyPath = parentPath
-      ? `${parentPath}.${propertyName}`
-      : propertyName
+      ? [...parentPath, propertyName]
+      : [propertyName]
 
     // Primary key.
     if (value instanceof PrimaryKey) {
@@ -59,12 +59,12 @@ function deepParseModelDefinition<Dictionary extends ModelDictionary>(
       invariant(
         !parentPath,
         'Failed to parse a model definition for "%s" property of "%s": cannot have a primary key in a nested object.',
-        parentPath,
+        parentPath?.join('.'),
         modelName,
       )
 
       result.primaryKey = propertyName
-      result.properties.push(propertyName)
+      result.properties.push([propertyName])
 
       continue
     }
@@ -72,7 +72,7 @@ function deepParseModelDefinition<Dictionary extends ModelDictionary>(
     // Relations.
     if (value instanceof Relation) {
       // Store the relations in a separate object.
-      result.relations[propertyPath] = value
+      result.relations.push({ path: propertyPath, relation: value })
       continue
     }
 
@@ -102,7 +102,7 @@ export function parseModelDefinition<Dictionary extends ModelDictionary>(
   definition: ModelDefinition,
 ): ParsedModelDefinition {
   log('parsing model definition for "%s" entity', modelName, definition)
-  const result = deepParseModelDefinition(dictionary, modelName, definition, '')
+  const result = deepParseModelDefinition(dictionary, modelName, definition)
 
   invariant(
     result.primaryKey,

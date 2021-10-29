@@ -17,8 +17,8 @@ it('parses a plain model definition', () => {
 
   expect(result).toEqual({
     primaryKey: 'id',
-    properties: ['id', 'firstName'],
-    relations: {},
+    properties: [['id'], ['firstName']],
+    relations: [],
   } as ParsedModelDefinition)
 })
 
@@ -41,20 +41,26 @@ it('parses a model definition with relations', () => {
 
   expect(result).toEqual({
     primaryKey: 'id',
-    properties: ['id', 'firstName'],
-    relations: {
-      country: new Relation({
-        to: 'country',
-        kind: RelationKind.OneOf,
-        attributes: {
-          unique: true,
-        },
-      }),
-      posts: new Relation({
-        to: 'post',
-        kind: RelationKind.ManyOf,
-      }),
-    },
+    properties: [['id'], ['firstName']],
+    relations: [
+      {
+        path: ['country'],
+        relation: new Relation({
+          to: 'country',
+          kind: RelationKind.OneOf,
+          attributes: {
+            unique: true,
+          },
+        }),
+      },
+      {
+        path: ['posts'],
+        relation: new Relation({
+          to: 'post',
+          kind: RelationKind.ManyOf,
+        }),
+      },
+    ],
   } as ParsedModelDefinition)
 })
 
@@ -85,20 +91,30 @@ it('parses a model definition with nested objects', () => {
 
   expect(result).toEqual({
     primaryKey: 'id',
-    properties: ['id', 'address.billing.street', 'address.billing.houseNumber'],
-    relations: {
-      'address.billing.country': new Relation({
-        to: 'country',
-        kind: RelationKind.OneOf,
-      }),
-      'activity.posts': new Relation({
-        to: 'post',
-        kind: RelationKind.ManyOf,
-        attributes: {
-          unique: true,
-        },
-      }),
-    },
+    properties: [
+      ['id'],
+      ['address', 'billing', 'street'],
+      ['address', 'billing', 'houseNumber'],
+    ],
+    relations: [
+      {
+        path: ['address', 'billing', 'country'],
+        relation: new Relation({
+          to: 'country',
+          kind: RelationKind.OneOf,
+        }),
+      },
+      {
+        path: ['activity', 'posts'],
+        relation: new Relation({
+          to: 'post',
+          kind: RelationKind.ManyOf,
+          attributes: {
+            unique: true,
+          },
+        }),
+      },
+    ],
   } as ParsedModelDefinition)
 })
 
