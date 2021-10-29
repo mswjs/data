@@ -162,3 +162,31 @@ test('queries entities that are younger or equal a number', () => {
   const names = users.map((user) => user.firstName)
   expect(names).toEqual(['John', 'Alice'])
 })
+
+test('queries entities where property is not contained into the array', () => {
+  const db = setup()
+
+  const users = db.user.findMany({
+    where: {
+      age: {
+        notIn: [16, 24],
+      },
+    },
+  })
+  const names = users.map((user) => user.firstName)
+  expect(names).toEqual(['Kate'])
+})
+
+test('queries entities where property is contained into the array', () => {
+  const db = setup()
+
+  const users = db.user.findMany({
+    where: {
+      age: {
+        in: [16, 24],
+      },
+    },
+  })
+  const names = users.map((user) => user.firstName)
+  expect(names).toEqual(['John', 'Alice'])
+})

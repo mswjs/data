@@ -121,6 +121,8 @@ export interface NumberQuery {
   gte: number
   lt: number
   lte: number
+  in: number[]
+  notIn: number[]
 }
 
 export interface BooleanQuery {
