@@ -546,6 +546,8 @@ This library supports querying of the seeded data similar to how one would query
 - `lte`
 - `between`
 - `notBetween`
+- `in`
+- `notIn`
 
 #### Boolean operators
 
