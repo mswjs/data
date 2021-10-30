@@ -9,7 +9,7 @@ import {
 } from '../glossary'
 import { GetQueryFor, QuerySelectorWhere } from '../query/queryTypes'
 import { OperationErrorType, OperationError } from '../errors/OperationError'
-import { findPrimaryKey } from '../utils/findPrimaryKey'
+import { findPrimaryKey, findPrimaryKeyValue } from '../utils/findPrimaryKey'
 
 enum HTTPErrorType {
   BadRequest,
@@ -126,6 +126,7 @@ export function generateRestHandlers<
   baseUrl: string = '',
 ) {
   const primaryKey = findPrimaryKey(modelDefinition)!
+  const primaryKeyValue = findPrimaryKeyValue(modelDefinition)!
   const modelPath = pluralize(modelName)
   const buildUrl = createUrlBuilder(baseUrl)
 
@@ -159,7 +160,7 @@ export function generateRestHandlers<
           const id = req.params[primaryKey]
           const where: WeakQuerySelectorWhere<typeof primaryKey> = {
             [primaryKey]: {
-              equals: id,
+              equals: typeof primaryKeyValue === 'number' ? +id : id as any,
             },
           }
           const entity = model.findFirst({
@@ -185,7 +186,7 @@ export function generateRestHandlers<
           const id = req.params[primaryKey]
           const where: WeakQuerySelectorWhere<typeof primaryKey> = {
             [primaryKey]: {
-              equals: id,
+              equals: typeof primaryKeyValue === 'number' ? +id : id as any,
             },
           }
           const updatedEntity = model.update({
@@ -205,7 +206,7 @@ export function generateRestHandlers<
           const id = req.params[primaryKey]
           const where: WeakQuerySelectorWhere<typeof primaryKey> = {
             [primaryKey]: {
-              equals: id,
+              equals: typeof primaryKeyValue === 'number' ? +id : id as any,
             },
           }
           const deletedEntity = model.delete({
