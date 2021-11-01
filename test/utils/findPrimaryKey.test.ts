@@ -1,5 +1,5 @@
 import { primaryKey } from '../../src'
-import { findPrimaryKey, findPrimaryKeyValue } from '../../src/utils/findPrimaryKey'
+import { findPrimaryKey } from '../../src/utils/findPrimaryKey'
 
 it('returns the primary key property name of the model definition', () => {
   const result = findPrimaryKey({
@@ -24,18 +24,4 @@ it('returns undefined if the model definition contains property-compatible objec
 it('returns undefined if the model definition has no primary key', () => {
   const result = findPrimaryKey({})
   expect(result).toBeUndefined()
-})
-
-it('returns the primary key property value of the model definition - string', () => {
-  const result = findPrimaryKeyValue({
-    id: primaryKey(String),
-  })
-  expect(result).toEqual('')
-})
-
-it('returns the primary key property value of the model definition - number', () => {
-  const result = findPrimaryKeyValue({
-    id: primaryKey(Number),
-  })
-  expect(result).toEqual(0)
 })

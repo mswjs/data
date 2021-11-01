@@ -9,7 +9,8 @@ import {
 } from '../glossary'
 import { GetQueryFor, QuerySelectorWhere } from '../query/queryTypes'
 import { OperationErrorType, OperationError } from '../errors/OperationError'
-import { findPrimaryKey, findPrimaryKeyValue } from '../utils/findPrimaryKey'
+import { findPrimaryKey } from '../utils/findPrimaryKey'
+import { PrimaryKey } from '../primaryKey'
 
 enum HTTPErrorType {
   BadRequest,
@@ -126,9 +127,14 @@ export function generateRestHandlers<
   baseUrl: string = '',
 ) {
   const primaryKey = findPrimaryKey(modelDefinition)!
-  const primaryKeyValue = findPrimaryKeyValue(modelDefinition)!
+  const primaryKeyValue = (modelDefinition[primaryKey] as PrimaryKey).getValue() as PrimaryKeyType
   const modelPath = pluralize(modelName)
   const buildUrl = createUrlBuilder(baseUrl)
+
+  function extractPrimaryKey(params: Record<string, string>): PrimaryKeyType {
+    const raw = params[primaryKey]
+    return isNaN(primaryKeyValue as any) ? raw : Number(raw)
+  }
 
   return [
     rest.get(
@@ -157,10 +163,10 @@ export function generateRestHandlers<
       buildUrl(`${modelPath}/:${primaryKey}`),
       withErrors<Entity<Dictionary, ModelName>, RequestParams<PrimaryKeyType>>(
         (req, res, ctx) => {
-          const id = req.params[primaryKey]
-          const where: WeakQuerySelectorWhere<typeof primaryKey> = {
+          const id = extractPrimaryKey(req.params)
+          const where: WeakQuerySelectorWhere<PrimaryKeyType> = {
             [primaryKey]: {
-              equals: typeof primaryKeyValue === 'number' ? +id : id as any,
+              equals: id as any,
             },
           }
           const entity = model.findFirst({
@@ -183,10 +189,10 @@ export function generateRestHandlers<
       buildUrl(`${modelPath}/:${primaryKey}`),
       withErrors<Entity<Dictionary, ModelName>, RequestParams<PrimaryKeyType>>(
         (req, res, ctx) => {
-          const id = req.params[primaryKey]
-          const where: WeakQuerySelectorWhere<typeof primaryKey> = {
+          const id = extractPrimaryKey(req.params)
+          const where: WeakQuerySelectorWhere<PrimaryKeyType> = {
             [primaryKey]: {
-              equals: typeof primaryKeyValue === 'number' ? +id : id as any,
+              equals: id as any,
             },
           }
           const updatedEntity = model.update({
@@ -203,10 +209,10 @@ export function generateRestHandlers<
       buildUrl(`${modelPath}/:${primaryKey}`),
       withErrors<Entity<Dictionary, ModelName>, RequestParams<PrimaryKeyType>>(
         (req, res, ctx) => {
-          const id = req.params[primaryKey]
-          const where: WeakQuerySelectorWhere<typeof primaryKey> = {
+          const id = extractPrimaryKey(req.params)
+          const where: WeakQuerySelectorWhere<PrimaryKeyType> = {
             [primaryKey]: {
-              equals: typeof primaryKeyValue === 'number' ? +id : id as any,
+              equals: id as any,
             },
           }
           const deletedEntity = model.delete({
