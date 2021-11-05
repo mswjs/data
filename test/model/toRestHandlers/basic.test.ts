@@ -1,17 +1,12 @@
 import fetch from 'node-fetch'
-import { name, datatype, lorem } from 'faker'
 import { setupServer } from 'msw/node'
 import { factory, drop, primaryKey } from '@mswjs/data'
 
 const db = factory({
   user: {
-    id: primaryKey(datatype.uuid),
-    firstName: name.firstName,
-    lastName: name.lastName,
-  },
-  todo: {
-    id: primaryKey(datatype.number),
-    title: lorem.sentence,
+    id: primaryKey(String),
+    firstName: String,
+    lastName: String,
   },
 })
 
@@ -46,6 +41,7 @@ it('generates CRUD request handlers for the model', () => {
 describe('GET /users', () => {
   it('handles a GET request to get all entities', async () => {
     server.use(...db.user.toHandlers('rest', 'http://localhost'))
+
     db.user.create({
       id: 'abc-123',
       firstName: 'John',
@@ -77,6 +73,7 @@ describe('GET /users', () => {
 
   it('returns offset paginated entities', async () => {
     server.use(...db.user.toHandlers('rest', 'http://localhost'))
+
     db.user.create({
       id: 'abc-123',
       firstName: 'John',
@@ -117,6 +114,7 @@ describe('GET /users', () => {
 
   it('returns offset paginated entities without an explicit "skip" parameter', async () => {
     server.use(...db.user.toHandlers('rest', 'http://localhost'))
+
     db.user.create({
       id: 'abc-123',
       firstName: 'John',
@@ -156,6 +154,7 @@ describe('GET /users', () => {
 
   it('returns offset paginated entities with the "skip" parameter set to 0', async () => {
     server.use(...db.user.toHandlers('rest', 'http://localhost'))
+
     db.user.create({
       id: 'abc-123',
       firstName: 'John',
@@ -195,6 +194,7 @@ describe('GET /users', () => {
 
   it('returns cursor paginated entities', async () => {
     server.use(...db.user.toHandlers('rest', 'http://localhost'))
+
     db.user.create({
       id: 'abc-123',
       firstName: 'John',
@@ -235,6 +235,7 @@ describe('GET /users', () => {
 
   it('returns cursor paginated entities without an explicit "take" parameter', async () => {
     server.use(...db.user.toHandlers('rest', 'http://localhost'))
+
     db.user.create({
       id: 'abc-123',
       firstName: 'John',
@@ -280,6 +281,7 @@ describe('GET /users', () => {
 
   it('return filtered entities', async () => {
     server.use(...db.user.toHandlers('rest', 'http://localhost'))
+
     db.user.create({
       id: 'abc-123',
       firstName: 'John',
@@ -311,6 +313,7 @@ describe('GET /users', () => {
 
   it('return all entities when wrong filter param is provided', async () => {
     server.use(...db.user.toHandlers('rest', 'http://localhost'))
+
     db.user.create({
       id: 'abc-123',
       firstName: 'John',
@@ -335,6 +338,7 @@ describe('GET /users', () => {
 describe('GET /users/:id', () => {
   it('handles a GET request to get a single entity', async () => {
     server.use(...db.user.toHandlers('rest', 'http://localhost'))
+
     db.user.create({
       id: 'abc-123',
       firstName: 'John',
@@ -359,6 +363,7 @@ describe('GET /users/:id', () => {
 
   it('returns a 404 response when getting a non-existing entity', async () => {
     server.use(...db.user.toHandlers('rest', 'http://localhost'))
+
     db.user.create({
       id: 'abc-123',
       firstName: 'John',
@@ -403,6 +408,7 @@ describe('POST /users', () => {
 
   it('returns a 409 response when creating a user with the same id', async () => {
     server.use(...db.user.toHandlers('rest', 'http://localhost'))
+
     db.user.create({
       id: 'abc-123',
     })
@@ -430,6 +436,7 @@ describe('POST /users', () => {
 describe('PUT /users/:id', () => {
   it('handles a PUT request to update an entity', async () => {
     server.use(...db.user.toHandlers('rest', 'http://localhost'))
+
     db.user.create({
       id: 'abc-123',
       firstName: 'John',
@@ -478,6 +485,7 @@ describe('PUT /users/:id', () => {
 
   it('returns a 409 response when updating an entity with primary key of another entity', async () => {
     server.use(...db.user.toHandlers('rest', 'http://localhost'))
+
     db.user.create({
       id: 'abc-123',
       firstName: 'John',
@@ -513,6 +521,7 @@ describe('PUT /users/:id', () => {
 describe('DELETE /users/:id', () => {
   it('handles a DELETE request to delete an entity', async () => {
     server.use(...db.user.toHandlers('rest', 'http://localhost'))
+
     db.user.create({
       id: 'abc-123',
       firstName: 'John',
@@ -559,173 +568,6 @@ describe('DELETE /users/:id', () => {
     expect(json).toEqual({
       message:
         'Failed to execute "delete" on the "user" model: no entity found matching the query "{"id":{"equals":"def-456"}}".',
-    })
-  })
-})
-
-describe('GET /todos/:id', () => {
-  it('handles a GET request to get a single entity', async () => {
-    server.use(...db.todo.toHandlers('rest', 'http://localhost'))
-    db.todo.create({
-      id: 123,
-      title: 'Todo 1',
-    })
-    db.todo.create({
-      id: 456,
-      title: 'Todo 2',
-    })
-
-    const res = await fetch('http://localhost/todos/123')
-    const todo = await res.json()
-
-    expect(res.status).toEqual(200)
-    expect(todo).toEqual({
-      id: 123,
-      title: 'Todo 1',
-    })
-  })
-
-  it('returns a 404 response when getting a non-existing entity', async () => {
-    server.use(...db.todo.toHandlers('rest', 'http://localhost'))
-    db.todo.create({
-      id: 123,
-      title: 'Todo 1',
-    })
-
-    const res = await fetch('http://localhost/todos/456')
-    const json = await res.json()
-
-    expect(res.status).toEqual(404)
-    expect(json).toEqual({
-      message:
-        'Failed to execute "findFirst" on the "todo" model: no entity found matching the query "{"id":{"equals":456}}".',
-    })
-  })
-})
-
-describe('PUT /todos/:id', () => {
-  it('handles a PUT request to update an entity', async () => {
-    server.use(...db.todo.toHandlers('rest', 'http://localhost'))
-    db.todo.create({
-      id: 123,
-      title: 'Todo 1',
-    })
-
-    const res = await fetch('http://localhost/todos/123', {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        title: 'Todo 1 updated',
-      }),
-    })
-    const todo = await res.json()
-
-    expect(res.status).toEqual(200)
-    expect(todo).toEqual({
-      id: 123,
-      title: 'Todo 1 updated',
-    })
-  })
-
-  it('returns a 404 response when updating a non-existing entity', async () => {
-    server.use(...db.todo.toHandlers('rest', 'http://localhost'))
-
-    const res = await fetch('http://localhost/todos/123', {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        title: 'Todo 1 updated',
-      }),
-    })
-    const json = await res.json()
-
-    expect(res.status).toEqual(404)
-    expect(json).toEqual({
-      message:
-        'Failed to execute "update" on the "todo" model: no entity found matching the query "{"id":{"equals":123}}".',
-    })
-  })
-
-  it('returns a 409 response when updating an entity with primary key of another entity', async () => {
-    server.use(...db.todo.toHandlers('rest', 'http://localhost'))
-    db.todo.create({
-      id: 123,
-      title: 'Todo 1',
-    })
-    db.todo.create({
-      id: 456,
-      title: 'Todo 2',
-    })
-
-    const res = await fetch('http://localhost/todos/123', {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        id: 456,
-        title: 'Todo 1 updated',
-      }),
-    })
-    const json = await res.json()
-
-    expect(res.status).toEqual(409)
-    expect(json).toEqual({
-      message:
-        'Failed to execute "update" on the "todo" model: the entity with a primary key "456" ("id") already exists.',
-    })
-  })
-})
-
-describe('DELETE /todos/:id', () => {
-  it('handles a DELETE request to delete an entity', async () => {
-    server.use(...db.todo.toHandlers('rest', 'http://localhost'))
-    db.todo.create({
-      id: 123,
-      title: 'Todo 1',
-    })
-    db.todo.create({
-      id: 456,
-      title: 'Todo 2',
-    })
-
-    const res = await fetch('http://localhost/todos/456', {
-      method: 'DELETE',
-    })
-    const todo = await res.json()
-    expect(res.status).toEqual(200)
-    expect(todo).toEqual({
-      id: 456,
-      title: 'Todo 2',
-    })
-
-    const alltodos = await fetch('http://localhost/todos').then((res) =>
-      res.json(),
-    )
-    expect(alltodos).toEqual([
-      {
-        id: 123,
-        title: 'Todo 1',
-      },
-    ])
-  })
-
-  it('returns a 404 response when deleting a non-existing entity', async () => {
-    server.use(...db.todo.toHandlers('rest', 'http://localhost'))
-
-    const res = await fetch('http://localhost/todos/456', {
-      method: 'DELETE',
-    })
-    const json = await res.json()
-
-    expect(res.status).toEqual(404)
-    expect(json).toEqual({
-      message:
-        'Failed to execute "delete" on the "todo" model: no entity found matching the query "{"id":{"equals":456}}".',
     })
   })
 })
