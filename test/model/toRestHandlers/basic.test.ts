@@ -1,13 +1,12 @@
 import fetch from 'node-fetch'
-import { name, datatype } from 'faker'
 import { setupServer } from 'msw/node'
 import { factory, drop, primaryKey } from '@mswjs/data'
 
 const db = factory({
   user: {
-    id: primaryKey(datatype.uuid),
-    firstName: name.firstName,
-    lastName: name.lastName,
+    id: primaryKey(String),
+    firstName: String,
+    lastName: String,
   },
 })
 
@@ -42,6 +41,7 @@ it('generates CRUD request handlers for the model', () => {
 describe('GET /users', () => {
   it('handles a GET request to get all entities', async () => {
     server.use(...db.user.toHandlers('rest', 'http://localhost'))
+
     db.user.create({
       id: 'abc-123',
       firstName: 'John',
@@ -73,6 +73,7 @@ describe('GET /users', () => {
 
   it('returns offset paginated entities', async () => {
     server.use(...db.user.toHandlers('rest', 'http://localhost'))
+
     db.user.create({
       id: 'abc-123',
       firstName: 'John',
@@ -113,6 +114,7 @@ describe('GET /users', () => {
 
   it('returns offset paginated entities without an explicit "skip" parameter', async () => {
     server.use(...db.user.toHandlers('rest', 'http://localhost'))
+
     db.user.create({
       id: 'abc-123',
       firstName: 'John',
@@ -152,6 +154,7 @@ describe('GET /users', () => {
 
   it('returns offset paginated entities with the "skip" parameter set to 0', async () => {
     server.use(...db.user.toHandlers('rest', 'http://localhost'))
+
     db.user.create({
       id: 'abc-123',
       firstName: 'John',
@@ -191,6 +194,7 @@ describe('GET /users', () => {
 
   it('returns cursor paginated entities', async () => {
     server.use(...db.user.toHandlers('rest', 'http://localhost'))
+
     db.user.create({
       id: 'abc-123',
       firstName: 'John',
@@ -231,6 +235,7 @@ describe('GET /users', () => {
 
   it('returns cursor paginated entities without an explicit "take" parameter', async () => {
     server.use(...db.user.toHandlers('rest', 'http://localhost'))
+
     db.user.create({
       id: 'abc-123',
       firstName: 'John',
@@ -276,6 +281,7 @@ describe('GET /users', () => {
 
   it('return filtered entities', async () => {
     server.use(...db.user.toHandlers('rest', 'http://localhost'))
+
     db.user.create({
       id: 'abc-123',
       firstName: 'John',
@@ -307,6 +313,7 @@ describe('GET /users', () => {
 
   it('return all entities when wrong filter param is provided', async () => {
     server.use(...db.user.toHandlers('rest', 'http://localhost'))
+
     db.user.create({
       id: 'abc-123',
       firstName: 'John',
@@ -331,6 +338,7 @@ describe('GET /users', () => {
 describe('GET /users/:id', () => {
   it('handles a GET request to get a single entity', async () => {
     server.use(...db.user.toHandlers('rest', 'http://localhost'))
+
     db.user.create({
       id: 'abc-123',
       firstName: 'John',
@@ -355,6 +363,7 @@ describe('GET /users/:id', () => {
 
   it('returns a 404 response when getting a non-existing entity', async () => {
     server.use(...db.user.toHandlers('rest', 'http://localhost'))
+
     db.user.create({
       id: 'abc-123',
       firstName: 'John',
@@ -399,6 +408,7 @@ describe('POST /users', () => {
 
   it('returns a 409 response when creating a user with the same id', async () => {
     server.use(...db.user.toHandlers('rest', 'http://localhost'))
+
     db.user.create({
       id: 'abc-123',
     })
@@ -426,6 +436,7 @@ describe('POST /users', () => {
 describe('PUT /users/:id', () => {
   it('handles a PUT request to update an entity', async () => {
     server.use(...db.user.toHandlers('rest', 'http://localhost'))
+
     db.user.create({
       id: 'abc-123',
       firstName: 'John',
@@ -474,6 +485,7 @@ describe('PUT /users/:id', () => {
 
   it('returns a 409 response when updating an entity with primary key of another entity', async () => {
     server.use(...db.user.toHandlers('rest', 'http://localhost'))
+
     db.user.create({
       id: 'abc-123',
       firstName: 'John',
@@ -509,6 +521,7 @@ describe('PUT /users/:id', () => {
 describe('DELETE /users/:id', () => {
   it('handles a DELETE request to delete an entity', async () => {
     server.use(...db.user.toHandlers('rest', 'http://localhost'))
+
     db.user.create({
       id: 'abc-123',
       firstName: 'John',
