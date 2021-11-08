@@ -67,7 +67,7 @@ export type ManyOf<ModelName extends KeyType> = Relation<
 >
 
 export type RelationsList = Array<{
-  path: string[]
+  propertyPath: string[]
   relation: Relation<any, any, any>
 }>
 

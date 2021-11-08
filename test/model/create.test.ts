@@ -149,16 +149,16 @@ test('uses value getters when creating an entity with nested arrays', () => {
   expect(exactUser.info).toHaveProperty('documents', [])
 })
 
-test('model with properties that contain dots in them and can be considered a path', () => {
+test('supports property names with dots in model definition', () => {
   const db = factory({
     user: {
       'employee.id': primaryKey(datatype.uuid),
     },
   })
 
-  const dotUser = db.user.create({
+  const user = db.user.create({
     'employee.id': 'abc-123',
   })
 
-  expect(dotUser).toHaveProperty(['employee.id'], 'abc-123')
+  expect(user).toHaveProperty(['employee.id'], 'abc-123')
 })

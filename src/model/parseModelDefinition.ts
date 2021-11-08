@@ -72,7 +72,7 @@ function deepParseModelDefinition<Dictionary extends ModelDictionary>(
     // Relations.
     if (value instanceof Relation) {
       // Store the relations in a separate object.
-      result.relations.push({ path: propertyPath, relation: value })
+      result.relations.push({ propertyPath, relation: value })
       continue
     }
 

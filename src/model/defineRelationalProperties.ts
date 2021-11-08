@@ -16,28 +16,28 @@ export function defineRelationalProperties(
 ): void {
   log('defining relational properties...', { entity, initialValues, relations })
 
-  for (const { path, relation } of relations) {
+  for (const { propertyPath, relation } of relations) {
     invariant(
       dictionary[relation.target.modelName],
       'Failed to define a "%s" relational property to "%s" on "%s": cannot find a model by the name "%s".',
       relation.kind,
-      path.join('.'),
+      propertyPath.join('.'),
       entity[ENTITY_TYPE],
       relation.target.modelName,
     )
 
     const references: Value<any, ModelDictionary> | undefined = get(
       initialValues,
-      path,
+      propertyPath,
     )
 
     log(
-      `setting relational property "${entity.__type}.${path.join('.')}" with references: %j`,
+      `setting relational property "${entity.__type}.${propertyPath.join('.')}" with references: %j`,
       relation,
       references,
     )
 
-    relation.apply(entity, path, dictionary, db)
+    relation.apply(entity, propertyPath, dictionary, db)
 
     if (references) {
       relation.resolveWith(entity, references)

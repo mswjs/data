@@ -44,7 +44,7 @@ it('parses a model definition with relations', () => {
     properties: [['id'], ['firstName']],
     relations: [
       {
-        path: ['country'],
+        propertyPath: ['country'],
         relation: new Relation({
           to: 'country',
           kind: RelationKind.OneOf,
@@ -54,7 +54,7 @@ it('parses a model definition with relations', () => {
         }),
       },
       {
-        path: ['posts'],
+        propertyPath: ['posts'],
         relation: new Relation({
           to: 'post',
           kind: RelationKind.ManyOf,
@@ -98,14 +98,14 @@ it('parses a model definition with nested objects', () => {
     ],
     relations: [
       {
-        path: ['address', 'billing', 'country'],
+        propertyPath: ['address', 'billing', 'country'],
         relation: new Relation({
           to: 'country',
           kind: RelationKind.OneOf,
         }),
       },
       {
-        path: ['activity', 'posts'],
+        propertyPath: ['activity', 'posts'],
         relation: new Relation({
           to: 'post',
           kind: RelationKind.ManyOf,

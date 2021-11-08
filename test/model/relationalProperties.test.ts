@@ -32,7 +32,7 @@ it('marks relational properties as enumerable', () => {
 
   const relations: RelationsList = [
     {
-      path: ['author'],
+      propertyPath: ['author'],
       relation: new Relation({
         to: 'user',
         kind: RelationKind.OneOf,
