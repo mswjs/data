@@ -32,7 +32,7 @@ export interface RelationAttributes {
 export interface RelationSource {
   modelName: string
   primaryKey: PrimaryKeyType
-  propertyPath: string
+  propertyPath: string[]
 }
 
 export interface RelationDefinition<
@@ -66,7 +66,10 @@ export type ManyOf<ModelName extends KeyType> = Relation<
   any
 >
 
-export type RelationsMap = Record<string, Relation<any, any, any>>
+export type RelationsList = Array<{
+  propertyPath: string[]
+  relation: Relation<any, any, any>
+}>
 
 const DEFAULT_RELATION_ATTRIBUTES: RelationAttributes = {
   unique: false,
@@ -118,7 +121,7 @@ export class Relation<
    */
   public apply(
     entity: Entity<any, any>,
-    propertyPath: string,
+    propertyPath: string[],
     dictionary: Dictionary,
     db: Database<Dictionary>,
   ) {

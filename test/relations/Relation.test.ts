@@ -67,7 +67,7 @@ it('applies a "ONE_OF" relation to an entity', () => {
   })
   const user = users.get('user-1')!
 
-  relation.apply(user, 'birthPlace', dictionary, db)
+  relation.apply(user, ['birthPlace'], dictionary, db)
 
   // When applied, relation is updated with the additional info.
   expect(relation.target.primaryKey).toEqual('code')
@@ -113,7 +113,7 @@ it('applies a "MANY_OF" relation to an entity', () => {
   db.getModel('post').get('post-1')!
   db.getModel('post').get('post-2')!
 
-  relation.apply(user, 'posts', dictionary, db)
+  relation.apply(user, ['posts'], dictionary, db)
 
   expect(relation.source.modelName).toEqual('user')
   expect(relation.source.primaryKey).toEqual('id')
@@ -144,7 +144,7 @@ it('throws an exception when resolving a relation with a non-existing reference'
   })
   const user = users.get('user-1')!
 
-  relation.apply(user, 'birthPlace', dictionary, db)
+  relation.apply(user, ['birthPlace'], dictionary, db)
 
   expect(() => {
     relation.resolveWith(user, { code: 'us' })
@@ -190,7 +190,7 @@ it('throws an exception when resolving a unique relation that references an alre
   })
 
   // First, apply a new relation to the first user.
-  relation.apply(firstUser, 'birthPlace', dictionary, db)
+  relation.apply(firstUser, ['birthPlace'], dictionary, db)
   relation.resolveWith(firstUser, { code: 'us' })
 
   // Then, apply the relation t othe second user
@@ -234,7 +234,7 @@ it('does not throw an exception when updating the relational reference to the sa
   const country = countries.get('us')
 
   // First, apply and resolve a new relation for the first user.
-  relation.apply(user, 'birthPlace', dictionary, db)
+  relation.apply(user, ['birthPlace'], dictionary, db)
   relation.resolveWith(user, { code: 'us' })
 
   // Update the relational reference to the same referenced country.

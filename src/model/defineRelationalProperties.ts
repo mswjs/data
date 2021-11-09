@@ -3,25 +3,25 @@ import get from 'lodash/get'
 import { invariant } from 'outvariant'
 import { Database } from '../db/Database'
 import { Entity, ENTITY_TYPE, ModelDictionary, Value } from '../glossary'
-import { RelationsMap } from '../relations/Relation'
+import { RelationsList } from '../relations/Relation'
 
 const log = debug('defineRelationalProperties')
 
 export function defineRelationalProperties(
   entity: Entity<any, any>,
   initialValues: Partial<Value<any, ModelDictionary>>,
-  relations: RelationsMap,
+  relations: RelationsList,
   dictionary: ModelDictionary,
   db: Database<any>,
 ): void {
   log('defining relational properties...', { entity, initialValues, relations })
 
-  for (const [propertyPath, relation] of Object.entries(relations)) {
+  for (const { propertyPath, relation } of relations) {
     invariant(
       dictionary[relation.target.modelName],
       'Failed to define a "%s" relational property to "%s" on "%s": cannot find a model by the name "%s".',
       relation.kind,
-      propertyPath,
+      propertyPath.join('.'),
       entity[ENTITY_TYPE],
       relation.target.modelName,
     )
@@ -32,7 +32,7 @@ export function defineRelationalProperties(
     )
 
     log(
-      `setting relational property "${entity.__type}.${propertyPath}" with references: %j`,
+      `setting relational property "${entity.__type}.${propertyPath.join('.')}" with references: %j`,
       relation,
       references,
     )
