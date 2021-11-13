@@ -323,7 +323,7 @@ test('supports sorting by both direct and relational properties in the paginated
     ],
   })
   const firstPageBooks = firstPage.map((book) => book.title)
-  const firstPageAuthors = firstPage.map((book) => book.author.firstName)
+  const firstPageAuthors = firstPage.map((book) => book.author?.firstName)
   expect(firstPageBooks).toEqual(['A', 'A'])
   expect(firstPageAuthors).toEqual(['John', 'Nelson'])
 })

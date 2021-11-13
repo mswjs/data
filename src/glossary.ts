@@ -199,13 +199,13 @@ export type Value<
     : // Extract value type from OneOf relations.
     Target[Key] extends OneOf<infer ModelName, infer Nullable>
     ? Nullable extends true
-      ? PublicEntity<Dictionary, ModelName> | null
-      : PublicEntity<Dictionary, ModelName>
+      ? PublicEntity<Dictionary, ModelName> | undefined | null
+      : PublicEntity<Dictionary, ModelName> | undefined
     : // Extract value type from ManyOf relations.
     Target[Key] extends ManyOf<infer ModelName, infer Nullable>
     ? Nullable extends true
-      ? PublicEntity<Dictionary, ModelName>[] | null
-      : PublicEntity<Dictionary, ModelName>[]
+      ? PublicEntity<Dictionary, ModelName>[] | undefined | null
+      : PublicEntity<Dictionary, ModelName>[] | undefined
     : // Account for primitive value getters because
     // native constructors (i.e. StringConstructor) satisfy
     // the "AnyObject" predicate below.

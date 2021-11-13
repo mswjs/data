@@ -131,7 +131,7 @@ test('supports updating a recursive one-to-many relation', () => {
   })!
 
   expect(updatedJohn.friends).toHaveLength(1)
-  expect(updatedJohn.friends[0]).toHaveProperty('firstName', 'Kate')
+  expect(updatedJohn.friends![0]).toHaveProperty('firstName', 'Kate')
 })
 
 test('supports updating a recursive nullable one-to-many relation', () => {
