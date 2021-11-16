@@ -26,9 +26,17 @@ export function defineRelationalProperties(
       relation.target.modelName,
     )
 
-    const references: Value<any, ModelDictionary> | undefined = get(
+    const references: Value<any, ModelDictionary> | null | undefined = get(
       initialValues,
       propertyPath,
+    )
+
+    invariant(
+      references !== null || relation.attributes.nullable,
+      'Failed to define a "%s" relational property to "%s" on "%s": a non-nullable relation cannot be instantiated with null. Use the "nullable" function when defining this relation to support nullable value.',
+      relation.kind,
+      propertyPath.join('.'),
+      entity[ENTITY_TYPE],
     )
 
     log(

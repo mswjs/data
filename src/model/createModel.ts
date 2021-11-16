@@ -1,4 +1,5 @@
 import { debug } from 'debug'
+import { invariant } from 'outvariant'
 import get from 'lodash/get'
 import set from 'lodash/set'
 import isFunction from 'lodash/isFunction'
@@ -75,6 +76,13 @@ export function createModel<
         set(properties, propertyName, value)
         return properties
       }
+
+      invariant(
+        initialValue !== null,
+        'Failed to create a "%s" entity: a non-nullable property "%s" cannot be instantiated with null. Use the "nullable" function when defining this property to support nullable value.',
+        modelName,
+        propertyName.join('.'),
+      )
 
       if (isModelValueType(initialValue)) {
         log(
