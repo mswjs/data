@@ -14,8 +14,8 @@ const db = factory({
     },
   },
   company: {
-    name: primaryKey(String)
-  }
+    name: primaryKey(String),
+  },
 })
 
 // @ts-expect-error Unknown model name.
@@ -30,6 +30,11 @@ db.user.create({
       country: 'us',
     },
   },
+})
+
+db.user.create({
+  // @ts-expect-error Non-nullable properties cannot be instantiated with null.
+  firstName: null,
 })
 
 db.user.create({
