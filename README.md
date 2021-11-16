@@ -337,7 +337,7 @@ db.user.toHandlers('graphql', 'https://example.com/graphql')
 
 ### Nullable properties
 
-You may use the `nullable` function to define properties that can be null:
+By default, all model properties are non-nullable. You can use the `nullable` function to mark a property as nullable:
 
 ```js
 import { factory, primaryKey, nullable } from '@mswjs/data'
@@ -345,19 +345,19 @@ import { factory, primaryKey, nullable } from '@mswjs/data'
 const db = factory({
   user: {
     id: primaryKey(String),
-    name: nullable(String),
+    firstName: String,
+    // "user.age" is a nullable property.
     age: nullable(Number),
   },
 })
 
-// age can now be set as null
 db.user.create({
   id: 'user-1',
-  name: 'John',
+  firstName: 'John',
+  // Nullable properties can be explicit null as the initial value.
   age: null,
 })
 
-// we can update nullable fields to null, or their underlying type later
 db.user.update({
   where: {
     id: {
@@ -365,13 +365,15 @@ db.user.update({
     },
   },
   data: {
-    age: 23,
-    name: null
+    // Nullable properties can be updated to null.
+    age: null,
   },
 })
 ```
 
-When using Typescript you can manually set the type of the property when it is
+> You can define [Nullable relationships](#nullable-relationships) in the same manner.
+
+When using Typescript, you can manually set the type of the property when it is
 not possible to infer it from the factory function, such as when you want the
 property to default to null:
 
@@ -399,7 +401,7 @@ const db = factory({
     address: {
       billing: {
         street: String,
-        city: nullable(String)
+        city: nullable(String),
       },
     },
   },
@@ -582,7 +584,7 @@ const karl = db.user.create({ invitation })
 #### Nullable relationships
 
 Both `oneOf` and `manyOf` relationships may be passed to `nullable` to allow
-setting the relation to null.
+instantiating and updating that relation to null.
 
 ```js
 import { factory, primaryKey, oneOf, nullable } from '@mswjs/data'
@@ -600,10 +602,10 @@ const db = factory({
 
 const invitation = db.invitation.create()
 
+// Nullable relationships are instantiated with null.
 const john = db.user.create({ invitation }) // john.friends === null
 const kate = db.user.create({ friends: [john] }) // kate.invitation === null
 
-// this makes it possible to update the relationships to null
 db.user.updateMany({
   where: {
     id: {
@@ -611,8 +613,9 @@ db.user.updateMany({
     },
   },
   data: {
+    // Nullable relationships can be updated to null.
     invitation: null,
-    friends: null
+    friends: null,
   },
 })
 ```
@@ -797,12 +800,12 @@ const db = factory({
   post: {
     id: primaryKey(String),
     title: String,
-    author: oneOf('user')
+    author: oneOf('user'),
   },
   user: {
     id: primaryKey(String),
-    firstName: String
-  }
+    firstName: String,
+  },
 })
 
 // Return all posts in the "Science" category
@@ -810,14 +813,14 @@ const db = factory({
 db.post.findMany({
   where: {
     category: {
-      equals: 'Science'
-    }
+      equals: 'Science',
+    },
   },
   orderBy: {
     author: {
-      firstName: 'asc'
-    }
-  }
+      firstName: 'asc',
+    },
+  },
 })
 ```
 
