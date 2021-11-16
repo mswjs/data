@@ -73,7 +73,7 @@ export function updateEntity(
           )
 
           invariant(
-            (value === null && propertyDefinition.nullable) ||
+            (value === null && propertyDefinition.attributes.nullable) ||
               isObject(value) ||
               Array.isArray(value),
             'Failed to update relational property "%s" on "%s": the next value must be an entity, a list of entities, or null if relation is nullable',

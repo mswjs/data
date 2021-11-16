@@ -32,7 +32,9 @@ export function defineRelationalProperties(
     )
 
     log(
-      `setting relational property "${entity.__type}.${propertyPath.join('.')}" with references: %j`,
+      `setting relational property "${entity.__type}.${propertyPath.join(
+        '.',
+      )}" with references: %j`,
       relation,
       references,
     )
@@ -41,7 +43,7 @@ export function defineRelationalProperties(
 
     if (references) {
       relation.resolveWith(entity, references)
-    } else if (relation.nullable) {
+    } else if (relation.attributes.nullable) {
       relation.resolveWith(entity, null)
     }
   }

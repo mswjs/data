@@ -26,6 +26,7 @@ export enum RelationKind {
 }
 
 export interface RelationAttributes {
+  nullable: boolean
   unique: boolean
 }
 
@@ -38,12 +39,11 @@ export interface RelationSource {
 export interface RelationDefinition<
   Kind extends RelationKind,
   ModelName extends KeyType,
-  Nullable extends boolean,
+  Attributes extends Partial<RelationAttributes>,
 > {
   to: ModelName
   kind: Kind
-  nullable?: Nullable
-  attributes?: Partial<RelationAttributes>
+  attributes?: Attributes
 }
 
 export type LazyRelation<
@@ -60,12 +60,12 @@ export type LazyRelation<
 export type OneOf<
   ModelName extends KeyType,
   Nullable extends boolean = false,
-> = Relation<RelationKind.OneOf, ModelName, any, Nullable>
+> = Relation<RelationKind.OneOf, ModelName, any, { nullable: Nullable }>
 
 export type ManyOf<
   ModelName extends KeyType,
   Nullable extends boolean = false,
-> = Relation<RelationKind.ManyOf, ModelName, any, Nullable>
+> = Relation<RelationKind.ManyOf, ModelName, any, { nullable: Nullable }>
 
 export type RelationsList = Array<{
   propertyPath: string[]
@@ -73,6 +73,7 @@ export type RelationsList = Array<{
 }>
 
 const DEFAULT_RELATION_ATTRIBUTES: RelationAttributes = {
+  nullable: false,
   unique: false,
 }
 
@@ -80,7 +81,7 @@ export class Relation<
   Kind extends RelationKind,
   ModelName extends KeyType,
   Dictionary extends ModelDictionary,
-  Nullable extends boolean,
+  Attributes extends Partial<RelationAttributes>,
   ReferenceType = Kind extends RelationKind.OneOf
     ? Value<Dictionary[ModelName], Dictionary>
     : Value<Dictionary[ModelName], Dictionary>[],
@@ -93,14 +94,11 @@ export class Relation<
     primaryKey: PrimaryKeyType
   }
 
-  // These readonly properties should never be changed to avoid errors
-  readonly nullable?: Nullable
-
   // These lazy properties are set after calling the ".apply()" method.
   private dictionary: Dictionary = null as any
   private db: Database<Dictionary> = null as any
 
-  constructor(definition: RelationDefinition<Kind, ModelName, Nullable>) {
+  constructor(definition: RelationDefinition<Kind, ModelName, Attributes>) {
     this.kind = definition.kind
     this.attributes = {
       ...DEFAULT_RELATION_ATTRIBUTES,
@@ -108,9 +106,9 @@ export class Relation<
     }
     this.target = {
       modelName: definition.to.toString(),
-      primaryKey: null as any,
+      // @ts-expect-error Null is an intermediate value.
+      primaryKey: null,
     }
-    this.nullable = definition.nullable
 
     log(
       'constructing a "%s" relation to "%s" with attributes: %o',
@@ -181,43 +179,22 @@ export class Relation<
     )
     log('entity of this relation:', entity)
 
+    // Support null as the next relation value for nullable relations.
     if (refs === null) {
       invariant(
-        this.nullable,
-        'Failed to resolve a "%s" relational property to "%s": only nullable relations can resolve with null. Use the "nullable" function when defining your relation',
+        this.attributes.nullable,
+        'Failed to resolve a "%s" relational property to "%s": only nullable relations can resolve with null. Use the "nullable" function when defining this relation to support nullable value.',
         this.kind,
         this.target.modelName,
       )
       log('this relation resolves with null')
 
-      return definePropertyAtPath(entity, this.source.propertyPath, {
-        // Mark the property as enumerable so it gets listed
-        // like a regular property on the entity.
-        enumerable: true,
-        // Mark the property as configurable so it could be re-defined
-        // when updating it during the entity update ("update"/"updateMany").
-        configurable: true,
-        get: () => {
-          log(
-            'GET "%s.%s" on "%s" ("%s")',
-            this.source.modelName,
-            this.source.propertyPath,
-            this.source.modelName,
-            entity[this.source.primaryKey],
-            this,
-          )
-
-          log(
-            'resolved "%s" relation at "%s.%s" ("%s") to null',
-            this.kind,
-            this.source.modelName,
-            this.source.propertyPath,
-            entity[this.source.primaryKey],
-          )
-
-          return null
-        },
+      // Override the relational property of the entity to return null.
+      this.setValueResolver(entity, () => {
+        return null
       })
+
+      return
     }
 
     invariant(
@@ -326,9 +303,38 @@ export class Relation<
       }
     }
 
+    this.setValueResolver(entity, () => {
+      const queryResult = referencesList.reduce<Entity<any, any>[]>(
+        (result, ref) => {
+          return result.concat(
+            executeQuery(
+              this.target.modelName,
+              this.target.primaryKey,
+              {
+                where: {
+                  [this.target.primaryKey]: {
+                    equals: ref[this.target.primaryKey],
+                  },
+                },
+              },
+              this.db,
+            ),
+          )
+        },
+        [],
+      )
+
+      return this.kind === RelationKind.OneOf ? first(queryResult) : queryResult
+    })
+  }
+
+  private setValueResolver(
+    entity: Entity<any, any>,
+    resolver: () => unknown,
+  ): void {
     definePropertyAtPath(entity, this.source.propertyPath, {
       // Mark the property as enumerable so it gets listed
-      // like a regular property on the entity.
+      // when iterating over the entity's properties.
       enumerable: true,
       // Mark the property as configurable so it could be re-defined
       // when updating it during the entity update ("update"/"updateMany").
@@ -342,27 +348,8 @@ export class Relation<
           entity[this.source.primaryKey],
           this,
         )
-        log('GET using referenced values', referencesList)
 
-        const queryResult = referencesList.reduce<Entity<any, any>[]>(
-          (result, ref) => {
-            return result.concat(
-              executeQuery(
-                this.target.modelName,
-                this.target.primaryKey,
-                {
-                  where: {
-                    [this.target.primaryKey]: {
-                      equals: ref[this.target.primaryKey],
-                    },
-                  },
-                },
-                this.db,
-              ),
-            )
-          },
-          [],
-        )
+        const nextValue = resolver()
 
         log(
           'resolved "%s" relation at "%s.%s" ("%s") to:',
@@ -370,12 +357,10 @@ export class Relation<
           this.source.modelName,
           this.source.propertyPath,
           entity[this.source.primaryKey],
-          queryResult,
+          nextValue,
         )
 
-        return this.kind === RelationKind.OneOf
-          ? first(queryResult)
-          : queryResult
+        return nextValue
       },
     })
   }

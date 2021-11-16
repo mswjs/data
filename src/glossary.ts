@@ -22,16 +22,16 @@ export type ModelDefinitionValue =
   | ModelValueTypeGetter
   | NullableProperty<any>
   | PrimaryKey<any>
-  | OneOf<any, any>
-  | ManyOf<any, any>
+  | OneOf<any, boolean>
+  | ManyOf<any, boolean>
   | NestedModelDefinition
 
 export type NestedModelDefinition = {
   [propertyName: string]:
     | ModelValueTypeGetter
     | NullableProperty<any>
-    | OneOf<any, any>
-    | ManyOf<any, any>
+    | OneOf<any, boolean>
+    | ManyOf<any, boolean>
     | NestedModelDefinition
 }
 
@@ -191,7 +191,7 @@ export type Value<
   Target extends AnyObject,
   Dictionary extends ModelDictionary,
 > = {
-  [Key in keyof Target]: Target[Key] extends PrimaryKey<any>
+  [Key in keyof Target]: Target[Key] extends PrimaryKey
     ? ReturnType<Target[Key]['getValue']>
     : // Extract underlying value type of nullable properties
     Target[Key] extends NullableProperty<any>

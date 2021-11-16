@@ -16,16 +16,20 @@ export function nullable<ValueType extends ModelValueType>(
   value: NullableGetter<ValueType>,
 ): NullableProperty<ValueType>
 
-export function nullable<ValueType extends Relation<any, any, any, false>>(
+export function nullable<
+  ValueType extends Relation<any, any, any, { nullable: false }>,
+>(
   value: ValueType,
-): ValueType extends Relation<infer Kind, infer Key, any, false>
+): ValueType extends Relation<infer Kind, infer Key, any, { nullable: false }>
   ? Kind extends RelationKind.ManyOf
     ? ManyOf<Key, true>
     : OneOf<Key, true>
   : never
 
 export function nullable(
-  value: NullableGetter<ModelValueType> | Relation<any, any, any, false>,
+  value:
+    | NullableGetter<ModelValueType>
+    | Relation<any, any, any, { nullable: false }>,
 ) {
   if (typeof value === 'function') {
     return new NullableProperty(value)
@@ -33,8 +37,10 @@ export function nullable(
 
   return new Relation({
     kind: value.kind,
-    attributes: value.attributes,
     to: value.target.modelName,
-    nullable: true,
+    attributes: {
+      ...value.attributes,
+      nullable: true,
+    },
   })
 }
