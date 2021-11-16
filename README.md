@@ -718,7 +718,7 @@ db.post.findMany({
     category: {
       equals: 'Science'
     }
-  }
+  },
   orderBy: {
     author: {
       firstName: 'asc'
