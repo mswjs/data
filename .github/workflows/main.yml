@@ -24,6 +24,14 @@ jobs:
       - name: Install dependencies
         run: yarn install --frozen-lockfile
 
+      # Versions
+      - name: Environment (versions)
+        run: |
+          echo "node: $(node -v)"
+          echo "npm: $(npm -v)"
+          echo "typescript: $(npm ls typescript)"
+          echo "tsc: $(tsc -v)"
+
       # Build
       - name: Build
         run: yarn build
