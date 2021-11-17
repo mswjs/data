@@ -62,7 +62,7 @@ export function createModel<
         set(
           properties,
           propertyName,
-          initialValue || propertyDefinition.getValue(),
+          initialValue || propertyDefinition.getPrimaryKeyValue(),
         )
         return properties
       }

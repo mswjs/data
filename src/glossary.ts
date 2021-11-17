@@ -19,9 +19,9 @@ export type ModelValueTypeGetter = () => ModelValueType
 export type ModelDefinition = Record<string, ModelDefinitionValue>
 
 export type ModelDefinitionValue =
+  | PrimaryKey<any>
   | ModelValueTypeGetter
   | NullableProperty<any>
-  | PrimaryKey<any>
   | OneOf<any, boolean>
   | ManyOf<any, boolean>
   | NestedModelDefinition
@@ -171,9 +171,9 @@ export type UpdateManyValue<
   | {
       [Key in keyof Target]?: Target[Key] extends PrimaryKey
         ? (
-            prevValue: ReturnType<Target[Key]['getValue']>,
+            prevValue: ReturnType<Target[Key]['getPrimaryKeyValue']>,
             entity: Value<Target, Dictionary>,
-          ) => ReturnType<Target[Key]['getValue']>
+          ) => ReturnType<Target[Key]['getPrimaryKeyValue']>
         : Target[Key] extends ModelValueTypeGetter
         ? (
             prevValue: ReturnType<Target[Key]>,
@@ -191,8 +191,8 @@ export type Value<
   Target extends AnyObject,
   Dictionary extends ModelDictionary,
 > = {
-  [Key in keyof Target]: Target[Key] extends PrimaryKey
-    ? ReturnType<Target[Key]['getValue']>
+  [Key in keyof Target]: Target[Key] extends PrimaryKey<any>
+    ? ReturnType<Target[Key]['getPrimaryKeyValue']>
     : // Extract underlying value type of nullable properties
     Target[Key] extends NullableProperty<any>
     ? ReturnType<Target[Key]['getValue']>
