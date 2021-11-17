@@ -11,6 +11,7 @@ import {
 } from '../glossary'
 import { isObject } from '../utils/isObject'
 import { inheritInternalProperties } from '../utils/inheritInternalProperties'
+import { NullableProperty } from '../nullable'
 
 const log = debug('updateEntity')
 
@@ -72,8 +73,10 @@ export function updateEntity(
           )
 
           invariant(
-            isObject(value) || Array.isArray(value),
-            'Failed to update relational property "%s" on "%s": the next value must be an entity or a list of entities.',
+            (value === null && propertyDefinition.attributes.nullable) ||
+              isObject(value) ||
+              Array.isArray(value),
+            'Failed to update relational property "%s" on "%s": the next value must be an entity, a list of entities, or null if relation is nullable',
             propertyName,
             propertyDefinition.source.modelName,
           )
@@ -81,7 +84,10 @@ export function updateEntity(
           log('updating the relation to resolve with:', value)
 
           // Re-define the relational property to now point at the next value.
-          propertyDefinition.resolveWith(nextEntity, value as Value<any, any>[])
+          propertyDefinition.resolveWith(
+            nextEntity,
+            value as Value<any, any>[] | null,
+          )
 
           return nextEntity
         }
@@ -100,6 +106,11 @@ export function updateEntity(
           typeof value === 'function' ? value(prevValue, entity) : value
 
         log('setting a value at "%s" to: %s', propertyName, nextValue)
+        invariant(
+          nextValue !== null || propertyDefinition instanceof NullableProperty,
+          'Failed to set value at "%s" to null as the property is not nullable. Use the "nullable" function when defining your property',
+          propertyName,
+        )
         nextEntity[propertyName] = nextValue
 
         log('next entity:', nextEntity)

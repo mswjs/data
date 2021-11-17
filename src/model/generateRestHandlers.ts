@@ -125,7 +125,7 @@ export function generateRestHandlers<
   const primaryKey = findPrimaryKey(modelDefinition)!
   const primaryKeyValue = (
     modelDefinition[primaryKey] as PrimaryKey<PrimaryKeyType>
-  ).getValue()
+  ).getPrimaryKeyValue()
   const modelPath = pluralize(modelName)
   const buildUrl = createUrlBuilder(baseUrl)
 

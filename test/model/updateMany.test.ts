@@ -1,5 +1,5 @@
 import { datatype, name } from 'faker'
-import { factory, primaryKey } from '@mswjs/data'
+import { factory, primaryKey, nullable } from '@mswjs/data'
 import { OperationErrorType } from '../../src/errors/OperationError'
 import { getThrownError } from '../testUtils'
 
@@ -175,6 +175,82 @@ test('should update many entities with primitive values', () => {
 
   expect(updateMultiUsers).toHaveLength(2)
   updateMultiUsers.forEach((user) => expect(user.role).toEqual('Admin'))
+})
+
+test('supports updating a nullable property to a non-null value on many entities', () => {
+  const db = factory({
+    user: {
+      id: primaryKey(datatype.uuid),
+      firstName: name.findName,
+      role: nullable<string>(() => null),
+    },
+  })
+  db.user.create({
+    firstName: 'Joseph',
+    role: null,
+  })
+
+  db.user.create({
+    firstName: 'John',
+    role: null,
+  })
+
+  db.user.create({
+    firstName: 'Jack',
+    role: 'Writer',
+  })
+
+  const nextAdmins = db.user.updateMany({
+    where: {
+      firstName: {
+        contains: 'J',
+      },
+    },
+    data: {
+      role: 'Admin',
+    },
+  })!
+
+  expect(nextAdmins).toHaveLength(3)
+  nextAdmins.forEach((user) => expect(user).toHaveProperty('role', 'Admin'))
+})
+
+test('supports updating a nullable property with a value to null on many entities', () => {
+  const db = factory({
+    user: {
+      id: primaryKey(datatype.uuid),
+      firstName: name.findName,
+      role: nullable<string>(() => null),
+    },
+  })
+  db.user.create({
+    firstName: 'Joseph',
+    role: 'Auditor',
+  })
+
+  db.user.create({
+    firstName: 'John',
+    role: 'Auditor',
+  })
+
+  db.user.create({
+    firstName: 'Jack',
+    role: 'Writer',
+  })
+
+  const prevAuditors = db.user.updateMany({
+    where: {
+      role: {
+        equals: 'Auditor',
+      },
+    },
+    data: {
+      role: null,
+    },
+  })!
+
+  expect(prevAuditors).toHaveLength(2)
+  prevAuditors.forEach((user) => expect(user.role).toBeNull())
 })
 
 test('throw an error when updating entities with an already existing primary key', () => {

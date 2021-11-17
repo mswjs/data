@@ -16,9 +16,10 @@ it('supports creating a relation without attributes', () => {
   expect(relation).toBeInstanceOf(Relation)
   expect(relation.kind).toEqual(RelationKind.OneOf)
   expect(relation.target.modelName).toEqual('country')
-  expect(relation.attributes).toEqual({
+  expect(relation.attributes).toEqual<RelationAttributes>({
+    nullable: false,
     unique: false,
-  } as RelationAttributes)
+  })
 })
 
 it('supports creating a relation with attributes', () => {
@@ -33,9 +34,10 @@ it('supports creating a relation with attributes', () => {
   expect(relation).toBeInstanceOf(Relation)
   expect(relation.kind).toEqual(RelationKind.ManyOf)
   expect(relation.target.modelName).toEqual('country')
-  expect(relation.attributes).toEqual({
+  expect(relation.attributes).toEqual<RelationAttributes>({
     unique: true,
-  } as RelationAttributes)
+    nullable: false,
+  })
 })
 
 it('applies a "ONE_OF" relation to an entity', () => {
@@ -241,4 +243,95 @@ it('does not throw an exception when updating the relational reference to the sa
   relation.resolveWith(user, { code: 'us' })
 
   expect(user.birthPlace).toEqual(country)
+})
+
+it('supports creating nullable relations', () => {
+  const relation = new Relation({
+    to: 'country',
+    kind: RelationKind.OneOf,
+    attributes: {
+      nullable: true,
+    },
+  })
+
+  expect(relation.attributes.nullable).toBe(true)
+})
+
+it('throws an exception when resolving a non-nullable relation with null', () => {
+  const relation = new Relation({
+    to: 'country',
+    kind: RelationKind.OneOf,
+  })
+  const dictionary: ModelDictionary = {
+    user: {
+      birthPlace: relation,
+    },
+    country: {
+      code: primaryKey(String),
+    },
+  }
+  const db = new Database(dictionary)
+  db.create('user', {
+    [ENTITY_TYPE]: 'user',
+    [PRIMARY_KEY]: 'id',
+    id: 'user-1',
+  })
+  const user = db.getModel('user').get('user-1')!
+
+  const countries = db.create('country', {
+    [ENTITY_TYPE]: 'country',
+    [PRIMARY_KEY]: 'code',
+    code: 'us',
+  })
+  const country = countries.get('us')
+
+  // First, apply a new relation to the user.
+  relation.apply(user, ['birthPlace'], dictionary, db)
+  relation.resolveWith(user, { code: 'us' })
+
+  // Then, update the relational property to resolve with null.
+  expect(() => {
+    relation.resolveWith(user, null)
+  }).toThrow(
+    'Failed to resolve a "ONE_OF" relational property to "country": only nullable relations can resolve with null. Use the "nullable" function when defining this relation to support nullable value.',
+  )
+
+  // The relational property still resolves with the previous value.
+  expect(user.birthPlace).toEqual(country)
+})
+
+it('does not throw an exception when resolving a nullable relation with null', () => {
+  const relation = new Relation({
+    to: 'country',
+    kind: RelationKind.OneOf,
+    attributes: {
+      nullable: true,
+    },
+  })
+  const dictionary: ModelDictionary = {
+    user: {
+      birthPlace: relation,
+    },
+    country: {
+      code: primaryKey(String),
+    },
+  }
+  const db = new Database(dictionary)
+  db.create('user', {
+    [ENTITY_TYPE]: 'user',
+    [PRIMARY_KEY]: 'id',
+    id: 'user-1',
+  })
+  const user = db.getModel('user').get('user-1')!
+
+  // First, apply a new relation to the user.
+  relation.apply(user, ['birthPlace'], dictionary, db)
+
+  // Then, update the relational property to return null.
+  expect(() => {
+    relation.resolveWith(user, null)
+  }).not.toThrow()
+
+  // The relational property now resolves to null.
+  expect(user.birthPlace).toEqual(null)
 })

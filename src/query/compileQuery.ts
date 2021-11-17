@@ -34,7 +34,7 @@ export function compileQuery<Data extends Record<string, any>>(
 
         // If an entity doesn't have any value for the property
         // is being queried for, treat it as non-matching.
-        if (typeof actualValue === 'undefined') {
+        if (actualValue == null) {
           return false
         }
 

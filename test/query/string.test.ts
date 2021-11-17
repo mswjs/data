@@ -1,12 +1,12 @@
 import { datatype } from 'faker'
-import { factory, primaryKey } from '@mswjs/data'
+import { factory, primaryKey, nullable } from '@mswjs/data'
 
 const setup = () => {
   const db = factory({
     recipe: {
       id: primaryKey(datatype.uuid),
       title: String,
-      category: String,
+      category: nullable<string>(() => null),
     },
   })
   db.recipe.create({
@@ -20,6 +20,9 @@ const setup = () => {
   db.recipe.create({
     title: 'Pizza Mozzarrela',
     category: 'pizza',
+  })
+  db.recipe.create({
+    title: 'Pizza Cake',
   })
   return db
 }
@@ -67,9 +70,13 @@ test('queries entities where property contains a string', () => {
       },
     },
   })
-  expect(allPizzas).toHaveLength(2)
+  expect(allPizzas).toHaveLength(3)
   const pizzaTitles = allPizzas.map((pizza) => pizza.title)
-  expect(pizzaTitles).toEqual(['New York Pizza', 'Pizza Mozzarrela'])
+  expect(pizzaTitles).toEqual([
+    'New York Pizza',
+    'Pizza Mozzarrela',
+    'Pizza Cake',
+  ])
 })
 
 test('queries entities where property not contains a string', () => {
@@ -122,4 +129,18 @@ test('queries entities where property is contained into the array', () => {
     },
   })
   expect(chocolateCake).toHaveProperty('title', 'New York Pizza')
+})
+
+test('ignores entities with missing values when querying using strings', () => {
+  const db = setup()
+
+  const pizzaOrCakeRecipes = db.recipe.findMany({
+    where: { category: { in: ['pizza', 'cake'] } },
+  })
+  const pizzaOrCakeRecipeTitles = pizzaOrCakeRecipes.map(
+    (recipe) => recipe.title,
+  )
+
+  expect(pizzaOrCakeRecipeTitles).toHaveLength(3)
+  expect(pizzaOrCakeRecipeTitles).not.toContain('Pizza Cake')
 })

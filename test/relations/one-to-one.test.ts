@@ -1,4 +1,4 @@
-import { factory, primaryKey, oneOf } from '@mswjs/data'
+import { factory, primaryKey, oneOf, nullable } from '@mswjs/data'
 import { ENTITY_TYPE, PRIMARY_KEY } from '../../lib/glossary'
 
 test('supports one-to-one relationship', () => {
@@ -52,12 +52,145 @@ test('supports one-to-one relationship', () => {
   })
 })
 
+test('supports nullable one-to-one relationship', () => {
+  const db = factory({
+    country: {
+      id: primaryKey(String),
+      name: String,
+      capital: nullable(oneOf('city')),
+    },
+    city: {
+      id: primaryKey(String),
+      name: String,
+    },
+  })
+
+  const britain = db.country.create({
+    id: 'country-1',
+    name: 'Great Britain',
+    capital: db.city.create({
+      id: 'city-1',
+      name: 'London',
+    }),
+  })
+
+  const candyLand = db.country.create({
+    id: 'country-2',
+    name: 'Candy Land',
+    capital: null,
+  })
+
+  expect(britain.capital).toEqual({
+    [ENTITY_TYPE]: 'city',
+    [PRIMARY_KEY]: 'id',
+    id: 'city-1',
+    name: 'London',
+  })
+
+  expect(
+    db.country.findFirst({
+      where: {
+        name: {
+          equals: 'Great Britain',
+        },
+      },
+    }),
+  ).toEqual({
+    [ENTITY_TYPE]: 'country',
+    [PRIMARY_KEY]: 'id',
+    id: 'country-1',
+    name: 'Great Britain',
+    capital: {
+      [ENTITY_TYPE]: 'city',
+      [PRIMARY_KEY]: 'id',
+      id: 'city-1',
+      name: 'London',
+    },
+  })
+
+  expect(candyLand.capital).toBeNull()
+
+  expect(
+    db.country.findFirst({
+      where: {
+        name: {
+          equals: 'Candy Land',
+        },
+      },
+    }),
+  ).toEqual({
+    [ENTITY_TYPE]: 'country',
+    [PRIMARY_KEY]: 'id',
+    id: 'country-2',
+    name: 'Candy Land',
+    capital: null,
+  })
+})
+
 test('supports querying through a one-to-one relational property', () => {
   const db = factory({
     country: {
       id: primaryKey(String),
       name: String,
       capital: oneOf('city'),
+    },
+    city: {
+      id: primaryKey(String),
+      name: String,
+    },
+  })
+
+  db.country.create({
+    id: 'country-1',
+    name: 'Great Britain',
+    capital: db.city.create({
+      id: 'city-1',
+      name: 'London',
+    }),
+  })
+
+  expect(
+    db.country.findFirst({
+      where: {
+        capital: {
+          name: {
+            equals: 'London',
+          },
+        },
+      },
+    }),
+  ).toEqual({
+    [ENTITY_TYPE]: 'country',
+    [PRIMARY_KEY]: 'id',
+    id: 'country-1',
+    name: 'Great Britain',
+    capital: {
+      [ENTITY_TYPE]: 'city',
+      [PRIMARY_KEY]: 'id',
+      id: 'city-1',
+      name: 'London',
+    },
+  })
+
+  expect(
+    db.country.findFirst({
+      where: {
+        capital: {
+          name: {
+            equals: 'New Hampshire',
+          },
+        },
+      },
+    }),
+  ).toEqual(null)
+})
+
+test('supports querying through a nullable one-to-one relational property', () => {
+  const db = factory({
+    country: {
+      id: primaryKey(String),
+      name: String,
+      capital: nullable(oneOf('city')),
     },
     city: {
       id: primaryKey(String),
@@ -153,6 +286,49 @@ test('supports querying through a nested one-to-one relation', () => {
   expect(result).toEqual(user)
 })
 
+test('supports querying through a nested nullable one-to-one relation', () => {
+  const db = factory({
+    user: {
+      id: primaryKey(String),
+      address: {
+        billing: {
+          country: nullable(oneOf('country', { unique: true })),
+        },
+      },
+    },
+    country: {
+      code: primaryKey(String),
+    },
+  })
+
+  const usa = db.country.create({ code: 'us' })
+
+  const user = db.user.create({
+    id: 'user-1',
+    address: {
+      billing: {
+        country: usa,
+      },
+    },
+  })
+
+  const result = db.user.findFirst({
+    where: {
+      address: {
+        billing: {
+          country: {
+            code: {
+              equals: 'us',
+            },
+          },
+        },
+      },
+    },
+  })
+
+  expect(result).toEqual(user)
+})
+
 test('creates an entity without specifying initial value for the one-to-one relational property', () => {
   const db = factory({
     country: {
@@ -173,6 +349,30 @@ test('creates an entity without specifying initial value for the one-to-one rela
     [PRIMARY_KEY]: 'id',
     id: 'country-1',
     name: '',
+  })
+})
+
+test('creates an entity without specifying initial value for the nullable one-to-one relational property', () => {
+  const db = factory({
+    country: {
+      id: primaryKey(String),
+      name: String,
+      capital: nullable(oneOf('city')),
+    },
+    city: {
+      id: primaryKey(String),
+      name: String,
+    },
+  })
+
+  const result = db.country.create({ id: 'country-1' })
+
+  expect(result).toEqual({
+    [ENTITY_TYPE]: 'country',
+    [PRIMARY_KEY]: 'id',
+    id: 'country-1',
+    name: '',
+    capital: null,
   })
 })
 
@@ -248,6 +448,105 @@ test('updates the relational property to the next value', () => {
   })
 })
 
+test('updates the nullable relational property to the next value', () => {
+  const db = factory({
+    country: {
+      id: primaryKey(String),
+      name: String,
+      capital: nullable(oneOf('city')),
+    },
+    city: {
+      id: primaryKey(String),
+      name: String,
+    },
+  })
+  const refetchCountry = () => {
+    return db.country.findFirst({
+      where: {
+        name: {
+          equals: 'Great Britain',
+        },
+      },
+    })
+  }
+
+  db.country.create({
+    id: 'country-1',
+    name: 'Great Britain',
+    capital: db.city.create({
+      id: 'city-1',
+      name: 'London',
+    }),
+  })
+
+  // Update the "capital" relational property.
+  let updatedCountry = db.country.update({
+    where: {
+      name: {
+        equals: 'Great Britain',
+      },
+    },
+    data: {
+      capital: db.city.create({
+        id: 'city-2',
+        name: 'New Hampshire',
+      }),
+    },
+  })
+
+  expect(updatedCountry).toEqual({
+    [ENTITY_TYPE]: 'country',
+    [PRIMARY_KEY]: 'id',
+    id: 'country-1',
+    name: 'Great Britain',
+    capital: {
+      [ENTITY_TYPE]: 'city',
+      [PRIMARY_KEY]: 'id',
+      id: 'city-2',
+      name: 'New Hampshire',
+    },
+  })
+  expect(refetchCountry()).toEqual({
+    [ENTITY_TYPE]: 'country',
+    [PRIMARY_KEY]: 'id',
+    id: 'country-1',
+    name: 'Great Britain',
+    capital: {
+      [ENTITY_TYPE]: 'city',
+      [PRIMARY_KEY]: 'id',
+      id: 'city-2',
+      name: 'New Hampshire',
+    },
+  })
+
+  // Update the "capital" relational property to null.
+  updatedCountry = db.country.update({
+    where: {
+      name: {
+        equals: 'Great Britain',
+      },
+    },
+    data: {
+      capital: null,
+    },
+  })
+
+  expect(updatedCountry).toEqual({
+    [ENTITY_TYPE]: 'country',
+    [PRIMARY_KEY]: 'id',
+    id: 'country-1',
+    name: 'Great Britain',
+    capital: null,
+  })
+  expect(refetchCountry()).toEqual({
+    [ENTITY_TYPE]: 'country',
+    [PRIMARY_KEY]: 'id',
+    id: 'country-1',
+    name: 'Great Britain',
+    capital: null,
+  })
+})
+
 test('throws an exception when creating a unique one-to-one relation to the already referenced entity', () => {
   const db = factory({
     user: {
@@ -319,6 +618,40 @@ test('throws an exception when updating a unique one-to-one relation to the alre
     }),
   ).toThrow(
     'Failed to create a unique "ONE_OF" relation to "invite" ("user.invitation") for "user-1": referenced invite "def-456" belongs to another user ("user-2").',
+  )
+})
+
+test('throws an exception when updating a non-nullable one-to-one relation to null', () => {
+  const db = factory({
+    user: {
+      id: primaryKey(String),
+      invitation: oneOf('invite'),
+    },
+    invite: {
+      code: primaryKey(String),
+    },
+  })
+
+  db.user.create({
+    id: 'user-1',
+    invitation: db.invite.create({ code: 'abc-123' }),
+  })
+
+  expect(() =>
+    db.user.update({
+      where: {
+        id: {
+          equals: 'user-1',
+        },
+      },
+      data: {
+        // @ts-expect-error updating non-nullable relation to null not allowed
+        invitation: null,
+      },
+      strict: true,
+    }),
+  ).toThrow(
+    'Failed to update relational property "invitation" on "user": the next value must be an entity, a list of entities, or null if relation is nullable',
   )
 })
 

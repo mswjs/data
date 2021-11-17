@@ -1,5 +1,5 @@
-import { datatype } from 'faker'
-import { factory, primaryKey, oneOf } from '@mswjs/data'
+import { datatype, name } from 'faker'
+import { factory, primaryKey, oneOf, manyOf, nullable } from '@mswjs/data'
 import { identity } from '../../src/utils/identity'
 
 test('creates a new entity', () => {
@@ -44,6 +44,29 @@ test('creates a new entity with an array property', () => {
   })
   expect(exactUser).toHaveProperty('id', 'abc-123')
   expect(exactUser).toHaveProperty('arrayProp', [1, 2, 3])
+})
+
+test('creates a new entity with nullable properties', () => {
+  const db = factory({
+    user: {
+      id: primaryKey(datatype.uuid),
+      name: nullable(name.findName),
+      age: nullable<number>(() => null),
+      address: {
+        street: String,
+        number: nullable<number>(() => null),
+      },
+    },
+  })
+
+  const user = db.user.create({
+    id: 'abc-123',
+    name: null,
+  })
+
+  expect(user).toHaveProperty('name', null)
+  expect(user).toHaveProperty('age', null)
+  expect(user.address).toHaveProperty('number', null)
 })
 
 test('supports nested objects in the model definition', () => {
@@ -161,4 +184,43 @@ test('supports property names with dots in model definition', () => {
   })
 
   expect(user).toHaveProperty(['employee.id'], 'abc-123')
+})
+
+test('throws an exception when null used as initial value for non-nullable properties', () => {
+  const db = factory({
+    user: {
+      id: primaryKey(datatype.uuid),
+      name: String,
+    },
+  })
+
+  expect(() => {
+    db.user.create({
+      // @ts-expect-error Cannot use null as the initial value for a non-nullable property.
+      name: null,
+    })
+  }).toThrowError(
+    'Failed to create a "user" entity: a non-nullable property "name" cannot be instantiated with null. Use the "nullable" function when defining this property to support nullable value.',
+  )
+})
+
+test('throws an exception when null used as initial value for non-nullable relations', () => {
+  const db = factory({
+    user: {
+      id: primaryKey(datatype.uuid),
+      posts: manyOf('post'),
+    },
+    post: {
+      id: primaryKey(datatype.uuid),
+    },
+  })
+
+  expect(() => {
+    db.user.create({
+      // @ts-expect-error Cannot use null as the initial value for a non-nullable relation.
+      posts: null,
+    })
+  }).toThrowError(
+    'Failed to define a "MANY_OF" relational property to "posts" on "user": a non-nullable relation cannot be instantiated with null. Use the "nullable" function when defining this relation to support nullable value.',
+  )
 })

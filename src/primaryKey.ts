@@ -3,10 +3,10 @@ import { PrimaryKeyType } from './glossary'
 export type PrimaryKeyGetter<ValueType extends PrimaryKeyType> = () => ValueType
 
 export class PrimaryKey<ValueType extends PrimaryKeyType = string> {
-  public getValue: PrimaryKeyGetter<ValueType>
+  public getPrimaryKeyValue: PrimaryKeyGetter<ValueType>
 
   constructor(getter: PrimaryKeyGetter<ValueType>) {
-    this.getValue = getter
+    this.getPrimaryKeyValue = getter
   }
 }
 

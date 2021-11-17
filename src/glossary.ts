@@ -1,5 +1,6 @@
 import { GraphQLSchema } from 'graphql'
 import { GraphQLHandler, RestHandler } from 'msw'
+import { NullableProperty } from './nullable'
 import { PrimaryKey } from './primaryKey'
 import {
   BulkQueryOptions,
@@ -18,17 +19,19 @@ export type ModelValueTypeGetter = () => ModelValueType
 export type ModelDefinition = Record<string, ModelDefinitionValue>
 
 export type ModelDefinitionValue =
-  | ModelValueTypeGetter
   | PrimaryKey<any>
-  | OneOf<any>
-  | ManyOf<any>
+  | ModelValueTypeGetter
+  | NullableProperty<any>
+  | OneOf<any, boolean>
+  | ManyOf<any, boolean>
   | NestedModelDefinition
 
 export type NestedModelDefinition = {
   [propertyName: string]:
     | ModelValueTypeGetter
-    | OneOf<any>
-    | ManyOf<any>
+    | NullableProperty<any>
+    | OneOf<any, boolean>
+    | ManyOf<any, boolean>
     | NestedModelDefinition
 }
 
@@ -168,9 +171,9 @@ export type UpdateManyValue<
   | {
       [Key in keyof Target]?: Target[Key] extends PrimaryKey
         ? (
-            prevValue: ReturnType<Target[Key]['getValue']>,
+            prevValue: ReturnType<Target[Key]['getPrimaryKeyValue']>,
             entity: Value<Target, Dictionary>,
-          ) => ReturnType<Target[Key]['getValue']>
+          ) => ReturnType<Target[Key]['getPrimaryKeyValue']>
         : Target[Key] extends ModelValueTypeGetter
         ? (
             prevValue: ReturnType<Target[Key]>,
@@ -189,12 +192,20 @@ export type Value<
   Dictionary extends ModelDictionary,
 > = {
   [Key in keyof Target]: Target[Key] extends PrimaryKey<any>
+    ? ReturnType<Target[Key]['getPrimaryKeyValue']>
+    : // Extract underlying value type of nullable properties
+    Target[Key] extends NullableProperty<any>
     ? ReturnType<Target[Key]['getValue']>
-    : // Extract value type from relations.
-    Target[Key] extends OneOf<infer ModelName>
-    ? PublicEntity<Dictionary, ModelName>
-    : Target[Key] extends ManyOf<infer ModelName>
-    ? PublicEntity<Dictionary, ModelName>[]
+    : // Extract value type from OneOf relations.
+    Target[Key] extends OneOf<infer ModelName, infer Nullable>
+    ? Nullable extends true
+      ? PublicEntity<Dictionary, ModelName> | null
+      : PublicEntity<Dictionary, ModelName>
+    : // Extract value type from ManyOf relations.
+    Target[Key] extends ManyOf<infer ModelName, infer Nullable>
+    ? Nullable extends true
+      ? PublicEntity<Dictionary, ModelName>[] | null
+      : PublicEntity<Dictionary, ModelName>[]
     : // Account for primitive value getters because
     // native constructors (i.e. StringConstructor) satisfy
     // the "AnyObject" predicate below.
