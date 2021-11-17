@@ -11,6 +11,7 @@ import { paginateResults } from './paginateResults'
 import { Database } from '../db/Database'
 import { sortResults } from './sortResults'
 import { invariant } from 'outvariant'
+import { safeStringify } from '../utils/safeStringify'
 
 const log = debug('executeQuery')
 
@@ -50,7 +51,7 @@ export function executeQuery(
   query: WeakQuerySelector<any> & BulkQueryOptions<any>,
   db: Database<any>,
 ): Entity<any, any>[] {
-  log(`${JSON.stringify(query)} on "${modelName}"`)
+  log(`${safeStringify(query)} on "${modelName}"`)
   log('using primary key "%s"', primaryKey)
 
   const records = db.getModel(modelName)
@@ -74,7 +75,7 @@ export function executeQuery(
   const resultJson = Array.from(result.values())
 
   log(
-    `resolved query "${JSON.stringify(query)}" on "${modelName}" to`,
+    `resolved query "${safeStringify(query)}" on "${modelName}" to`,
     resultJson,
   )
 
