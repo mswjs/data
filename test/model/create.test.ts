@@ -46,6 +46,34 @@ test('creates a new entity with an array property', () => {
   expect(exactUser).toHaveProperty('arrayProp', [1, 2, 3])
 })
 
+test('creates a new entity with an array property with aray of objects assigned', () => {
+  const db = factory({
+    user: {
+      id: primaryKey(datatype.uuid),
+      arrayProp: Array,
+    },
+  })
+
+  const arrayOfObjects = [
+    {
+      key: 'hobby',
+      value: 'code',
+    },
+    {
+      key: 'phone',
+      value: 12345,
+    },
+  ]
+
+  const exactUser = db.user.create({
+    id: 'abc-123',
+    arrayProp: arrayOfObjects,
+  })
+
+  expect(exactUser).toHaveProperty('id', 'abc-123')
+  expect(exactUser).toHaveProperty('arrayProp', arrayOfObjects)
+})
+
 test('creates a new entity with nullable properties', () => {
   const db = factory({
     user: {
