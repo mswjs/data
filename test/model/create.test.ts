@@ -46,7 +46,7 @@ test('creates a new entity with an array property', () => {
   expect(exactUser).toHaveProperty('arrayProp', [1, 2, 3])
 })
 
-test('creates a new entity with an array property with aray of objects assigned', () => {
+test('creates a new entity with an array property with array of objects assigned', () => {
   const db = factory({
     user: {
       id: primaryKey(datatype.uuid),
