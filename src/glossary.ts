@@ -213,7 +213,7 @@ export type Value<
     ? ReturnType<Target[Key]>
     : // Handle nested objects.
     Target[Key] extends AnyObject
-    ? Partial<Value<Target[Key], Target>>
+    ? Partial<Value<Target[Key], Dictionary>>
     : // Otherwise, return the return type of primitive value getters.
       ReturnType<Target[Key]>
 }
