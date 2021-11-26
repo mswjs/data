@@ -13,7 +13,7 @@ test('creates a new entity', () => {
   // Without any arguments a new entity is seeded
   // using the value getters defined in the model.
   const randomUser = db.user.create()
-  expect(randomUser).toHaveProperty('id', userId)
+  expect(randomUser.id).toEqual(userId)
 })
 
 test('creates a new entity with initial values', () => {
@@ -27,23 +27,23 @@ test('creates a new entity with initial values', () => {
   const exactUser = db.user.create({
     id: 'abc-123',
   })
-  expect(exactUser).toHaveProperty('id', 'abc-123')
+  expect(exactUser.id).toEqual('abc-123')
 })
 
 test('creates a new entity with an array property', () => {
   const db = factory({
     user: {
       id: primaryKey(datatype.uuid),
-      arrayProp: Array,
+      favouriteNumbers: Array,
     },
   })
 
   const exactUser = db.user.create({
     id: 'abc-123',
-    arrayProp: [1, 2, 3],
+    favouriteNumbers: [1, 2, 3],
   })
-  expect(exactUser).toHaveProperty('id', 'abc-123')
-  expect(exactUser).toHaveProperty('arrayProp', [1, 2, 3])
+  expect(exactUser.id).toEqual('abc-123')
+  expect(exactUser.favouriteNumbers).toEqual([1, 2, 3])
 })
 
 test('creates a new entity with an array property with array of objects assigned', () => {
@@ -70,8 +70,8 @@ test('creates a new entity with an array property with array of objects assigned
     notes: exampleNotes,
   })
 
-  expect(exactUser).toHaveProperty('id', 'abc-123')
-  expect(exactUser).toHaveProperty('notes', exampleNotes)
+  expect(exactUser.id).toEqual('abc-123')
+  expect(exactUser.notes).toEqual(exampleNotes)
 })
 
 test('creates a new entity with nullable properties', () => {
@@ -92,9 +92,9 @@ test('creates a new entity with nullable properties', () => {
     name: null,
   })
 
-  expect(user).toHaveProperty('name', null)
-  expect(user).toHaveProperty('age', null)
-  expect(user.address).toHaveProperty('number', null)
+  expect(user.name).toEqual(null)
+  expect(user.age).toEqual(null)
+  expect(user.address.number).toEqual(null)
 })
 
 test('supports nested objects in the model definition', () => {
@@ -128,9 +128,9 @@ test('supports nested objects in the model definition', () => {
     },
   })
 
-  expect(exactUser).toHaveProperty('id', 'abc-123')
-  expect(exactUser).toHaveProperty('name', 'sampleUser')
-  expect(exactUser).toHaveProperty('info', {
+  expect(exactUser.id).toEqual('abc-123')
+  expect(exactUser.name).toEqual('sampleUser')
+  expect(exactUser.info).toEqual({
     firstName: 'Reginald',
     lastName: 'Dwight',
     address: {
@@ -171,10 +171,12 @@ test('relational properties can be declared in nested objects', () => {
     },
   })
 
-  expect(exactUser).toHaveProperty('name', 'user')
-  expect(exactUser.info).toHaveProperty('firstName', 'Ryuichi')
-  expect(exactUser.info).toHaveProperty('lastName', 'Sakamoto')
-  expect(exactUser.info.country).toHaveProperty('name', 'Japan')
+  expect(exactUser.name).toEqual('user')
+  expect(exactUser.info.firstName).toEqual('Ryuichi')
+  expect(exactUser.info.lastName).toEqual('Sakamoto')
+  expect(exactUser.info.country).toEqual(
+    expect.objectContaining({ name: 'Japan' }),
+  )
 })
 
 test('uses value getters when creating an entity with nested arrays', () => {
@@ -194,10 +196,10 @@ test('uses value getters when creating an entity with nested arrays', () => {
     name: 'sampleUser',
   })
 
-  expect(exactUser).toHaveProperty('name', 'sampleUser')
+  expect(exactUser.name).toEqual('sampleUser')
   expect(exactUser).toHaveProperty('info')
-  expect(exactUser.info).toHaveProperty('tags', [1, 2])
-  expect(exactUser.info).toHaveProperty('documents', [])
+  expect(exactUser.info.tags).toEqual([1, 2])
+  expect(exactUser.info.documents).toEqual([])
 })
 
 test('supports property names with dots in model definition', () => {
@@ -211,7 +213,7 @@ test('supports property names with dots in model definition', () => {
     'employee.id': 'abc-123',
   })
 
-  expect(user).toHaveProperty(['employee.id'], 'abc-123')
+  expect(user['employee.id']).toEqual('abc-123')
 })
 
 test('throws an exception when null used as initial value for non-nullable properties', () => {
