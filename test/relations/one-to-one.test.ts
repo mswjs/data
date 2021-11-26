@@ -890,3 +890,95 @@ test('supports updating the values of multiple relational properties', () => {
     },
   })
 })
+
+test('preserves relational property getter after updating the parent entity', () => {
+  const db = factory({
+    segment: {
+      id: primaryKey(String),
+      title: String,
+      revision: oneOf('revision'),
+    },
+    revision: {
+      id: primaryKey(String),
+      title: String,
+    },
+  })
+
+  db.segment.create({
+    id: 'segment-1',
+    revision: db.revision.create({
+      id: 'revision-1',
+      title: 'Initial',
+    }),
+  })
+
+  // Update the parent entity "segment".
+  const segment = db.segment.update({
+    where: { id: { equals: 'segment-1' } },
+    data: { title: 'Updated segment' },
+  })!
+
+  expect(Object.getOwnPropertyDescriptor(segment, 'revision')).toHaveProperty(
+    'get',
+  )
+  expect(segment.revision.id).toEqual('revision-1')
+
+  db.revision.update({
+    where: { id: { equals: segment.revision.id } },
+    data: {
+      title: 'Updated revision',
+    },
+  })
+
+  // Referencing the relational property on the updated parent
+  // must resolve the latest referenced value (via getter).
+  expect(segment.revision.title).toEqual('Updated revision')
+})
+
+test('preserves nested relational properties after updating the parent entity', () => {
+  const db = factory({
+    segment: {
+      id: primaryKey(String),
+      title: String,
+      stats: {
+        revision: oneOf('revision'),
+      },
+    },
+    revision: {
+      id: primaryKey(String),
+      title: String,
+    },
+  })
+
+  db.segment.create({
+    id: 'segment-1',
+    stats: {
+      revision: db.revision.create({
+        id: 'revision-1',
+        title: 'Initial',
+      }),
+    },
+  })
+
+  // Update the parent entity "segment".
+  const segment = db.segment.update({
+    where: { id: { equals: 'segment-1' } },
+    data: { title: 'Updated segment' },
+  })!
+
+  expect(
+    Object.getOwnPropertyDescriptor(segment.stats, 'revision'),
+  ).toHaveProperty('get')
+  expect(segment.stats.revision?.id).toEqual('revision-1')
+
+  db.revision.update({
+    where: { id: { equals: segment.stats.revision?.id } },
+    data: {
+      title: 'Updated revision',
+    },
+  })
+
+  // Referencing the relational property on the updated parent
+  // must resolve the latest referenced value (via getter).
+  expect(segment.stats.revision?.title).toEqual('Updated revision')
+})

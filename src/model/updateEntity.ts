@@ -12,6 +12,7 @@ import {
 import { isObject } from '../utils/isObject'
 import { inheritInternalProperties } from '../utils/inheritInternalProperties'
 import { NullableProperty } from '../nullable'
+import { spread } from '../utils/spread'
 
 const log = debug('updateEntity')
 
@@ -117,22 +118,22 @@ export function updateEntity(
 
         return nextEntity
       },
-      { ...entityChunk },
+      spread(entityChunk),
     )
 
     return result
   }
 
-  const result = updateRecursively(entity, data)
+  const nextEntity = updateRecursively(entity, data)
 
   /**
    * @note Inherit the internal properties (type, primary key)
    * from the source (previous) entity.
    * Spreading the entity chunk strips off its symbols.
    */
-  inheritInternalProperties(result, entity)
+  inheritInternalProperties(nextEntity, entity)
 
-  log('successfully updated to:', result)
+  log('successfully updated to:', nextEntity)
 
-  return result
+  return nextEntity
 }
