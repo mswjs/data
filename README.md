@@ -4,15 +4,16 @@
 
 <h1 align="center"><code>@mswjs/data</code></h1>
 
-Data modeling and relation library for testing JavaScript applications.
+<p align="center">Data modeling and relation library for testing JavaScript applications.</p>
+<br />
 
 ## Motivation
 
 When testing API interactions you often need to mock data. Instead of keeping a hard-coded set of fixtures, this library provides you with must-have tools for data-driven API mocking:
 
-- An intuitive interface to model data
-- The ability to create relationships between models
-- The ability to query data in a manner similar to an actual database
+- An intuitive interface to model data;
+- The ability to create relationships between models;
+- The ability to query data in a manner similar to an actual database.
 
 ## Getting started
 
@@ -20,6 +21,8 @@ When testing API interactions you often need to mock data. Instead of keeping a 
 
 ```bash
 $ npm install @mswjs/data --save-dev
+# or
+$ yarn add @mswjs/data --save-dev
 ```
 
 ### Describe data
@@ -41,7 +44,7 @@ export const db = factory({
 })
 ```
 
-> See the [Recipes](#recipes) for more tips and tricks on data modeling.
+> See the [Recipes](#recipes) for more guidelines on data modeling.
 
 Throughout this document native JavaScript constructors (i.e. String, Number) will be used as values getters for the models, as they both create a value and define its type. In practice, you may consider using value generators or tools like [faker](#usage-with-faker) for value getters.
 
@@ -49,7 +52,7 @@ Throughout this document native JavaScript constructors (i.e. String, Number) wi
 
 Each model **must have a primary key**. That is a root-level property representing the model's identity. Think of it as an "id" column for a particular table in a database.
 
-Declare a primary key by using the `primaryKey` helper function:
+Declare a primary key by using the `primaryKey` function:
 
 ```js
 import { factory, primaryKey } from '@mswjs/data'
@@ -61,65 +64,144 @@ factory({
 })
 ```
 
-In the example above, the `id` is the primary key for the `user` model. This means that whenever a `user` is created it must have the `id` property that equals a unique `String`.
+In the example above, the `id` is the primary key for the `user` model. This means that whenever a `user` is created it must have the `id` property that equals a unique `String`. Any property can be marked as a primary key, it doesn't have to be named "id".
 
-### Integrate with API mocks
-
-This library is designed and written to be standalone. However, being in the [Mock Service Worker](https://github.com/mswjs/msw) ecosystem, it features a
-
-- Learn more about [**integrating modeled data into API mocks**](#integrating-with-api-mocks)
+Just like regular model properties, the primary key accepts a getter function that you can use to generate its value when creating entities:
 
 ```js
-// src/mocks/browser.js
-import { setupWorker, rest } from 'msw'
-import { db } from './db'
+import { datatype } from 'faker'
 
-setupWorker(
-  // Mock a user creation operation.
-  rest.post('/user', (req, res, ctx) => {
-    const { firstName, lastName } = req.body
-
-    const user = db.user.create({
-      firstName,
-      lastName,
-    })
-
-    return res(ctx.json(user))
-  }),
-
-  // Retrieve a single user from the database by ID.
-  rest.get('/user/:userId', (req, res, ctx) => {
-    const user = db.user.findFirst({
-      where: {
-        id: {
-          equals: req.params.userId,
-        },
-      },
-    })
-
-    if (!user) {
-      return res(ctx.status(404))
-    }
-
-    return res(ctx.json(user))
-  }),
-)
+factory({
+  user: {
+    id: primaryKey(datatype.uuid),
+  },
+})
 ```
 
-## Recipes
+> Each time a new `user` is created, its `user.id` property is seeded with the value returned from the `datatype.uuid` function call.
 
-- [Model methods](#model-methods)
-- **Modeling:**
-  - [Nullable properties](#nullable-properties)
-  - [Nested structures](#nested-structures)
-  - [Model relationships](#model-relationships)
-- **Querying:**
-  - [Querying data](#querying-data)
-  - [Strict mode](#strict-mode)
-  - [Pagination](#pagination)
-  - [Sorting](#sorting)
+Once your data is modeled, you can use [Model methods](#model-methods) to interact with it (create/update/delete). Apart from serving as interactive, queryable fixtures, you can also [integrate your data models into API mocks](#usage-with-api-mocks) to supercharge your prototyping/testing workflow.
 
-### Model methods
+## API
+
+- [`factory`](#factory)
+- [`primaryKey`](#primaryKey)
+- [`nullable`](#nullable)
+- [`oneOf`](#oneOf)
+- [`manyOf`](#manyOf)
+- [`drop`](#drop)
+
+### `factory`
+
+The `factory` function is used to model a database. It accepts a _model dictionary_ and returns an API to interact with the described models.
+
+```js
+import { factory, primaryKey } from '@mswjs/data'
+
+const db = factory({
+  user: {
+    id: primaryKey(String),
+    firstName: String
+    age: Number
+  }
+})
+```
+
+> Learn more about the [Model methods](#model-methods) and how you can interact with the described models.
+
+Each `factory` call encapsulates an in-memory database instance that holds the respective models. It's possible to create multiple database instances by calling `factory` multiple times. The entities and relationships, however, are not shared between different database instances.
+
+### `primaryKey`
+
+Marks the property of a model as a primary key.
+
+```js
+import { factory, primaryKey } from '@mswjs/data'
+
+const db = factory({
+  user: {
+    id: primaryKey(String),
+  },
+})
+
+// Create a new "user" with the primary key "id" equal to "user-1".
+db.user.create({ id: 'user-1' })
+```
+
+Primary key must be unique for each entity and is used as the identifier to query a particular entity.
+
+### `nullable`
+
+Marks the current model property as nullable.
+
+```js
+import { factory, primaryKey, nullable } from '@mswjs/data'
+
+factory({
+  user: {
+    id: primaryKey(String)
+    // "user.title" is a nullable property.
+    title: nullable(String)
+  }
+})
+```
+
+> Learn more how to work with [Nullable properties](#nullable-properties).
+
+### `oneOf`
+
+Creates a `*-to-one` relationship with another model.
+
+```js
+import { factory, primaryKey, oneOf } from '@mswjs/data'
+
+factory({
+  user: {
+    id: primaryKey(String),
+    role: oneOf('userGroup'),
+  },
+  userGroup: {
+    name: primaryKey(String),
+  },
+})
+```
+
+> Learn more about [Modeling relationships](#model-relationships).
+
+### `manyOf`
+
+Creates a `*-to-many` relationship with another model.
+
+```js
+import { factory, primaryKey, manyOf } from '@mswjs/data'
+
+factory({
+  user: {
+    id: primaryKey(String),
+    publications: manyOf('post'),
+  },
+  post: {
+    id: primaryKey(String),
+    title: String,
+  },
+})
+```
+
+> Learn more about [Modeling relationships](#model-relationships).
+
+### `drop`
+
+Deletes all entities in the given database instance.
+
+```js
+import { factory, drop } from '@mswjs/data'
+
+const db = factory(...models)
+
+drop(db)
+```
+
+## Model methods
 
 Each model has the following methods:
 
@@ -134,7 +216,7 @@ Each model has the following methods:
 - [`deleteMany()`](#deleteMany)
 - [`toHandlers()`](#toHandlers)
 
-#### `create`
+### `create`
 
 Creates an entity for the model.
 
@@ -154,7 +236,7 @@ const user = db.user.create({
 
 > Note that all model properties _are optional_, including [relational properties](#model-relationships).
 
-#### `findFirst`
+### `findFirst`
 
 Returns the first entity that satisfies the given query.
 
@@ -168,7 +250,7 @@ const user = db.user.findFirst({
 })
 ```
 
-#### `findMany`
+### `findMany`
 
 Returns all the entities that satisfy the given query.
 
@@ -182,7 +264,7 @@ const users = db.user.findMany({
 })
 ```
 
-#### `count`
+### `count`
 
 Returns the number of records for the given model.
 
@@ -205,7 +287,7 @@ db.user.count({
 })
 ```
 
-#### `getAll`
+### `getAll`
 
 Returns all the entities of the given model.
 
@@ -213,7 +295,7 @@ Returns all the entities of the given model.
 const allUsers = db.user.getAll()
 ```
 
-#### `update`
+### `update`
 
 Updates the first entity that matches the query.
 
@@ -238,7 +320,7 @@ const updatedUser = db.user.update({
 })
 ```
 
-#### `updateMany`
+### `updateMany`
 
 Updates multiple entities that match the query.
 
@@ -258,7 +340,7 @@ const updatedUsers = db.user.updateMany({
 })
 ```
 
-#### `delete`
+### `delete`
 
 Deletes the entity that satisfies the given query.
 
@@ -272,7 +354,7 @@ const deletedUser = db.user.delete({
 })
 ```
 
-#### `deleteMany`
+### `deleteMany`
 
 Deletes multiple entities that match the query.
 
@@ -286,11 +368,11 @@ const deletedUsers = db.user.deleteMany({
 })
 ```
 
-#### `toHandlers`
+### `toHandlers`
 
 Generates request handlers for the given model to use with [Mock Service Worker](https://github.com/mswjs/msw). All generated handlers are automatically connected to the respective [model methods](#model-methods), enabling you to perform CRUD operations against your mocked database.
 
-##### REST handlers
+#### REST handlers
 
 ```js
 import { factory, primaryKey } from '@mswjs/data'
@@ -308,7 +390,7 @@ db.user.toHandlers('rest')
 
 - Learn more about [REST API mocking integration](#generate-rest-api).
 
-##### GraphQL handlers
+#### GraphQL handlers
 
 ```js
 import { factory, primaryKey } from '@mswjs/data'
@@ -326,7 +408,7 @@ db.user.toHandlers('graphql')
 
 - Learn more about [GraphQL API mocking integration](#generate-graphql-api).
 
-##### Scoping handlers
+#### Scoping handlers
 
 The `.toHandlers()` method supports an optional second `baseUrl` argument to scope the generated handlers to a given endpoint:
 
@@ -334,6 +416,18 @@ The `.toHandlers()` method supports an optional second `baseUrl` argument to sco
 db.user.toHandlers('rest', 'https://example.com')
 db.user.toHandlers('graphql', 'https://example.com/graphql')
 ```
+
+## Recipes
+
+- **Modeling:**
+  - [Nullable properties](#nullable-properties)
+  - [Nested structures](#nested-structures)
+  - [Model relationships](#model-relationships)
+- **Querying:**
+  - [Querying data](#querying-data)
+  - [Strict mode](#strict-mode)
+  - [Pagination](#pagination)
+  - [Sorting](#sorting)
 
 ### Nullable properties
 
@@ -373,9 +467,7 @@ db.user.update({
 
 > You can define [Nullable relationships](#nullable-relationships) in the same manner.
 
-When using Typescript, you can manually set the type of the property when it is
-not possible to infer it from the factory function, such as when you want the
-property to default to null:
+When using Typescript, you can manually set the type of the property when it cannot be otherwise inferred from the seeding function, such as when you want a property to default to `null`:
 
 ```typescript
 import { factory, primaryKey, nullable } from '@mswjs/data'
@@ -892,15 +984,60 @@ factory({
 })
 ```
 
+### Collocated updates
+
+When you wish to update a parent entity and one of its relational properties at the same time, collocate such an update operation via the updater function of the [`update`](#update) method.
+
+```js
+import { factory, primaryKey, oneOf } from '@mswjs/data'
+
+const db = factory({
+  post: {
+    id: primaryKey(String),
+    title: String,
+    revision: oneOf('revision'),
+  },
+  revision: {
+    id: primaryKey(String),
+    updatedAt: () => new Date(),
+  },
+})
+
+db.post.update({
+  where: {
+    id: { equals: 'post-1' },
+  },
+  data: {
+    title: 'Renamed post',
+    // The next value of the "post.revision"
+    // is returned from this updater function.
+    revision(prevRevision, post) {
+      // Update this post's revision as you'd do usually,
+      // but nested within the post's update operation.
+      return db.revision.update({
+        where: {
+          id: { equals: post.revision.id },
+        },
+        data: {
+          updatedAt: Date.now(),
+        },
+      })
+    },
+  },
+})
+```
+
+> While the `post` above will get updated, both `post.revision` and the respective `revision` standalone will be updated as well.
+
+Collocating nested updates grants you a predictable behavior when changing multiple related entities.
+
 ## Usage with API mocks
 
-This library is designed and implemented as a standalone solution. However, being a part of the [Mock Service Worker](https://github.com/mswjs), it provides an opt-in API for integrating the modeled data into the API mocks that you write.
+While this library can be used standalone, it brings a tremendous benefit in a combination with tools like [Mock Service Worker](https://github.com/mswjs). We provide a build-in API to quickly generate API request handlers based on your models, representing model interactions via HTTP requests.
 
 ### Generate request handlers
 
-Both REST and GraphQL [request handlers]() can be generated from a model using the `.toHandlers()` method of that model. When generated, request handlers automatically have that model's CRUD methods like `POST /user` or `mutation CreateUser`.
-
-- Learn more about the [`.toHandlers()`](#tohandlers) API.
+Both REST and GraphQL [request handlers]() can be generated from a model using the [`.toHandlers()`](#toHandlers) method of that model. When generated, request handlers automatically have that model's CRUD methods like `POST /user` or `mutation CreateUser`.
 
 #### Generate REST API
 
