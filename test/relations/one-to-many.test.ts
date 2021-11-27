@@ -131,7 +131,7 @@ test('supports updating a recursive one-to-many relation', () => {
   })!
 
   expect(updatedJohn.friends).toHaveLength(1)
-  expect(updatedJohn.friends![0]).toHaveProperty('firstName', 'Kate')
+  expect(updatedJohn.friends![0]?.firstName).toEqual('Kate')
 })
 
 test('supports updating a recursive nullable one-to-many relation', () => {
@@ -173,7 +173,7 @@ test('supports updating a recursive nullable one-to-many relation', () => {
   })!
 
   expect(updatedJohn.friends).toHaveLength(1)
-  expect(updatedJohn.friends?.shift()).toHaveProperty('firstName', 'Kate')
+  expect(updatedJohn.friends?.shift()?.firstName).toEqual('Kate')
 
   const jack = db.user.create({
     id: 'jack',
@@ -196,7 +196,7 @@ test('supports updating a recursive nullable one-to-many relation', () => {
   })!
 
   expect(updatedJack.friends).toHaveLength(1)
-  expect(updatedJack.friends?.shift()).toHaveProperty('firstName', 'John')
+  expect(updatedJack.friends?.shift()?.firstName).toEqual('John')
 })
 
 test('supports querying through one-to-many relation', () => {

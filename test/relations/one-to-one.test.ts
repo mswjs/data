@@ -921,10 +921,10 @@ test('preserves relational property getter after updating the parent entity', ()
   expect(Object.getOwnPropertyDescriptor(segment, 'revision')).toHaveProperty(
     'get',
   )
-  expect(segment.revision.id).toEqual('revision-1')
+  expect(segment.revision?.id).toEqual('revision-1')
 
   db.revision.update({
-    where: { id: { equals: segment.revision.id } },
+    where: { id: { equals: segment.revision?.id } },
     data: {
       title: 'Updated revision',
     },
@@ -932,7 +932,7 @@ test('preserves relational property getter after updating the parent entity', ()
 
   // Referencing the relational property on the updated parent
   // must resolve the latest referenced value (via getter).
-  expect(segment.revision.title).toEqual('Updated revision')
+  expect(segment.revision?.title).toEqual('Updated revision')
 })
 
 test('preserves nested relational properties after updating the parent entity', () => {
