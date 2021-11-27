@@ -10,8 +10,5 @@ function isPrimitiveValueType(value: any): value is PrimitiveValueType {
 }
 
 export function isModelValueType(value: any): value is ModelValueType {
-  return (
-    isPrimitiveValueType(value) ||
-    (Array.isArray(value) && value.every(isPrimitiveValueType))
-  )
+  return isPrimitiveValueType(value) || Array.isArray(value)
 }

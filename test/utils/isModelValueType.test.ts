@@ -28,18 +28,18 @@ it('returns true given an array with primitive values', () => {
   expect(isModelValueType(['I am a string', 100])).toBe(true)
 })
 
+it('returns true when given an array with non-primitive values', () => {
+  expect(isModelValueType(['I am a string', {}])).toBe(true)
+})
+
+it('returns true when given nested primitive arrays', () => {
+  expect(isModelValueType(['I am a string', [100]])).toBe(true)
+})
+
 it('returns false given an undefined', () => {
   expect(isModelValueType(undefined)).toBe(false)
 })
 
 it('returns false given a null', () => {
   expect(isModelValueType(null)).toBe(false)
-})
-
-it('returns false when given an array with non-primitive values', () => {
-  expect(isModelValueType(['I am a string', {}])).toBe(false)
-})
-
-it('returns false when given nested primitive arrays', () => {
-  expect(isModelValueType(['I am a string', [100]])).toBe(false)
 })
