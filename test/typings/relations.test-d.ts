@@ -18,7 +18,7 @@ const db = factory({
 })
 
 const user = db.user.create()
-user.country.code.toUpperCase()
+user.country?.code.toUpperCase()
 
 // @ts-expect-error Unknown property "foo" on "country".
 user.country.foo
