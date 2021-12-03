@@ -1,4 +1,12 @@
 import { performance, PerformanceObserver, PerformanceEntry } from 'perf_hooks'
+import { factory } from '../src'
+import {
+  ModelDictionary,
+  ENTITY_TYPE,
+  PRIMARY_KEY,
+  DATABASE_INSTANCE,
+  Value,
+} from '../src/glossary'
 
 export function repeat(action: () => void, times: number) {
   for (let i = 0; i < times; i++) {
@@ -35,5 +43,28 @@ export function getThrownError(fn: () => void) {
     fn()
   } catch (error) {
     return error
+  }
+}
+
+export function testFactory<Dictionary extends ModelDictionary>(
+  dictionary: Dictionary,
+) {
+  const db = factory(dictionary)
+
+  return {
+    db,
+    databaseInstance: db[DATABASE_INSTANCE],
+    dictionary,
+    entity<ModelName extends keyof Dictionary>(
+      modelName: ModelName,
+      properties: Value<Dictionary[ModelName], Dictionary>,
+    ) {
+      const entity = db[modelName].getAll()[0]
+      return {
+        [ENTITY_TYPE]: entity[ENTITY_TYPE],
+        [PRIMARY_KEY]: entity[PRIMARY_KEY],
+        ...properties,
+      }
+    },
   }
 }

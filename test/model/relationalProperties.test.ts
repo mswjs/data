@@ -5,7 +5,7 @@ import {
   RelationsList,
 } from '../../src/relations/Relation'
 import { defineRelationalProperties } from '../../src/model/defineRelationalProperties'
-import { testFactory } from '../../test/helpers'
+import { testFactory } from '../../test/testUtils'
 
 it('marks relational properties as enumerable', () => {
   const { db, dictionary, databaseInstance } = testFactory({

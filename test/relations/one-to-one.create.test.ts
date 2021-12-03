@@ -1,5 +1,5 @@
 import { nullable, oneOf, primaryKey } from '../../src'
-import { testFactory } from '../helpers'
+import { testFactory } from '../testUtils'
 
 /**
  * Nullable one-to-one relationship.

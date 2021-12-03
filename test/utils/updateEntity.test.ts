@@ -1,6 +1,6 @@
 import { primaryKey, oneOf, manyOf, nullable } from '../../src'
 import { updateEntity } from '../../src/model/updateEntity'
-import { testFactory } from '../../test/helpers'
+import { testFactory } from '../../test/testUtils'
 
 describe('plain value', () => {
   it('updates a single root-level property', () => {

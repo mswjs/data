@@ -1,6 +1,6 @@
 import { primaryKey, oneOf, nullable } from '../../src'
 import { ENTITY_TYPE, PRIMARY_KEY } from '../../src/glossary'
-import { testFactory } from '../helpers'
+import { testFactory } from '../testUtils'
 
 /**
  * Nullable one-to-one relationship.
