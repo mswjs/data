@@ -1,5 +1,5 @@
 import { datatype } from 'faker'
-import { factory, primaryKey } from '@mswjs/data'
+import { factory, primaryKey } from '../../src'
 import { repeat } from '../testUtils'
 
 test('counts the amount of records for the model', () => {

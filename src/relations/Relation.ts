@@ -162,6 +162,24 @@ export class Relation<
     entity: Entity<Dictionary, string>,
     refs: ReferenceType | null,
   ): void {
+    const exception = (
+      predicate: unknown,
+      reason: string,
+      ...positionals: any[]
+    ): void => {
+      invariant(
+        predicate,
+        `Failed to resolve a "%s" relationship to "%s" at "%s.%s" (%s: "%s"): ${reason}`,
+        this.kind,
+        this.target.modelName,
+        this.source.modelName,
+        this.source.propertyPath,
+        this.source.primaryKey,
+        entity[this.source.primaryKey],
+        ...positionals,
+      )
+    }
+
     invariant(
       this.source,
       'Failed to resolve a "%s" relational property to "%s": relation has not been applied.',
@@ -170,23 +188,23 @@ export class Relation<
     )
 
     log(
-      'resolving a "%s" relational property to "%s" on "%s.%s" ("%s")',
+      'resolving a "%s" relational property to "%s" on "%s.%s" ("%s"):',
       this.kind,
       this.target.modelName,
       this.source.modelName,
       this.source.propertyPath,
       entity[this.source.primaryKey],
+      refs,
     )
     log('entity of this relation:', entity)
 
     // Support null as the next relation value for nullable relations.
     if (refs === null) {
-      invariant(
+      exception(
         this.attributes.nullable,
-        'Failed to resolve a "%s" relational property to "%s": only nullable relations can resolve with null. Use the "nullable" function when defining this relation to support nullable value.',
-        this.kind,
-        this.target.modelName,
+        'cannot resolve a non-nullable relationship with null.',
       )
+
       log('this relation resolves with null')
 
       // Override the relational property of the entity to return null.
@@ -197,31 +215,48 @@ export class Relation<
       return
     }
 
-    invariant(
+    exception(
       this.target.primaryKey,
-      'Failed to define a "%s" relation to "%s" on "%s": referenced target model has no primary key set.',
-      this.kind,
-      this.source.propertyPath,
-      this.source.modelName,
+      'referenced model has no primary key set.',
     )
 
     const referencesList = ([] as Value<any, Dictionary>[]).concat(refs)
     const records = this.db.getModel(this.target.modelName)
 
-    log('records in the referenced model', records.keys())
+    log('records in the referenced model:', records.keys())
 
-    // Ensure all given next references exist in the database.
-    // This guards against assigning a compatible plain object
-    // as the relational property value.
-    referencesList.forEach((entity) => {
-      const entityId = entity[this.target.primaryKey]
-      invariant(
-        records.has(entityId),
-        'Failed to define a relational property "%s" on "%s": referenced entity "%s" ("%s") does not exist.',
-        this.source.propertyPath,
-        this.source.modelName,
-        entityId,
+    // Forbid referencing entities from a model different than the one
+    // defined in the
+    referencesList.forEach((ref) => {
+      const refModelName = ref[ENTITY_TYPE as unknown as string]
+      const refPrimaryKey = ref[PRIMARY_KEY as unknown as string]
+      const refId = ref[this.target.primaryKey]
+
+      exception(
+        refModelName,
+        'expected a referenced entity to be "%s" but got %o',
+        this.target.modelName,
+        ref,
+      )
+
+      exception(
+        refModelName === this.target.modelName,
+        'expected a referenced entity to be "%s" but got "%s" (%s: "%s").',
+        this.target.modelName,
+        refModelName,
+        refPrimaryKey,
+        ref[refPrimaryKey],
+      )
+
+      // Forbid referencing non-existing entities.
+      // This guards against assigning a compatible plain object
+      // as the relational value.
+      exception(
+        records.has(refId),
+        'referenced entity "%s" (%s: "%s") does not exist.',
+        refModelName,
         this.target.primaryKey,
+        refId,
       )
     })
 
@@ -287,17 +322,14 @@ export class Relation<
           return extraneousReferences.includes(entity[this.target.primaryKey])
         })
 
-        invariant(
+        exception(
           false,
-          'Failed to create a unique "%s" relation to "%s" ("%s.%s") for "%s": referenced %s "%s" belongs to another %s ("%s").',
-          this.kind,
+          'the referenced "%s" (%s: "%s") belongs to another "%s" (%s: "%s").',
           this.target.modelName,
-          this.source.modelName,
-          this.source.propertyPath,
-          entity[this.source.primaryKey],
-          this.target.modelName,
+          this.target.primaryKey,
           firstInvalidReference?.[this.target.primaryKey],
           this.source.modelName,
+          extraneousEntities[0]?.[PRIMARY_KEY],
           extraneousEntities[0]?.[this.source.primaryKey],
         )
       }
@@ -332,6 +364,22 @@ export class Relation<
     entity: Entity<any, any>,
     resolver: () => unknown,
   ): void {
+    log(
+      'setting value resolver at "%s" on: %j',
+      this.source.propertyPath,
+      entity,
+    )
+
+    invariant(
+      entity[ENTITY_TYPE],
+      'Failed to set a value resolver on a "%s" relationship to "%s" at "%s.%s": provided object (%j) is not an entity.',
+      this.kind,
+      this.target.modelName,
+      this.source.modelName,
+      this.source.propertyPath.join('.'),
+      entity,
+    )
+
     definePropertyAtPath(entity, this.source.propertyPath, {
       // Mark the property as enumerable so it gets listed
       // when iterating over the entity's properties.

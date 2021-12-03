@@ -1,6 +1,6 @@
 import fetch from 'node-fetch'
 import { setupServer } from 'msw/node'
-import { factory, drop, primaryKey } from '@mswjs/data'
+import { factory, drop, primaryKey } from '../../../src'
 
 const db = factory({
   todo: {

@@ -60,7 +60,7 @@ it('applies a "ONE_OF" relation to an entity', () => {
     [PRIMARY_KEY]: 'code',
     code: 'us',
   })
-  const country = db.getModel('country').get('us')!
+  db.getModel('country').get('us')!
 
   const users = db.create('user', {
     [ENTITY_TYPE]: 'user',
@@ -77,7 +77,7 @@ it('applies a "ONE_OF" relation to an entity', () => {
   expect(relation.source.primaryKey).toEqual('id')
 
   // Applying a relation does NOT define the proxy getter.
-  expect(user.birthPlace).toEqual(undefined)
+  expect(user).not.toHaveProperty('birthPlace')
 })
 
 it('applies a "MANY_OF" relation to an entity', () => {
@@ -122,7 +122,7 @@ it('applies a "MANY_OF" relation to an entity', () => {
   expect(relation.target.primaryKey).toEqual('id')
 
   // Applying a relation does NOT define the proxy getter.
-  expect(user.posts).toEqual(undefined)
+  expect(user).not.toHaveProperty('posts')
 })
 
 it('throws an exception when resolving a relation with a non-existing reference', () => {
@@ -149,9 +149,13 @@ it('throws an exception when resolving a relation with a non-existing reference'
   relation.apply(user, ['birthPlace'], dictionary, db)
 
   expect(() => {
-    relation.resolveWith(user, { code: 'us' })
+    relation.resolveWith(user, {
+      [ENTITY_TYPE]: 'country',
+      [PRIMARY_KEY]: 'code',
+      code: 'us',
+    })
   }).toThrow(
-    'Failed to define a relational property "birthPlace" on "user": referenced entity "us" ("code") does not exist.',
+    'Failed to resolve a "ONE_OF" relationship to "country" at "user.birthPlace" (id: "user-1"): referenced entity "country" (code: "us") does not exist.',
   )
 })
 
@@ -185,22 +189,23 @@ it('throws an exception when resolving a unique relation that references an alre
   const firstUser = db.getModel('user').get('user-1')!
   const secondUser = db.getModel('user').get('user-2')!
 
-  db.create('country', {
+  const country = {
     [ENTITY_TYPE]: 'country',
     [PRIMARY_KEY]: 'code',
     code: 'us',
-  })
+  }
+  db.create('country', country)
 
   // First, apply a new relation to the first user.
   relation.apply(firstUser, ['birthPlace'], dictionary, db)
-  relation.resolveWith(firstUser, { code: 'us' })
+  relation.resolveWith(firstUser, country)
 
-  // Then, apply the relation t othe second user
-  // referencing the same country (the relation is unique).
+  // Then, apply the relationship to the second user,
+  // referencing the same country (the relationship is unique).
   expect(() => {
-    relation.resolveWith(secondUser, { code: 'us' })
+    relation.resolveWith(secondUser, country)
   }).toThrow(
-    'Failed to create a unique "ONE_OF" relation to "country" ("user.birthPlace") for "user-2": referenced country "us" belongs to another user ("user-1").',
+    'Failed to resolve a "ONE_OF" relationship to "country" at "user.birthPlace" (id: "user-2"): the referenced "country" (code: "us") belongs to another "user" (id: "user-1").',
   )
 })
 
@@ -237,12 +242,20 @@ it('does not throw an exception when updating the relational reference to the sa
 
   // First, apply and resolve a new relation for the first user.
   relation.apply(user, ['birthPlace'], dictionary, db)
-  relation.resolveWith(user, { code: 'us' })
+  relation.resolveWith(user, {
+    [ENTITY_TYPE]: 'country',
+    [PRIMARY_KEY]: 'code',
+    code: 'us',
+  })
 
   // Update the relational reference to the same referenced country.
-  relation.resolveWith(user, { code: 'us' })
+  relation.resolveWith(user, {
+    [ENTITY_TYPE]: 'country',
+    [PRIMARY_KEY]: 'code',
+    code: 'us',
+  })
 
-  expect(user.birthPlace).toEqual(country)
+  expect(user).toHaveRelationalProperty('birthPlace', country)
 })
 
 it('supports creating nullable relations', () => {
@@ -287,17 +300,21 @@ it('throws an exception when resolving a non-nullable relation with null', () =>
 
   // First, apply a new relation to the user.
   relation.apply(user, ['birthPlace'], dictionary, db)
-  relation.resolveWith(user, { code: 'us' })
+  relation.resolveWith(user, {
+    [ENTITY_TYPE]: 'country',
+    [PRIMARY_KEY]: 'code',
+    code: 'us',
+  })
 
   // Then, update the relational property to resolve with null.
   expect(() => {
     relation.resolveWith(user, null)
   }).toThrow(
-    'Failed to resolve a "ONE_OF" relational property to "country": only nullable relations can resolve with null. Use the "nullable" function when defining this relation to support nullable value.',
+    'Failed to resolve a "ONE_OF" relationship to "country" at "user.birthPlace" (id: "user-1"): cannot resolve a non-nullable relationship with null.',
   )
 
   // The relational property still resolves with the previous value.
-  expect(user.birthPlace).toEqual(country)
+  expect(user).toHaveRelationalProperty('birthPlace', country)
 })
 
 it('does not throw an exception when resolving a nullable relation with null', () => {
@@ -333,5 +350,5 @@ it('does not throw an exception when resolving a nullable relation with null', (
   }).not.toThrow()
 
   // The relational property now resolves to null.
-  expect(user.birthPlace).toEqual(null)
+  expect(user).toHaveRelationalProperty('birthPlace', null)
 })

@@ -1,5 +1,5 @@
 import { datatype, name } from 'faker'
-import { factory, primaryKey, oneOf, manyOf, nullable } from '@mswjs/data'
+import { factory, primaryKey, oneOf, manyOf, nullable } from '../../src'
 import { identity } from '../../src/utils/identity'
 
 test('creates a new entity', () => {
@@ -237,20 +237,21 @@ test('throws an exception when null used as initial value for non-nullable prope
 test('throws an exception when null used as initial value for non-nullable relations', () => {
   const db = factory({
     user: {
-      id: primaryKey(datatype.uuid),
+      id: primaryKey(String),
       posts: manyOf('post'),
     },
     post: {
-      id: primaryKey(datatype.uuid),
+      id: primaryKey(String),
     },
   })
 
   expect(() => {
     db.user.create({
+      id: 'user-1',
       // @ts-expect-error Cannot use null as the initial value for a non-nullable relation.
       posts: null,
     })
   }).toThrowError(
-    'Failed to define a "MANY_OF" relational property to "posts" on "user": a non-nullable relation cannot be instantiated with null. Use the "nullable" function when defining this relation to support nullable value.',
+    'Failed to define a "MANY_OF" relationship to "post" at "user.posts" (id: "user-1"): cannot set a non-nullable relationship to null.',
   )
 })

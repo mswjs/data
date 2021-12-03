@@ -2,8 +2,14 @@ import { debug } from 'debug'
 import get from 'lodash/get'
 import { invariant } from 'outvariant'
 import { Database } from '../db/Database'
-import { Entity, ENTITY_TYPE, ModelDictionary, Value } from '../glossary'
-import { RelationsList } from '../relations/Relation'
+import {
+  Entity,
+  ENTITY_TYPE,
+  ModelDictionary,
+  PRIMARY_KEY,
+  Value,
+} from '../glossary'
+import { Relation, RelationsList } from '../relations/Relation'
 
 const log = debug('defineRelationalProperties')
 
@@ -33,11 +39,23 @@ export function defineRelationalProperties(
 
     invariant(
       references !== null || relation.attributes.nullable,
-      'Failed to define a "%s" relational property to "%s" on "%s": a non-nullable relation cannot be instantiated with null. Use the "nullable" function when defining this relation to support nullable value.',
+      'Failed to define a "%s" relationship to "%s" at "%s.%s" (%s: "%s"): cannot set a non-nullable relationship to null.',
+
       relation.kind,
-      propertyPath.join('.'),
+      relation.target.modelName,
       entity[ENTITY_TYPE],
+      propertyPath.join('.'),
+      entity[PRIMARY_KEY],
+      entity[entity[PRIMARY_KEY]],
     )
+
+    // invariant(
+    //   references !== null || relation.attributes.nullable,
+    //   'Failed to define a "%s" relational property to "%s" on "%s": a non-nullable relation cannot be instantiated with null. Use the "nullable" function when defining this relation to support nullable value.',
+    //   relation.kind,
+    //   propertyPath.join('.'),
+    //   entity[ENTITY_TYPE],
+    // )
 
     log(
       `setting relational property "${entity.__type}.${propertyPath.join(

@@ -1,5 +1,5 @@
 import { datatype } from 'faker'
-import { factory, primaryKey, oneOf } from '@mswjs/data'
+import { factory, primaryKey, oneOf } from '../../src'
 
 test('supports offset-based pagination', () => {
   const db = factory({

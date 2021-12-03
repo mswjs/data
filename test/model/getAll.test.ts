@@ -1,5 +1,5 @@
 import { datatype } from 'faker'
-import { factory, primaryKey } from '@mswjs/data'
+import { factory, primaryKey } from '../../src'
 
 test('returns all entities', () => {
   const db = factory({

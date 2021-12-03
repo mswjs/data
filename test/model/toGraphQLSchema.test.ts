@@ -1,6 +1,6 @@
 import { datatype } from 'faker'
-import { factory, primaryKey } from '@mswjs/data'
 import { printSchema } from 'graphql'
+import { factory, primaryKey } from '../../src'
 
 const db = factory({
   user: {

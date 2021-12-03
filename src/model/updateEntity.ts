@@ -98,7 +98,7 @@ export function updateEntity(
             // Forbid providing a compatible plain object in any array members.
             invariant(
               ref[ENTITY_TYPE],
-              'Failed to update a "%s" relationship to "%s" at "%s" (%s: "%s"): expected the next value at index %d to be an entity but got %j',
+              'Failed to update a "%s" relationship to "%s" at "%s" (%s: "%s"): expected the next value at index %d to be an entity but got %j.',
               propertyDefinition.kind,
               propertyDefinition.target.modelName,
               location,

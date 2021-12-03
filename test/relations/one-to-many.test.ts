@@ -1,5 +1,5 @@
-import { factory, primaryKey, manyOf, nullable } from '@mswjs/data'
-import { ENTITY_TYPE, PRIMARY_KEY } from '../../lib/glossary'
+import { factory, primaryKey, manyOf, nullable } from '../../src'
+import { ENTITY_TYPE, PRIMARY_KEY } from '../../src/glossary'
 
 test('supports one-to-many relation', () => {
   const db = factory({
@@ -809,7 +809,7 @@ test('throws an exception when updating a relational value via a compatible obje
       },
     }),
   ).toThrow(
-    'Failed to define a relational property "posts" on "user": referenced entity "post-2" ("id") does not exist.',
+    'Failed to update a "MANY_OF" relationship to "post" at "user.posts" (id: "abc-123"): expected the next value at index 0 to be an entity but got {"id":"post-2","title":"Compatible object"}.',
   )
 })
 
@@ -840,7 +840,7 @@ test('throws an exception when creating a unique one-to-many relation to the alr
       posts: [post],
     }),
   ).toThrow(
-    'Failed to create a unique "MANY_OF" relation to "post" ("user.posts") for "user-2": referenced post "post-1" belongs to another user ("user-1").',
+    'Failed to resolve a "MANY_OF" relationship to "post" at "user.posts" (id: "user-2"): the referenced "post" (id: "post-1") belongs to another "user" (id: "user-1").',
   )
 })
 
@@ -882,7 +882,7 @@ test('throws an exception when updating a unique one-to-many relation to the alr
       strict: true,
     }),
   ).toThrow(
-    'Failed to create a unique "MANY_OF" relation to "post" ("user.posts") for "user-2": referenced post "post-1" belongs to another user ("user-1").',
+    'Failed to resolve a "MANY_OF" relationship to "post" at "user.posts" (id: "user-2"): the referenced "post" (id: "post-1") belongs to another "user" (id: "user-1").',
   )
 })
 
@@ -924,6 +924,6 @@ test('throws an exception when updating a non-nullable one-to-many relation to n
       strict: true,
     }),
   ).toThrow(
-    'Failed to update relational property "posts" on "user": the next value must be an entity, a list of entities, or null if relation is nullable',
+    'Failed to update a "MANY_OF" relationship to "post" at "user.posts" (id: "user-2"): cannot update a non-nullable relationship to null.',
   )
 })

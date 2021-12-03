@@ -1,5 +1,5 @@
-import { factory, oneOf, primaryKey, nullable } from '@mswjs/data'
-import { ENTITY_TYPE, PRIMARY_KEY } from '../../lib/glossary'
+import { factory, oneOf, primaryKey, nullable } from '../../src'
+import { ENTITY_TYPE, PRIMARY_KEY } from '../../src/glossary'
 
 test('supports querying by a many-to-one relation', () => {
   const db = factory({

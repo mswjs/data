@@ -1,8 +1,8 @@
 import fetch from 'node-fetch'
 import { rest } from 'msw'
 import { setupServer } from 'msw/node'
-import { factory, manyOf, primaryKey } from '@mswjs/data'
-import { ENTITY_TYPE, PRIMARY_KEY } from '../../lib/glossary'
+import { factory, manyOf, primaryKey } from '../../src'
+import { ENTITY_TYPE, PRIMARY_KEY } from '../../src/glossary'
 
 const server = setupServer()
 
