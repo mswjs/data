@@ -1,4 +1,4 @@
-import { factory, primaryKey, nullable } from '@mswjs/data'
+import { factory, primaryKey, nullable } from '../../src'
 import faker from 'faker'
 
 const db = factory({

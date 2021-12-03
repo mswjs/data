@@ -1,4 +1,4 @@
-import { factory, oneOf, primaryKey } from '../../src'
+import { factory, oneOf, primaryKey } from '@mswjs/data'
 
 const db = factory({
   user: {

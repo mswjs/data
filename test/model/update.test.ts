@@ -1,6 +1,6 @@
 import { datatype, name } from 'faker'
-import { factory, oneOf, primaryKey, nullable } from '@mswjs/data'
-import { ENTITY_TYPE, PRIMARY_KEY } from '../../lib/glossary'
+import { factory, oneOf, primaryKey, nullable } from '../../src'
+import { ENTITY_TYPE, PRIMARY_KEY } from '../../src/glossary'
 import { OperationErrorType } from '../../src/errors/OperationError'
 import { getThrownError } from '../testUtils'
 
@@ -589,7 +589,7 @@ test('throws when setting a non-nullable property to null', () => {
         firstName: null,
       },
     }),
-  ).toThrowError(
-    /Failed to set value at "firstName" to null as the property is not nullable/,
+  ).toThrow(
+    'Failed to update "firstName" on "user": cannot set a non-nullable property to null.',
   )
 })

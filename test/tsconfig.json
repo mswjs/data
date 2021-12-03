@@ -5,5 +5,5 @@
     "noEmit": true,
     "baseUrl": "../",
   },
-  "include": ["**/*.ts"]
+  "include": ["jest.d.ts", "**/*.ts"]
 }

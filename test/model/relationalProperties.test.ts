@@ -4,12 +4,11 @@ import {
   RelationKind,
   RelationsList,
 } from '../../src/relations/Relation'
-import { Database } from '../../src/db/Database'
-import { ENTITY_TYPE, ModelDictionary, PRIMARY_KEY } from '../../src/glossary'
 import { defineRelationalProperties } from '../../src/model/defineRelationalProperties'
+import { testFactory } from '../../test/testUtils'
 
 it('marks relational properties as enumerable', () => {
-  const dictionary: ModelDictionary = {
+  const { db, dictionary, databaseInstance } = testFactory({
     user: {
       id: primaryKey(String),
       name: String,
@@ -19,15 +18,15 @@ it('marks relational properties as enumerable', () => {
       title: String,
       author: oneOf('user'),
     },
-  }
+  })
 
-  const db = new Database(dictionary)
-
-  db.create('user', {
-    [ENTITY_TYPE]: 'user',
-    [PRIMARY_KEY]: 'id',
-    id: 'abc-123',
-    name: 'Test User',
+  const user = db.user.create({
+    id: 'user-1',
+    name: 'John Maverick',
+  })
+  const post = db.post.create({
+    id: 'post-1',
+    title: 'Test Post',
   })
 
   const relations: RelationsList = [
@@ -40,21 +39,21 @@ it('marks relational properties as enumerable', () => {
     },
   ]
 
-  const post = {
-    [ENTITY_TYPE]: 'post',
-    [PRIMARY_KEY]: 'id',
-    id: '234',
-    title: 'Test Post',
-  }
-  const initialValues = { author: { id: 'abc-123' } }
+  defineRelationalProperties(
+    post,
+    {
+      author: user,
+    },
+    relations,
+    dictionary,
+    databaseInstance,
+  )
 
-  defineRelationalProperties(post, initialValues, relations, dictionary, db)
-
-  expect(post.propertyIsEnumerable('author')).toBe(true)
+  expect(post.propertyIsEnumerable('author')).toEqual(true)
 })
 
 it('marks nullable relational properties as enumerable', () => {
-  const dictionary: ModelDictionary = {
+  const { db, dictionary, databaseInstance } = testFactory({
     user: {
       id: primaryKey(String),
       name: String,
@@ -64,15 +63,16 @@ it('marks nullable relational properties as enumerable', () => {
       title: String,
       author: nullable(oneOf('user')),
     },
-  }
+  })
 
-  const db = new Database(dictionary)
+  const user = db.user.create({
+    id: 'user-1',
+    name: 'John Maverick',
+  })
 
-  db.create('user', {
-    [ENTITY_TYPE]: 'user',
-    [PRIMARY_KEY]: 'id',
-    id: 'abc-123',
-    name: 'Test User',
+  const post = db.post.create({
+    id: 'post-1',
+    title: 'Test Post',
   })
 
   const relations: RelationsList = [
@@ -85,15 +85,15 @@ it('marks nullable relational properties as enumerable', () => {
     },
   ]
 
-  const post = {
-    [ENTITY_TYPE]: 'post',
-    [PRIMARY_KEY]: 'id',
-    id: '234',
-    title: 'Test Post',
-  }
-  const initialValues = { author: { id: 'abc-123' } }
+  defineRelationalProperties(
+    post,
+    {
+      author: user,
+    },
+    relations,
+    dictionary,
+    databaseInstance,
+  )
 
-  defineRelationalProperties(post, initialValues, relations, dictionary, db)
-
-  expect(post.propertyIsEnumerable('author')).toBe(true)
+  expect(post.propertyIsEnumerable('author')).toEqual(true)
 })

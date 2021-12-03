@@ -1,5 +1,5 @@
 import { datatype, name } from 'faker'
-import { factory, primaryKey } from '@mswjs/data'
+import { factory, primaryKey } from '../../src'
 import { OperationErrorType } from '../../src/errors/OperationError'
 import { getThrownError } from '../testUtils'
 

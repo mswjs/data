@@ -1,4 +1,4 @@
-import { factory, manyOf, primaryKey } from '@mswjs/data'
+import { factory, manyOf, primaryKey } from '../../src'
 
 const db = factory({
   user: {
@@ -24,8 +24,8 @@ allUsers[0].firstName
 allUsers[0].address.billing?.country
 
 // Relational properties.
-const user = allUsers[0];
-const { posts = [] } = user;
+const user = allUsers[0]
+const { posts = [] } = user
 posts[0].id
 posts[0].title
 

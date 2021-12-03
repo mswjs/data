@@ -1,5 +1,5 @@
 import { datatype } from 'faker'
-import { factory, primaryKey, nullable } from '@mswjs/data'
+import { factory, primaryKey, nullable } from '../../src'
 
 const setup = () => {
   const db = factory({
