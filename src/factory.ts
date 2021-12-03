@@ -1,5 +1,6 @@
 import { format } from 'outvariant'
 import {
+  DATABASE_INSTANCE,
   Entity,
   FactoryAPI,
   ModelAPI,
@@ -32,15 +33,20 @@ export function factory<Dictionary extends ModelDictionary>(
   // Initialize database extensions.
   sync(db)
 
-  return Object.entries(dictionary).reduce<any>((acc, [modelName, props]) => {
-    acc[modelName] = createModelApi<Dictionary, typeof modelName>(
-      dictionary,
-      modelName,
-      props,
-      db,
-    )
-    return acc
-  }, {})
+  return Object.entries(dictionary).reduce<any>(
+    (acc, [modelName, props]) => {
+      acc[modelName] = createModelApi<Dictionary, typeof modelName>(
+        dictionary,
+        modelName,
+        props,
+        db,
+      )
+      return acc
+    },
+    {
+      [DATABASE_INSTANCE]: db,
+    },
+  )
 }
 
 function createModelApi<

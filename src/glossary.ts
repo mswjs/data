@@ -1,5 +1,6 @@
 import { GraphQLSchema } from 'graphql'
 import { GraphQLHandler, RestHandler } from 'msw'
+import { Database } from './db/Database'
 import { NullableProperty } from './nullable'
 import { PrimaryKey } from './primaryKey'
 import {
@@ -7,7 +8,11 @@ import {
   QuerySelector,
   WeakQuerySelector,
 } from './query/queryTypes'
-import { OneOf, ManyOf, Relation } from './relations/Relation'
+import { OneOf, ManyOf } from './relations/Relation'
+
+export const PRIMARY_KEY = Symbol('primaryKey')
+export const ENTITY_TYPE = Symbol('type')
+export const DATABASE_INSTANCE = Symbol('databaseInstance')
 
 export type KeyType = string | number | symbol
 export type AnyObject = Record<KeyType, any>
@@ -37,6 +42,8 @@ export type NestedModelDefinition = {
 
 export type FactoryAPI<Dictionary extends Record<string, any>> = {
   [ModelName in keyof Dictionary]: ModelAPI<Dictionary, ModelName>
+} & {
+  [DATABASE_INSTANCE]: Database<Dictionary>
 }
 
 export type ModelDictionary = Record<KeyType, Limit<ModelDefinition>>
@@ -48,9 +55,6 @@ export type Limit<Definition extends ModelDefinition> = {
         error: 'expected primary key, initial value, or relation'
       }
 }
-
-export const PRIMARY_KEY = Symbol('primaryKey')
-export const ENTITY_TYPE = Symbol('type')
 
 export interface InternalEntityProperties<ModelName extends KeyType> {
   readonly [ENTITY_TYPE]: ModelName

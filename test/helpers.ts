@@ -4,6 +4,7 @@ import {
   ENTITY_TYPE,
   PRIMARY_KEY,
   Value,
+  DATABASE_INSTANCE,
 } from '../src/glossary'
 
 export function testFactory<Dictionary extends ModelDictionary>(
@@ -13,6 +14,7 @@ export function testFactory<Dictionary extends ModelDictionary>(
 
   return {
     db,
+    databaseInstance: db[DATABASE_INSTANCE],
     dictionary,
     entity<ModelName extends keyof Dictionary>(
       modelName: ModelName,
