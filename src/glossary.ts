@@ -7,7 +7,7 @@ import {
   QuerySelector,
   WeakQuerySelector,
 } from './query/queryTypes'
-import { OneOf, ManyOf } from './relations/Relation'
+import { OneOf, ManyOf, Relation } from './relations/Relation'
 
 export type KeyType = string | number | symbol
 export type AnyObject = Record<KeyType, any>
@@ -179,6 +179,16 @@ export type UpdateManyValue<
             prevValue: ReturnType<Target[Key]>,
             entity: Value<ModelRoot, Dictionary>,
           ) => ReturnType<Target[Key]>
+        : Target[Key] extends OneOf<infer ModelName>
+        ? (
+            prevValue: PublicEntity<Dictionary, ModelName>,
+            entity: Value<Target, Dictionary>,
+          ) => PublicEntity<Dictionary, ModelName>
+        : Target[Key] extends ManyOf<infer ModelName>
+        ? (
+            prevValue: PublicEntity<Dictionary, ModelName>[],
+            entity: Value<Target, Dictionary>,
+          ) => PublicEntity<Dictionary, ModelName>[]
         : Target[Key] extends AnyObject
         ? Partial<UpdateManyValue<Target[Key], Target, ModelRoot>>
         : (
