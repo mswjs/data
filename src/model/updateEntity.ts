@@ -1,14 +1,9 @@
 import { debug } from 'debug'
 import get from 'lodash/get'
+import set from 'lodash/set'
 import { invariant } from 'outvariant'
-import { Relation } from '../relations/Relation'
-import {
-  ENTITY_TYPE,
-  Entity,
-  ModelDefinition,
-  PRIMARY_KEY,
-  Value,
-} from '../glossary'
+import { Relation, RelationKind } from '../relations/Relation'
+import { ENTITY_TYPE, PRIMARY_KEY, Entity, ModelDefinition } from '../glossary'
 import { isObject } from '../utils/isObject'
 import { inheritInternalProperties } from '../utils/inheritInternalProperties'
 import { NullableProperty } from '../nullable'
@@ -17,121 +12,189 @@ import { spread } from '../utils/spread'
 const log = debug('updateEntity')
 
 /**
- * Update given entity with the data, potentially evolving
- * it based on the existing values.
+ * Update an entity with the given next data.
  */
 export function updateEntity(
   entity: Entity<any, any>,
-  data: any,
+  data: Record<string, any>,
   definition: ModelDefinition,
 ): Entity<any, any> {
-  log('updating entity: %j, with data: %s', entity, data)
+  log('updating entity:\n%j\nwith data:\n%j', entity, data)
   log('model definition:', definition)
 
-  const updateRecursively = (
-    entityChunk: Entity<any, any>,
-    data: any,
-    parentPath: string = '',
-  ): Entity<any, any> => {
-    const result = Object.entries(data).reduce<Entity<any, any>>(
-      (nextEntity, [propertyName, value]) => {
-        const propertyPath = parentPath
-          ? `${parentPath}.${propertyName}`
-          : propertyName
+  const nextEntity = spread(entity)
+  inheritInternalProperties(nextEntity, entity)
 
+  const updateRecursively = (data: any, parentPath: string[] = []): void => {
+    log('updating path "%s" to:', parentPath, data)
+
+    for (const [propertyName, value] of Object.entries(data)) {
+      const propertyPath = parentPath.concat(propertyName)
+
+      const prevValue = get(nextEntity, propertyPath)
+      log('previous value for "%s":', propertyPath, prevValue)
+
+      const nextValue =
+        typeof value === 'function' ? value(prevValue, entity) : value
+      log('next value for "%s":', propertyPath, nextValue)
+
+      const propertyDefinition = get(definition, propertyPath)
+      log('property definition for "%s":', propertyPath, propertyDefinition)
+
+      if (propertyDefinition == null) {
         log(
-          'updating propety "%s" to "%s" on "%s" ("%s"): %j',
-          propertyPath,
-          value,
+          'skipping an unknown property "%s" on "%s"...',
+          propertyName,
           entity[ENTITY_TYPE],
-          entity[entity[PRIMARY_KEY]],
-          entityChunk,
+        )
+        continue
+      }
+
+      if (propertyDefinition instanceof Relation) {
+        log(
+          'property "%s" is a "%s" relationship to "%s"',
+          propertyPath,
+          propertyDefinition.kind,
+          propertyDefinition.target.modelName,
         )
 
-        /**
-         * @note Entity chunk in this scope is always flat.
-         */
-        const prevValue = entityChunk[propertyName]
-        const propertyDefinition = get(definition, propertyPath)
+        const location = `${nextEntity[ENTITY_TYPE]}.${propertyPath.join('.')}`
 
-        log('definition for "%s":', propertyPath, propertyDefinition)
-        log('previous value for "%s":', propertyName, prevValue)
-
-        // Skip the properties not specified in the model definition.
-        if (propertyDefinition == null) {
-          log('unknown property "%s" on the entity, skipping...', propertyName)
-          return nextEntity
-        }
-
-        // When updating a relational property,
-        // re-define the relation instead of using the actual value.
-        if (propertyDefinition instanceof Relation) {
-          log(
-            'property "%s" is a "%s" relation to "%s"!',
-            propertyName,
+        if (nextValue == null) {
+          // Forbid updating a non-nullable relationship to null.
+          invariant(
+            propertyDefinition.attributes.nullable,
+            'Failed to update a "%s" relationship to "%s" at "%s" (%s: "%s"): cannot update a non-nullable relationship to null.',
             propertyDefinition.kind,
             propertyDefinition.target.modelName,
+            location,
+            nextEntity[PRIMARY_KEY],
+            nextEntity[nextEntity[PRIMARY_KEY]],
           )
 
-          invariant(
-            (value === null && propertyDefinition.attributes.nullable) ||
-              isObject(value) ||
-              Array.isArray(value),
-            'Failed to update relational property "%s" on "%s": the next value must be an entity, a list of entities, or null if relation is nullable',
+          log(
+            're-defining the "%s" relationship on "%s" to: null',
             propertyName,
-            propertyDefinition.source.modelName,
+            nextEntity[ENTITY_TYPE],
           )
-
-          log('updating the relation to resolve with:', value)
-
-          // Re-define the relational property to now point at the next value.
-          propertyDefinition.resolveWith(
-            nextEntity,
-            value as Value<any, any>[] | null,
-          )
-
-          return nextEntity
+          propertyDefinition.resolveWith(nextEntity, null)
+          continue
         }
 
-        if (isObject(value)) {
-          log('value is a plain object (%s), recursively updating...', value)
-          nextEntity[propertyName] = updateRecursively(
-            prevValue,
-            value,
-            propertyPath,
+        if (propertyDefinition.kind === RelationKind.ManyOf) {
+          // Forbid updating a "MANY_OF" relation to a non-array value.
+          invariant(
+            Array.isArray(nextValue),
+            'Failed to update a "%s" relationship to "%s" at "%s" (%s: "%s"): expected the next value to be an array of entities but got %j.',
+            propertyDefinition.kind,
+            propertyDefinition.target.modelName,
+            location,
+            nextEntity[PRIMARY_KEY],
+            nextEntity[nextEntity[PRIMARY_KEY]],
+            nextValue,
           )
-          return nextEntity
+
+          nextValue.forEach((ref, index) => {
+            // Forbid providing a compatible plain object in any array members.
+            invariant(
+              ref[ENTITY_TYPE],
+              'Failed to update a "%s" relationship to "%s" at "%s" (%s: "%s"): expected the next value at index %d to be an entity but got %j',
+              propertyDefinition.kind,
+              propertyDefinition.target.modelName,
+              location,
+              nextEntity[PRIMARY_KEY],
+              nextEntity[nextEntity[PRIMARY_KEY]],
+              index,
+              ref,
+            )
+
+            // Forbid referencing a different model in any array members.
+            invariant(
+              ref[ENTITY_TYPE] === propertyDefinition.target.modelName,
+              'Failed to update a "%s" relationship to "%s" at "%s" (%s: "%s"): expected the next value at index %d to reference a "%s" but got "%s".',
+              propertyDefinition.kind,
+              propertyDefinition.target.modelName,
+              location,
+              nextEntity[PRIMARY_KEY],
+              nextEntity[nextEntity[PRIMARY_KEY]],
+              index,
+              propertyDefinition.target.modelName,
+              ref[ENTITY_TYPE],
+            )
+          })
+
+          propertyDefinition.resolveWith(nextEntity, nextValue)
+          continue
         }
 
-        const nextValue =
-          typeof value === 'function' ? value(prevValue, entity) : value
-
-        log('setting a value at "%s" to: %s', propertyName, nextValue)
+        // Forbid updating a relationship with a compatible plain object.
         invariant(
-          nextValue !== null || propertyDefinition instanceof NullableProperty,
-          'Failed to set value at "%s" to null as the property is not nullable. Use the "nullable" function when defining your property',
-          propertyName,
+          nextValue[ENTITY_TYPE],
+          'Failed to update a "%s" relationship to "%s" at "%s" (%s: "%s"): expected the next value to be an entity but got %j.',
+          propertyDefinition.kind,
+          propertyDefinition.target.modelName,
+          location,
+          nextEntity[PRIMARY_KEY],
+          nextEntity[nextEntity[PRIMARY_KEY]],
+          nextValue,
         )
-        nextEntity[propertyName] = nextValue
 
-        log('next entity:', nextEntity)
+        // Forbid updating a relationship to an entity of a different model.
+        invariant(
+          nextValue[ENTITY_TYPE] == propertyDefinition.target.modelName,
+          'Failed to update a "%s" relationship to "%s" at "%s" (%s: "%s"): expected the next value to reference a "%s" but got "%s" (%s: "%s").',
+          propertyDefinition.kind,
+          propertyDefinition.target.modelName,
+          location,
+          nextEntity[PRIMARY_KEY],
+          nextEntity[nextEntity[PRIMARY_KEY]],
+          propertyDefinition.target.modelName,
+          nextValue[ENTITY_TYPE],
+          nextValue[PRIMARY_KEY],
+          nextValue[nextValue[PRIMARY_KEY]],
+        )
 
-        return nextEntity
-      },
-      spread(entityChunk),
-    )
+        // Re-define the relationship only if its next value references a different entity
+        // than before. That means a new compatible entity was created as the next value.
+        if (
+          prevValue?.[prevValue?.[PRIMARY_KEY]] !==
+          nextValue[nextValue[PRIMARY_KEY]]
+        ) {
+          log(
+            'next referenced "%s" (%s: "%s") differs from the previous (%s: "%s"), re-defining the relationship...',
+            propertyDefinition.target.modelName,
+            nextValue[PRIMARY_KEY],
+          )
+          propertyDefinition.resolveWith(nextEntity, nextValue)
+        }
 
-    return result
+        continue
+      }
+
+      // Support updating nested objects.
+      if (isObject(nextValue)) {
+        log(
+          'next value at "%s" is an object: %j, recursively updating...',
+          propertyPath,
+          nextValue,
+        )
+        updateRecursively(nextValue, propertyPath)
+        continue
+      }
+
+      invariant(
+        nextValue !== null || propertyDefinition instanceof NullableProperty,
+        'Failed to update "%s" on "%s": cannot set a non-nullable property to null.',
+        propertyName,
+        entity[ENTITY_TYPE],
+      )
+
+      log('updating a plain property "%s" to:', propertyPath, nextValue)
+      set(nextEntity, propertyPath, nextValue)
+    }
   }
 
-  const nextEntity = updateRecursively(entity, data)
-
-  /**
-   * @note Inherit the internal properties (type, primary key)
-   * from the source (previous) entity.
-   * Spreading the entity chunk strips off its symbols.
-   */
-  inheritInternalProperties(nextEntity, entity)
+  updateRecursively(data)
 
   log('successfully updated to:', nextEntity)
 
