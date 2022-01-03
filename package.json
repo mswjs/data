@@ -13,6 +13,7 @@
     "test:ts": "tsc -p test/tsconfig.test-d.json",
     "clean": "rimraf ./lib",
     "build": "yarn clean && tsc",
+    "postinstall": "yarn simple-git-hooks init",
     "prepublishOnly": "yarn build && yarn test:ts && yarn test"
   },
   "files": [
@@ -20,10 +21,14 @@
     "README.md"
   ],
   "devDependencies": {
+    "@commitlint/cli": "^16.0.1",
+    "@commitlint/config-conventional": "^16.0.0",
     "@types/debug": "^4.1.5",
     "@types/faker": "^5.5.3",
     "@types/jest": "^26.0.22",
     "@types/node-fetch": "^2.5.10",
+    "commitizen": "^4.2.4",
+    "cz-conventional-changelog": "3.3.0",
     "faker": "^5.5.3",
     "jest": "^26.6.0",
     "msw": "latest",
@@ -31,6 +36,7 @@
     "page-with": "^0.4.1",
     "prettier": "^2.2.1",
     "rimraf": "^3.0.2",
+    "simple-git-hooks": "^2.7.0",
     "ts-jest": "^26.5.5",
     "ts-node": "^9.1.1",
     "typescript": "4.3.5"
@@ -52,5 +58,10 @@
   },
   "optionalDependencies": {
     "msw": "latest"
+  },
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/cz-conventional-changelog"
+    }
   }
 }

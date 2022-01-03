@@ -42,3 +42,10 @@ jobs:
 
       - name: Tests (typings)
         run: yarn test:ts
+
+      - name: Release
+        if: contains(github.ref, 'refs/heads/main')
+        uses: cycjimmy/semantic-release-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
