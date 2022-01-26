@@ -1,5 +1,5 @@
 import { datatype } from 'faker'
-import { factory, primaryKey } from '../../src'
+import { factory, primaryKey, nullable } from '../../src'
 import { OperationErrorType } from '../../src/errors/OperationError'
 import { getThrownError } from '../testUtils'
 
@@ -75,4 +75,27 @@ test('returns an empty array when not found matching entities', () => {
     },
   })
   expect(users).toHaveLength(0)
+})
+
+test('queries with null as criteria', () => {
+  const db = factory({
+    user: {
+      id: String,
+      organizationId: nullable((): string | null => null),
+    },
+  })
+
+  const john = db.user.create({ id: 'john' })
+  db.user.create({ id: 'katy', organizationId: 'org-1' })
+  const clark = db.user.create({ id: 'clark' })
+
+  const users = db.user.findMany({
+    where: {
+      organizationId: {
+        equals: null,
+      },
+    },
+  })
+
+  expect(users).toEqual([john, clark])
 })
