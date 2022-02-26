@@ -1,3 +1,6 @@
+/**
+ * @see https://github.com/mswjs/data/issues/139
+ */
 import { factory, manyOf, oneOf, primaryKey } from '@mswjs/data'
 
 test('supports creating a bi-directional one-to-one relationship', () => {
@@ -8,7 +11,7 @@ test('supports creating a bi-directional one-to-one relationship', () => {
     },
   })
 
-  // create bi-directional relationship between partners
+  // Create a bi-directional relationship between partners.
   const starsky = db.user.create({
     id: 'starsky',
   })
@@ -39,7 +42,7 @@ test('supports creating a bi-directional one-to-many relationship', () => {
     },
   })
 
-  // create bi-directional relationship between author and posts
+  // Create a bi-directional relationship between author and posts.
   const author = db.user.create({ id: 'user-1' })
   const posts = [
     db.post.create({
@@ -61,7 +64,7 @@ test('supports creating a bi-directional one-to-many relationship', () => {
 
   posts.forEach((post) => {
     expect(post.author).toBe(nextAuthor)
-    expect(nextAuthor.posts.includes(post)).toBe(true)
+    expect(nextAuthor.posts?.includes(post)).toBe(true)
   })
 })
 
@@ -78,7 +81,7 @@ test('supports creating a bi-directional many-to-many relationship', () => {
     },
   })
 
-  // create bi-directional relationship between authors and posts
+  // Create a bi-directional relationship between authors and posts.
   const authors = [
     db.user.create({ id: 'user-1' }),
     db.user.create({ id: 'user-2' }),
@@ -104,8 +107,8 @@ test('supports creating a bi-directional many-to-many relationship', () => {
   expect(nextAuthors).toHaveLength(authors.length)
   posts.forEach((post) => {
     nextAuthors.forEach((author) => {
-      expect(post.authors.includes(author)).toBe(true)
-      expect(author.posts.includes(post)).toBe(true)
+      expect(post.authors?.includes(author)).toBe(true)
+      expect(author.posts?.includes(post)).toBe(true)
     })
   })
 })
@@ -118,7 +121,7 @@ test('supports querying by a bi-directional one-to-one relationship', () => {
     },
   })
 
-  // create bi-directional relationship between partners
+  // Create a bi-directional relationship between partners
   const starsky = db.user.create({
     id: 'starsky',
   })
@@ -132,10 +135,10 @@ test('supports querying by a bi-directional one-to-one relationship', () => {
     strict: true,
   })!
 
-  // create unrelated user to ensure they are not found
+  // Create an unrelated user to ensure they are not found
   db.user.create({ id: 'user' })
 
-  // can find models using bi-directional relationship
+  // Can find models using bi-directional relationship
   const starskysPartner = db.user.findFirst({
     where: { partner: { id: { equals: starsky.id } } },
     strict: true,
@@ -157,7 +160,7 @@ test('supports querying by a bi-directional one-to-many relationship', () => {
     },
   })
 
-  // create bi-directional relationship between author and posts
+  // Create a bi-directional relationship between author and posts
   const firstAuthor = db.user.create({ id: 'user-1' })
   const secondAuthor = db.user.create({ id: 'user-2' })
   const thirdAuthor = db.user.create({ id: 'user-3' })
@@ -198,11 +201,11 @@ test('supports querying by a bi-directional one-to-many relationship', () => {
     strict: true,
   })
 
-  // create unrelated user and post to ensure they are not included
+  // Create unrelated user and post to ensure they are not included.
   db.user.create({ id: 'user-unrelated' })
   db.post.create({ id: 'post-unrelated' })
 
-  // find posts in one-to-many direction
+  // Find posts in one-to-many direction
   const posts = db.post.findMany({
     where: { author: { id: { in: [firstAuthor.id, secondAuthor.id] } } },
     strict: true,
@@ -215,7 +218,7 @@ test('supports querying by a bi-directional one-to-many relationship', () => {
     expect(posts.includes(expectedPost)).toBe(true)
   })
 
-  // find authors in many-to-one direction
+  // Find authors in many-to-one direction.
   const authors = db.user.findMany({
     where: { posts: { id: { in: [secondPost.id, thirdPost.id] } } },
     strict: true,
@@ -242,7 +245,7 @@ test('supports querying by a bi-directional many-to-many relationship', () => {
     },
   })
 
-  // create bi-directional relationship between authors and posts
+  // Create a bi-directional relationship between authors and posts.
   const firstAuthor = db.user.create({ id: 'user-1' })
   const secondAuthor = db.user.create({ id: 'user-2' })
   const thirdAuthor = db.user.create({ id: 'user-3' })
@@ -283,7 +286,7 @@ test('supports querying by a bi-directional many-to-many relationship', () => {
     strict: true,
   })
 
-  // find posts through many-to-many relationship
+  // Find posts through many-to-many relationship.
   const posts = db.post.findMany({
     where: { authors: { id: { in: [firstAuthor.id, secondAuthor.id] } } },
     strict: true,
@@ -305,7 +308,7 @@ test('supports updating using an entity with a bi-directional one-to-one relatio
     },
   })
 
-  // create bi-directional relationship between partners
+  // Create a bi-directional relationship between partners.
   const hutch = db.user.create({
     id: 'hutch',
     partner: db.user.create({
@@ -318,10 +321,10 @@ test('supports updating using an entity with a bi-directional one-to-one relatio
     strict: true,
   })!
 
-  // create a user that is not related to starsky or hutch.
+  // Create a user that is not related to starsky or hutch.
   db.user.create({ id: 'user' })
 
-  // update using user with bi-directional relationship
+  // Update using user with bi-directional relationship.
   const user = db.user.update({
     where: { id: { equals: 'user' } },
     data: { partner: starsky },
@@ -344,7 +347,7 @@ test('supports updating using an entity with a bi-directional one-to-many relati
     },
   })
 
-  // create bi-directional relationship between author and posts
+  // Create a bi-directional relationship between author and posts.
   const author = db.user.create({
     id: 'user-1',
   })
@@ -366,13 +369,13 @@ test('supports updating using an entity with a bi-directional one-to-many relati
     strict: true,
   })!
 
-  // create a post that is not related to author
+  // Create a post that is not related to author.
   db.post.create({
     id: 'post-3',
     title: 'Third post',
   })
 
-  // update post using author with bi-directional relationship
+  // Update post using author with bi-directional relationship.
   const post = db.post.update({
     where: { id: { equals: 'post-3' } },
     data: { author: nextAuthor },
@@ -395,7 +398,7 @@ test('supports updating using an entity with a bi-directional many-to-many relat
     },
   })
 
-  // create bi-directional relationship between authors and posts
+  // Create a bi-directional relationship between authors and posts.
   const authors = [
     db.user.create({
       id: 'user-1',
@@ -422,12 +425,12 @@ test('supports updating using an entity with a bi-directional many-to-many relat
     strict: true,
   })!
 
-  // create an unrelated post
+  // Create an unrelated post.
   db.post.create({
     id: 'post-3',
   })
 
-  // update post using authors with bi-directional relationships
+  // Update post using authors with bi-directional relationships.
   const post = db.post.update({
     where: { id: { equals: 'post-2' } },
     data: { authors: nextAuthors },
@@ -435,7 +438,7 @@ test('supports updating using an entity with a bi-directional many-to-many relat
   })!
 
   expect(post.authors).toHaveLength(authors.length)
-  post.authors.forEach((author, i) => {
+  post.authors?.forEach((author, i) => {
     expect(author).toBe(nextAuthors[i])
   })
 })

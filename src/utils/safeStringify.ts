@@ -1,6 +1,6 @@
 import { ENTITY_TYPE, PRIMARY_KEY } from '../glossary'
 
-export function safeStringify(value: any) {
+export function safeStringify(value: unknown): string {
   const seen = new WeakSet()
 
   return JSON.stringify(value, (_, value) => {
@@ -11,6 +11,7 @@ export function safeStringify(value: any) {
     if (seen.has(value)) {
       const type = value[ENTITY_TYPE]
       const primaryKey = value[PRIMARY_KEY]
+
       return type && primaryKey
         ? `Entity(type: ${type}, ${primaryKey}: ${value[primaryKey]})`
         : '[Circular Reference]'
