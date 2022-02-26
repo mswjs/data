@@ -7,8 +7,10 @@ import {
   ModelDefinitionValue,
 } from '../glossary'
 
-export interface QuerySelector<EntityType extends AnyObject> {
+export interface QueryOptions {
   strict?: boolean
+}
+export interface QuerySelector<EntityType extends AnyObject> {
   where: QuerySelectorWhere<EntityType>
 }
 
