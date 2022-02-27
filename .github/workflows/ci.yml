@@ -1,0 +1,35 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Environment (versions)
+        run: |
+          echo "node: $(node -v)"
+          echo "npm: $(npm -v)"
+          echo "typescript: $(npm ls typescript)"
+          echo "tsc: $(tsc -v)"
+
+      - name: Build
+        run: yarn build
+
+      - name: Tests
+        run: yarn test
+
+      - name: Tests (typings)
+        run: yarn test:ts
