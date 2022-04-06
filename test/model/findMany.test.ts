@@ -74,5 +74,5 @@ test('returns an empty array when not found matching entities', () => {
       },
     },
   })
-  expect(users).toHaveLength(0)
+  expect(users).toEqual([])
 })

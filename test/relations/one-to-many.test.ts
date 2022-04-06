@@ -39,6 +39,46 @@ test('supports one-to-many relation', () => {
   ).toEqual(user)
 })
 
+test('returns an empty array for a non-nullable one-to-many relation with no value', () => {
+  const db = factory({
+    user: {
+      id: primaryKey(String),
+      posts: manyOf('post'),
+    },
+    post: {
+      id: primaryKey(String),
+      title: String,
+    },
+  })
+
+  const user = db.user.create({
+    id: 'user-1',
+  })
+
+  // Non-nullable "manyOf" relations return an empty array.
+  expect(user.posts).toEqual([])
+})
+
+test('returns null for a nullable one-to-many relation with no value', () => {
+  const db = factory({
+    user: {
+      id: primaryKey(String),
+      posts: nullable(manyOf('post')),
+    },
+    post: {
+      id: primaryKey(String),
+      title: String,
+    },
+  })
+
+  const user = db.user.create({
+    id: 'user-1',
+  })
+
+  // Nullable "manyOf" relations return null.
+  expect(user.posts).toBeNull()
+})
+
 test('supports nullable one-to-many relation', () => {
   const db = factory({
     user: {

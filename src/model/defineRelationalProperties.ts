@@ -9,7 +9,7 @@ import {
   PRIMARY_KEY,
   Value,
 } from '../glossary'
-import { Relation, RelationsList } from '../relations/Relation'
+import { RelationKind, RelationsList } from '../relations/Relation'
 
 const log = debug('defineRelationalProperties')
 
@@ -49,28 +49,36 @@ export function defineRelationalProperties(
       entity[entity[PRIMARY_KEY]],
     )
 
-    // invariant(
-    //   references !== null || relation.attributes.nullable,
-    //   'Failed to define a "%s" relational property to "%s" on "%s": a non-nullable relation cannot be instantiated with null. Use the "nullable" function when defining this relation to support nullable value.',
-    //   relation.kind,
-    //   propertyPath.join('.'),
-    //   entity[ENTITY_TYPE],
-    // )
-
     log(
-      `setting relational property "${entity.__type}.${propertyPath.join(
+      `setting relational property "${entity[ENTITY_TYPE]}.${propertyPath.join(
         '.',
       )}" with references: %j`,
-      relation,
       references,
+      relation,
     )
 
     relation.apply(entity, propertyPath, dictionary, db)
 
     if (references) {
+      log('has references, applying a getter...')
       relation.resolveWith(entity, references)
-    } else if (relation.attributes.nullable) {
-      relation.resolveWith(entity, null)
+      continue
     }
+
+    if (relation.attributes.nullable) {
+      log('has no references but is nullable, applying a getter to null...')
+      relation.resolveWith(entity, null)
+      continue
+    }
+
+    if (relation.kind === RelationKind.ManyOf) {
+      log(
+        'has no references but is a non-nullable "manyOf" relationship, applying a getter to []...',
+      )
+      relation.resolveWith(entity, [])
+      continue
+    }
+
+    log('has no relations, skipping the getter...')
   }
 }
