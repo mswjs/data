@@ -182,9 +182,10 @@ export class Relation<
 
     invariant(
       this.source,
-      'Failed to resolve a "%s" relational property to "%s": relation has not been applied.',
+      'Failed to resolve a "%s" relational property to "%s": relation has not been applied (source: %s).',
       this.kind,
       this.target.modelName,
+      this.source,
     )
 
     log(
