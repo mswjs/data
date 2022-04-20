@@ -743,6 +743,15 @@ This library supports querying of the seeded data similar to how one would query
 - `equals`
 - `notEquals`
 
+#### Date operators
+
+- `equals`
+- `notEquals`
+- `gt`
+- `gte`
+- `lt`
+- `lte`
+
 #### Query example
 
 ```js
