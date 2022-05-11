@@ -20,9 +20,6 @@ const post = db.post.create()
 // @ts-expect-error author is potentially undefined
 post.author.id
 
-// @ts-expect-error posts is potentially undefined
-user.posts[0]
-
 // @ts-expect-error reply is potentially null
 post.reply.id
 

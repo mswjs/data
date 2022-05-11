@@ -230,7 +230,7 @@ export type Value<
     Target[Key] extends ManyOf<infer ModelName, infer Nullable>
     ? Nullable extends true
       ? PublicEntity<Dictionary, ModelName>[] | null
-      : PublicEntity<Dictionary, ModelName>[] | undefined
+      : PublicEntity<Dictionary, ModelName>[]
     : // Account for primitive value getters because
     // native constructors (i.e. StringConstructor) satisfy
     // the "AnyObject" predicate below.
