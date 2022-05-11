@@ -1,7 +1,7 @@
 {
   "name": "@mswjs/data",
   "description": "Data modeling and relation library for testing JavaScript applications.",
-  "version": "0.8.4",
+  "version": "0.10.1",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "author": "Artem Zakharchenko",
