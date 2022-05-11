@@ -16,6 +16,11 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GH_ADMIN_TOKEN }}
 
+      - name: Setup Git
+        run: |
+          git config --local user.name "kettanaito"
+          git config --local user.email "kettanaito@gmail.com"
+
       - name: Install dependencies
         run: yarn install --frozen-lockfile
 
