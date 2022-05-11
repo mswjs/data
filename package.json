@@ -24,6 +24,7 @@
   "devDependencies": {
     "@commitlint/cli": "^16.0.1",
     "@commitlint/config-conventional": "^16.0.0",
+    "@ossjs/release": "^0.2.1",
     "@types/debug": "^4.1.5",
     "@types/faker": "^5.5.3",
     "@types/jest": "^26.0.22",
