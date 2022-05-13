@@ -1,7 +1,7 @@
 import { GraphQLSchema } from 'graphql'
 import { GraphQLHandler, RestHandler } from 'msw'
 import { Database } from './db/Database'
-import { NullableProperty } from './nullable'
+import { NullableObjectProperty, NullableProperty } from './nullable'
 import { PrimaryKey } from './primaryKey'
 import {
   BulkQueryOptions,
@@ -28,6 +28,7 @@ export type ModelDefinitionValue =
   | PrimaryKey<any>
   | ModelValueTypeGetter
   | NullableProperty<any>
+  | NullableObjectProperty<any>
   | OneOf<any, boolean>
   | ManyOf<any, boolean>
   | NestedModelDefinition
@@ -36,6 +37,7 @@ export type NestedModelDefinition = {
   [propertyName: string]:
     | ModelValueTypeGetter
     | NullableProperty<any>
+    | NullableObjectProperty<any>
     | OneOf<any, boolean>
     | ManyOf<any, boolean>
     | NestedModelDefinition

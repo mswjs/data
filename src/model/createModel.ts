@@ -17,10 +17,29 @@ import { ParsedModelDefinition } from './parseModelDefinition'
 import { defineRelationalProperties } from './defineRelationalProperties'
 import { PrimaryKey } from '../primaryKey'
 import { Relation } from '../relations/Relation'
-import { NullableProperty } from '../nullable'
+import { NullableObjectProperty, NullableProperty } from '../nullable'
 import { isModelValueType } from '../utils/isModelValueType'
 
 const log = debug('createModel')
+
+function getDefinition(definition: ModelDefinition, propertyName: string[]) {
+  return propertyName.reduce((acc, property) => {
+    const value = acc[property]
+    // "safe" get
+    if (value === undefined) {
+      return undefined
+    }
+    // unwrap value from NullableObjectProperty if it's not the last part of the path
+    // otherwise return NullableObjectProperty to be caught by createModel to properly
+    if (
+      value instanceof NullableObjectProperty &&
+      property !== propertyName.at(-1)
+    ) {
+      return value.value
+    }
+    return value
+  }, definition)
+}
 
 export function createModel<
   Dictionary extends ModelDictionary,
@@ -51,7 +70,7 @@ export function createModel<
   const publicProperties = properties.reduce<Record<string, unknown>>(
     (properties, propertyName) => {
       const initialValue = get(initialValues, propertyName)
-      const propertyDefinition = get(definition, propertyName)
+      const propertyDefinition = getDefinition(definition, propertyName)
 
       // Ignore relational properties at this stage.
       if (propertyDefinition instanceof Relation) {
@@ -64,6 +83,15 @@ export function createModel<
           propertyName,
           initialValue || propertyDefinition.getPrimaryKeyValue(),
         )
+        return properties
+      }
+
+      if (propertyDefinition instanceof NullableObjectProperty) {
+        // if initial value is set to null then set it to override the default values for model
+        if (initialValue === null) {
+          set(properties, propertyName, null)
+        }
+
         return properties
       }
 

@@ -74,27 +74,44 @@ test('creates a new entity with an array property with array of objects assigned
   expect(exactUser.notes).toEqual(exampleNotes)
 })
 
-test('creates a new entity with nullable properties', () => {
+test.only('creates a new entity with nullable properties', () => {
   const db = factory({
     user: {
       id: primaryKey(datatype.uuid),
+      test: String,
       name: nullable(name.findName),
       age: nullable<number>(() => null),
       address: {
         street: String,
         number: nullable<number>(() => null),
       },
+      address2: nullable({
+        street: String,
+        number: nullable<number>(() => null),
+      }),
+      address3: nullable({
+        street: String,
+        number: nullable<number>(() => null),
+      }),
+      address4: nullable(Object),
+      address5: nullable(Object),
     },
   })
 
   const user = db.user.create({
     id: 'abc-123',
     name: null,
+    address2: null,
+    address4: null,
   })
 
   expect(user.name).toEqual(null)
   expect(user.age).toEqual(null)
   expect(user.address.number).toEqual(null)
+  expect(user.address2).toEqual(null)
+  expect(user.address3).toEqual({ street: '', number: null })
+  expect(user.address4).toEqual(null)
+  expect(user.address5).toEqual({})
 })
 
 test('supports nested objects in the model definition', () => {

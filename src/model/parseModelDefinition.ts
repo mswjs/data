@@ -9,7 +9,7 @@ import {
 import { PrimaryKey } from '../primaryKey'
 import { isObject } from '../utils/isObject'
 import { Relation, RelationsList } from '../relations/Relation'
-import { NullableProperty } from '../nullable'
+import { NullableObjectProperty, NullableProperty } from '../nullable'
 
 const log = debug('parseModelDefinition')
 
@@ -67,6 +67,24 @@ function deepParseModelDefinition<Dictionary extends ModelDictionary>(
       result.primaryKey = propertyName
       result.properties.push([propertyName])
 
+      continue
+    }
+
+    if (
+      value instanceof NullableObjectProperty &&
+      isObject<NestedModelDefinition>(value.value)
+    ) {
+      // Add nullable object properties individually to fill in default values if provided
+      deepParseModelDefinition(
+        dictionary,
+        modelName,
+        value.value,
+        propertyPath,
+        result,
+      )
+
+      // Add nullable object property key after individual properties to make sure it overwrites it
+      result.properties.push(propertyPath)
       continue
     }
 
