@@ -46,7 +46,7 @@ export const db = factory({
 
 > See the [Recipes](#recipes) for more guidelines on data modeling.
 
-Throughout this document native JavaScript constructors (i.e. String, Number) will be used as values getters for the models, as they both create a value and define its type. In practice, you may consider using value generators or tools like [faker](#usage-with-faker) for value getters.
+Throughout this document native JavaScript constructors (i.e. String, Number) will be used as values getters for the models, as they both create a value and define its type. In practice, you may consider using value generators or tools like [Faker](#usage-with-faker) for value getters.
 
 #### Using the primary key
 
@@ -69,7 +69,7 @@ In the example above, the `id` is the primary key for the `user` model. This mea
 Just like regular model properties, the primary key accepts a getter function that you can use to generate its value when creating entities:
 
 ```js
-import { datatype } from 'faker'
+import { datatype } from '@faker-js/faker'
 
 factory({
   user: {
@@ -973,12 +973,12 @@ const db = factory({...})
 drop(db)
 ```
 
-### Usage with `faker`
+### Usage with `Faker`
 
-Libraries like [`faker`](https://github.com/Marak/Faker.js) can help you generate fake data for your models.
+Libraries like [Faker](https://github.com/faker-js/faker) can help you generate fake data for your models.
 
 ```js
-import { seed, datatype, name } from 'faker'
+import { seed, datatype, name } from '@faker-js/faker'
 import { factory, primaryKey } from '@mswjs/data'
 
 // (Optional) Seed `faker` to ensure reproducible
