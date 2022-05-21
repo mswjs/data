@@ -1,4 +1,4 @@
-import { datatype, name } from 'faker'
+import { faker } from '@faker-js/faker'
 import { factory, primaryKey, nullable } from '../../src'
 import { OperationErrorType } from '../../src/errors/OperationError'
 import { getThrownError } from '../testUtils'
@@ -6,8 +6,8 @@ import { getThrownError } from '../testUtils'
 test('derives updated value from the existing value', () => {
   const db = factory({
     user: {
-      id: primaryKey(datatype.uuid),
-      firstName: name.findName,
+      id: primaryKey(faker.datatype.uuid),
+      firstName: faker.name.findName,
       role: String,
     },
   })
@@ -110,8 +110,8 @@ test('moves entities when they update primary keys', () => {
 test('throws an exception when no entity matches the query in strict mode', () => {
   const db = factory({
     user: {
-      id: primaryKey(datatype.uuid),
-      firstName: name.firstName,
+      id: primaryKey(faker.datatype.uuid),
+      firstName: faker.name.firstName,
     },
   })
   db.user.create()
@@ -142,8 +142,8 @@ test('throws an exception when no entity matches the query in strict mode', () =
 test('should update many entities with primitive values', () => {
   const db = factory({
     user: {
-      id: primaryKey(datatype.uuid),
-      firstName: name.findName,
+      id: primaryKey(faker.datatype.uuid),
+      firstName: faker.name.findName,
       role: String,
     },
   })
@@ -180,8 +180,8 @@ test('should update many entities with primitive values', () => {
 test('supports updating a nullable property to a non-null value on many entities', () => {
   const db = factory({
     user: {
-      id: primaryKey(datatype.uuid),
-      firstName: name.findName,
+      id: primaryKey(faker.datatype.uuid),
+      firstName: faker.name.findName,
       role: nullable<string>(() => null),
     },
   })
@@ -218,8 +218,8 @@ test('supports updating a nullable property to a non-null value on many entities
 test('supports updating a nullable property with a value to null on many entities', () => {
   const db = factory({
     user: {
-      id: primaryKey(datatype.uuid),
-      firstName: name.findName,
+      id: primaryKey(faker.datatype.uuid),
+      firstName: faker.name.findName,
       role: nullable<string>(() => null),
     },
   })
@@ -256,7 +256,7 @@ test('supports updating a nullable property with a value to null on many entitie
 test('throw an error when updating entities with an already existing primary key', () => {
   const db = factory({
     user: {
-      id: primaryKey(datatype.uuid),
+      id: primaryKey(faker.datatype.uuid),
       role: String,
     },
   })

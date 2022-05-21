@@ -1,4 +1,4 @@
-import { datatype } from 'faker'
+import { faker } from '@faker-js/faker'
 import { factory, primaryKey } from '../../src'
 import { OperationErrorType } from '../../src/errors/OperationError'
 import { getThrownError } from '../testUtils'
@@ -6,7 +6,7 @@ import { getThrownError } from '../testUtils'
 test('returns all matching entities', () => {
   const db = factory({
     user: {
-      id: primaryKey(datatype.uuid),
+      id: primaryKey(faker.datatype.uuid),
       followersCount: Number,
     },
   })
@@ -30,7 +30,7 @@ test('returns all matching entities', () => {
 test('throws an exception when no results in strict mode', () => {
   const db = factory({
     user: {
-      id: primaryKey(datatype.uuid),
+      id: primaryKey(faker.datatype.uuid),
     },
   })
   db.user.create()
@@ -58,7 +58,7 @@ test('throws an exception when no results in strict mode', () => {
 test('returns an empty array when not found matching entities', () => {
   const db = factory({
     user: {
-      id: primaryKey(datatype.uuid),
+      id: primaryKey(faker.datatype.uuid),
       followersCount: Number,
     },
   })

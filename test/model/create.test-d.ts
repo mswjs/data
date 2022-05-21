@@ -1,5 +1,5 @@
 import { factory, primaryKey, nullable } from '../../src'
-import faker from 'faker'
+import { faker } from '@faker-js/faker'
 
 const db = factory({
   user: {

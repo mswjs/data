@@ -1,4 +1,4 @@
-import { datatype, random, name } from 'faker'
+import { faker } from '@faker-js/faker'
 import { factory, primaryKey } from '@mswjs/data'
 import { measurePerformance, repeat } from '../testUtils'
 
@@ -6,11 +6,11 @@ describe.skip('Performance testing', () => {
   test('creates a 1000 records in under 100ms', async () => {
     const db = factory({
       user: {
-        id: primaryKey(datatype.uuid),
-        firstName: name.firstName,
-        lastName: name.lastName,
-        age: datatype.number,
-        role: random.word,
+        id: primaryKey(faker.datatype.uuid),
+        firstName: faker.name.firstName,
+        lastName: faker.name.lastName,
+        age: faker.datatype.number,
+        role: faker.random.word,
       },
     })
 
@@ -24,11 +24,11 @@ describe.skip('Performance testing', () => {
   test('queries through a 1000 records in under 100ms', async () => {
     const db = factory({
       user: {
-        id: primaryKey(datatype.uuid),
-        firstName: name.firstName,
-        lastName: name.lastName,
-        age: datatype.number,
-        role: random.word,
+        id: primaryKey(faker.datatype.uuid),
+        firstName: faker.name.firstName,
+        lastName: faker.name.lastName,
+        age: faker.datatype.number,
+        role: faker.random.word,
       },
     })
     repeat(db.user.create, 1000)
@@ -49,11 +49,11 @@ describe.skip('Performance testing', () => {
   test('updates a single record under 100ms', async () => {
     const db = factory({
       user: {
-        id: primaryKey(datatype.uuid),
-        firstName: name.firstName,
-        lastName: name.lastName,
-        age: datatype.number,
-        role: random.word,
+        id: primaryKey(faker.datatype.uuid),
+        firstName: faker.name.firstName,
+        lastName: faker.name.lastName,
+        age: faker.datatype.number,
+        role: faker.random.word,
       },
     })
     repeat(db.user.create, 1000)
@@ -77,11 +77,11 @@ describe.skip('Performance testing', () => {
   test('deletes a single record in under 100ms', async () => {
     const db = factory({
       user: {
-        id: primaryKey(datatype.uuid),
-        firstName: name.firstName,
-        lastName: name.lastName,
-        age: datatype.number,
-        role: random.word,
+        id: primaryKey(faker.datatype.uuid),
+        firstName: faker.name.firstName,
+        lastName: faker.name.lastName,
+        age: faker.datatype.number,
+        role: faker.random.word,
       },
     })
     repeat(db.user.create, 999)
@@ -103,11 +103,11 @@ describe.skip('Performance testing', () => {
   test('deletes multiple records in under 100ms', async () => {
     const db = factory({
       user: {
-        id: primaryKey(datatype.uuid),
-        firstName: name.firstName,
-        lastName: name.lastName,
-        age: datatype.number,
-        role: random.word,
+        id: primaryKey(faker.datatype.uuid),
+        firstName: faker.name.firstName,
+        lastName: faker.name.lastName,
+        age: faker.datatype.number,
+        role: faker.random.word,
       },
     })
     repeat(db.user.create, 1000)

@@ -1,10 +1,10 @@
-import { datatype } from 'faker'
+import { faker } from '@faker-js/faker'
 import { factory, primaryKey } from '../../src'
 
 test('returns all entities', () => {
   const db = factory({
     user: {
-      id: primaryKey(datatype.uuid),
+      id: primaryKey(faker.datatype.uuid),
       firstName: String,
     },
   })
@@ -23,7 +23,7 @@ test('returns all entities', () => {
 test('returns an empty list when found no entities', () => {
   const db = factory({
     user: {
-      id: primaryKey(datatype.uuid),
+      id: primaryKey(faker.datatype.uuid),
       firstName: String,
     },
   })
