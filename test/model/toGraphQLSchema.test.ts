@@ -1,10 +1,10 @@
-import { datatype } from 'faker'
+import { faker } from '@faker-js/faker'
 import { printSchema } from 'graphql'
 import { factory, primaryKey } from '../../src'
 
 const db = factory({
   user: {
-    id: primaryKey(datatype.uuid),
+    id: primaryKey(faker.datatype.uuid),
     firstName: String,
     age: Number,
   },

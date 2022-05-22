@@ -1,11 +1,11 @@
 import fetch from 'node-fetch'
-import { datatype } from 'faker'
+import { faker } from '@faker-js/faker'
 import { setupServer } from 'msw/node'
 import { factory, primaryKey, drop } from '../../src'
 
 const db = factory({
   user: {
-    id: primaryKey(datatype.uuid),
+    id: primaryKey(faker.datatype.uuid),
     firstName: String,
     age: Number,
   },

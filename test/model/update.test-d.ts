@@ -1,4 +1,4 @@
-import faker from 'faker'
+import { faker } from '@faker-js/faker'
 import { factory, oneOf, manyOf, primaryKey, nullable } from '@mswjs/data'
 
 const db = factory({

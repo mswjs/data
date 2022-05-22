@@ -1,14 +1,14 @@
-import { datatype, name } from 'faker'
+import { faker } from '@faker-js/faker'
 import { factory, primaryKey } from '../../src'
 import { OperationErrorType } from '../../src/errors/OperationError'
 import { getThrownError } from '../testUtils'
 
 test('deletes a unique entity that matches the query', () => {
-  const userId = datatype.uuid()
+  const userId = faker.datatype.uuid()
   const db = factory({
     user: {
-      id: primaryKey(datatype.uuid),
-      firstName: name.findName,
+      id: primaryKey(faker.datatype.uuid),
+      firstName: faker.name.findName,
     },
   })
 
@@ -34,8 +34,8 @@ test('deletes a unique entity that matches the query', () => {
 test('deletes the first entity that matches the query', () => {
   const db = factory({
     user: {
-      id: primaryKey(datatype.uuid),
-      firstName: name.firstName,
+      id: primaryKey(faker.datatype.uuid),
+      firstName: faker.name.firstName,
       followersCount: Number,
     },
   })
@@ -70,7 +70,7 @@ test('deletes the first entity that matches the query', () => {
 test('throws an exception when no entities matches the query in strict mode', () => {
   const db = factory({
     user: {
-      id: primaryKey(datatype.uuid),
+      id: primaryKey(faker.datatype.uuid),
     },
   })
   db.user.create()
@@ -98,8 +98,8 @@ test('throws an exception when no entities matches the query in strict mode', ()
 test('does nothing when no entity matches the query', () => {
   const db = factory({
     user: {
-      id: primaryKey(datatype.uuid),
-      firstName: name.firstName,
+      id: primaryKey(faker.datatype.uuid),
+      firstName: faker.name.firstName,
     },
   })
   db.user.create({ firstName: 'Kate' })

@@ -1,15 +1,15 @@
-import { datatype, name } from 'faker'
+import { faker } from '@faker-js/faker'
 import { factory, oneOf, primaryKey, nullable } from '../../src'
 import { ENTITY_TYPE, PRIMARY_KEY } from '../../src/glossary'
 import { OperationErrorType } from '../../src/errors/OperationError'
 import { getThrownError } from '../testUtils'
 
 test('updates a unique entity that matches the query', () => {
-  const userId = datatype.uuid()
+  const userId = faker.datatype.uuid()
   const db = factory({
     user: {
-      id: primaryKey(datatype.uuid),
-      firstName: name.findName,
+      id: primaryKey(faker.datatype.uuid),
+      firstName: faker.name.findName,
     },
   })
   db.user.create({
@@ -43,7 +43,7 @@ test('updates a unique entity that matches the query', () => {
 test('updates a property that had no initial value', () => {
   const db = factory({
     user: {
-      id: primaryKey(datatype.uuid),
+      id: primaryKey(faker.datatype.uuid),
       firstName: String,
     },
   })
@@ -89,9 +89,9 @@ test('updates a property that had no initial value', () => {
 test('updates the first entity when multiple entities match the query', () => {
   const db = factory({
     user: {
-      id: primaryKey(datatype.uuid),
-      firstName: name.findName,
-      followersCount: datatype.number,
+      id: primaryKey(faker.datatype.uuid),
+      firstName: faker.name.findName,
+      followersCount: faker.datatype.number,
     },
   })
   db.user.create({
@@ -127,7 +127,7 @@ test('updates the first entity when multiple entities match the query', () => {
 test('updates a nested property of the model', () => {
   const db = factory({
     user: {
-      id: primaryKey(datatype.uuid),
+      id: primaryKey(faker.datatype.uuid),
       address: {
         billing: {
           street: String,
@@ -188,7 +188,7 @@ test('updates a nested property of the model', () => {
 test('updates root and nested properties of the model simultaneously', () => {
   const db = factory({
     user: {
-      id: primaryKey(datatype.uuid),
+      id: primaryKey(faker.datatype.uuid),
       firstName: String,
       address: {
         shipping: {
@@ -240,12 +240,12 @@ test('updates root and nested properties of the model simultaneously', () => {
 test('updates both properties and relations', () => {
   const db = factory({
     user: {
-      id: primaryKey(datatype.uuid),
+      id: primaryKey(faker.datatype.uuid),
       firstName: String,
       address: oneOf('address'),
     },
     address: {
-      id: primaryKey(datatype.uuid),
+      id: primaryKey(faker.datatype.uuid),
       country: String,
     },
   })
@@ -293,7 +293,7 @@ test('updates both properties and relations', () => {
 test('throws an exception when no model matches the query in strict mode', () => {
   const db = factory({
     user: {
-      id: primaryKey(datatype.uuid),
+      id: primaryKey(faker.datatype.uuid),
       firstName: String,
     },
   })
@@ -325,7 +325,7 @@ test('throws an exception when no model matches the query in strict mode', () =>
 test('moves the entity when it updates the primary key', () => {
   const db = factory({
     user: {
-      id: primaryKey(datatype.uuid),
+      id: primaryKey(faker.datatype.uuid),
     },
   })
 
@@ -367,7 +367,7 @@ test('moves the entity when it updates the primary key', () => {
 test('does nothing when no entity matches the query', () => {
   const db = factory({
     user: {
-      id: primaryKey(datatype.uuid),
+      id: primaryKey(faker.datatype.uuid),
     },
   })
 
@@ -390,7 +390,7 @@ test('does nothing when no entity matches the query', () => {
 test('throw an error when trying to update an entity using a key already used', () => {
   const db = factory({
     user: {
-      id: primaryKey(datatype.uuid),
+      id: primaryKey(faker.datatype.uuid),
     },
   })
 
@@ -425,8 +425,8 @@ test('throw an error when trying to update an entity using a key already used', 
 test('derives next entity values based on the existing ones', () => {
   const db = factory({
     user: {
-      id: primaryKey(datatype.uuid),
-      firstName: name.findName,
+      id: primaryKey(faker.datatype.uuid),
+      firstName: faker.name.findName,
       role: String,
     },
   })
@@ -470,7 +470,7 @@ test('derives next entity values based on the existing ones', () => {
 test('exposes a root entity for a derivitive value of a nested property', () => {
   const db = factory({
     user: {
-      id: primaryKey(datatype.uuid),
+      id: primaryKey(faker.datatype.uuid),
       address: {
         billing: {
           country: String,
@@ -514,8 +514,8 @@ test('exposes a root entity for a derivitive value of a nested property', () => 
 test('supports updating a nullable property to a non-null value', () => {
   const db = factory({
     user: {
-      id: primaryKey(datatype.uuid),
-      firstName: nullable(name.firstName),
+      id: primaryKey(faker.datatype.uuid),
+      firstName: nullable(faker.name.firstName),
     },
   })
 
@@ -541,8 +541,8 @@ test('supports updating a nullable property to a non-null value', () => {
 test('supports updating a nullable property with a value to null', () => {
   const db = factory({
     user: {
-      id: primaryKey(datatype.uuid),
-      firstName: nullable(name.firstName),
+      id: primaryKey(faker.datatype.uuid),
+      firstName: nullable(faker.name.firstName),
     },
   })
 
@@ -568,8 +568,8 @@ test('supports updating a nullable property with a value to null', () => {
 test('throws when setting a non-nullable property to null', () => {
   const db = factory({
     user: {
-      id: primaryKey(datatype.uuid),
-      firstName: name.firstName,
+      id: primaryKey(faker.datatype.uuid),
+      firstName: faker.name.firstName,
     },
   })
 

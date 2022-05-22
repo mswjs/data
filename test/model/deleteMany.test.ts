@@ -1,4 +1,4 @@
-import { datatype, name } from 'faker'
+import { faker } from '@faker-js/faker'
 import { factory, primaryKey } from '../../src'
 import { OperationErrorType } from '../../src/errors/OperationError'
 import { getThrownError } from '../testUtils'
@@ -6,9 +6,9 @@ import { getThrownError } from '../testUtils'
 test('deletes all entites that match the query', () => {
   const db = factory({
     user: {
-      id: primaryKey(datatype.uuid),
-      firstName: name.firstName,
-      followersCount: datatype.number,
+      id: primaryKey(faker.datatype.uuid),
+      firstName: faker.name.firstName,
+      followersCount: faker.datatype.number,
     },
   })
 
@@ -60,7 +60,7 @@ test('deletes all entites that match the query', () => {
 test('throws an exception when no entities match the query in a strict mode', () => {
   const db = factory({
     user: {
-      id: primaryKey(datatype.uuid),
+      id: primaryKey(faker.datatype.uuid),
     },
   })
   db.user.create()
@@ -88,9 +88,9 @@ test('throws an exception when no entities match the query in a strict mode', ()
 test('does nothing when no entities match the query', () => {
   const db = factory({
     user: {
-      id: primaryKey(datatype.uuid),
-      firstName: name.firstName,
-      followersCount: datatype.number,
+      id: primaryKey(faker.datatype.uuid),
+      firstName: faker.name.firstName,
+      followersCount: faker.datatype.number,
     },
   })
 

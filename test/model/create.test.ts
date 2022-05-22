@@ -1,9 +1,9 @@
-import { datatype, name } from 'faker'
+import { faker } from '@faker-js/faker'
 import { factory, primaryKey, oneOf, manyOf, nullable } from '../../src'
 import { identity } from '../../src/utils/identity'
 
 test('creates a new entity', () => {
-  const userId = datatype.uuid()
+  const userId = faker.datatype.uuid()
   const db = factory({
     user: {
       id: primaryKey(identity(userId)),
@@ -19,7 +19,7 @@ test('creates a new entity', () => {
 test('creates a new entity with initial values', () => {
   const db = factory({
     user: {
-      id: primaryKey(datatype.uuid),
+      id: primaryKey(faker.datatype.uuid),
     },
   })
 
@@ -33,7 +33,7 @@ test('creates a new entity with initial values', () => {
 test('creates a new entity with an array property', () => {
   const db = factory({
     user: {
-      id: primaryKey(datatype.uuid),
+      id: primaryKey(faker.datatype.uuid),
       favouriteNumbers: Array,
     },
   })
@@ -49,7 +49,7 @@ test('creates a new entity with an array property', () => {
 test('creates a new entity with an array property with array of objects assigned', () => {
   const db = factory({
     user: {
-      id: primaryKey(datatype.uuid),
+      id: primaryKey(faker.datatype.uuid),
       notes: Array,
     },
   })
@@ -77,8 +77,8 @@ test('creates a new entity with an array property with array of objects assigned
 test('creates a new entity with nullable properties', () => {
   const db = factory({
     user: {
-      id: primaryKey(datatype.uuid),
-      name: nullable(name.findName),
+      id: primaryKey(faker.datatype.uuid),
+      name: nullable(faker.name.findName),
       age: nullable<number>(() => null),
       address: {
         street: String,
@@ -100,7 +100,7 @@ test('creates a new entity with nullable properties', () => {
 test('supports nested objects in the model definition', () => {
   const db = factory({
     user: {
-      id: primaryKey(datatype.uuid),
+      id: primaryKey(faker.datatype.uuid),
       name: String,
       info: {
         firstName: String,
@@ -144,7 +144,7 @@ test('supports nested objects in the model definition', () => {
 test('relational properties can be declared in nested objects', () => {
   const db = factory({
     user: {
-      id: primaryKey(datatype.uuid),
+      id: primaryKey(faker.datatype.uuid),
       name: String,
       info: {
         country: oneOf('country'),
@@ -153,7 +153,7 @@ test('relational properties can be declared in nested objects', () => {
       },
     },
     country: {
-      id: primaryKey(datatype.uuid),
+      id: primaryKey(faker.datatype.uuid),
       name: String,
     },
   })
@@ -182,7 +182,7 @@ test('relational properties can be declared in nested objects', () => {
 test('uses value getters when creating an entity with nested arrays', () => {
   const db = factory({
     user: {
-      id: primaryKey(datatype.uuid),
+      id: primaryKey(faker.datatype.uuid),
       name: String,
       info: {
         tags: () => [1, 2],
@@ -205,7 +205,7 @@ test('uses value getters when creating an entity with nested arrays', () => {
 test('supports property names with dots in model definition', () => {
   const db = factory({
     user: {
-      'employee.id': primaryKey(datatype.uuid),
+      'employee.id': primaryKey(faker.datatype.uuid),
     },
   })
 
@@ -219,7 +219,7 @@ test('supports property names with dots in model definition', () => {
 test('throws an exception when null used as initial value for non-nullable properties', () => {
   const db = factory({
     user: {
-      id: primaryKey(datatype.uuid),
+      id: primaryKey(faker.datatype.uuid),
       name: String,
     },
   })

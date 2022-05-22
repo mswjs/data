@@ -1,5 +1,5 @@
 import { v4 } from 'uuid'
-import { random, datatype } from 'faker'
+import { faker } from '@faker-js/faker'
 import { factory, primaryKey } from '../src'
 import {
   OperationError,
@@ -11,7 +11,7 @@ test('supports querying by the primary key', () => {
   const db = factory({
     user: {
       id: primaryKey(v4),
-      firstName: random.word,
+      firstName: faker.random.word,
     },
   })
 
@@ -37,8 +37,8 @@ test('supports querying by the primary key', () => {
 test('supports querying by the range of primary keys', () => {
   const db = factory({
     user: {
-      id: primaryKey(random.word),
-      firstName: random.word,
+      id: primaryKey(faker.random.word),
+      firstName: faker.random.word,
     },
   })
 
@@ -69,7 +69,7 @@ test('supports querying by the range of primary keys', () => {
 test('supports querying by the primary key and additional properties', () => {
   const db = factory({
     user: {
-      id: primaryKey(datatype.uuid),
+      id: primaryKey(faker.datatype.uuid),
       firstName: String,
       age: Number,
     },
@@ -136,7 +136,7 @@ test('throws an error when primary key is not set at root level', () => {
         name: String,
         info: {
           // @ts-expect-error Primary key on nested properties are forbidden.
-          id: primaryKey(datatype.uuid),
+          id: primaryKey(faker.datatype.uuid),
           firstName: String,
           lastName: String,
         },

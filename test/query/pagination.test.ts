@@ -1,10 +1,10 @@
-import { datatype } from 'faker'
+import { faker } from '@faker-js/faker'
 import { factory, primaryKey, oneOf } from '../../src'
 
 test('supports offset-based pagination', () => {
   const db = factory({
     book: {
-      id: primaryKey(datatype.uuid),
+      id: primaryKey(faker.datatype.uuid),
       title: String,
       category: String,
     },
@@ -42,7 +42,7 @@ test('supports offset-based pagination', () => {
 test('supports cursor-based pagination', () => {
   const db = factory({
     book: {
-      id: primaryKey(datatype.uuid),
+      id: primaryKey(faker.datatype.uuid),
       title: String,
       category: String,
     },
@@ -81,7 +81,7 @@ test('supports cursor-based pagination', () => {
 test('returns an empty list given invalid cursor', () => {
   const db = factory({
     book: {
-      id: primaryKey(datatype.uuid),
+      id: primaryKey(faker.datatype.uuid),
       title: String,
       category: String,
     },
@@ -103,7 +103,7 @@ test('returns an empty list given invalid cursor', () => {
 test('supports single-criteria sorting in the paginated results', () => {
   const db = factory({
     book: {
-      id: primaryKey(datatype.uuid),
+      id: primaryKey(faker.datatype.uuid),
       title: String,
       publishedYear: Number,
     },
@@ -141,7 +141,7 @@ test('supports single-criteria sorting in the paginated results', () => {
 test('supports multi-criteria sorting in the paginated results', () => {
   const db = factory({
     book: {
-      id: primaryKey(datatype.uuid),
+      id: primaryKey(faker.datatype.uuid),
       title: String,
       publishedYear: Number,
     },
@@ -191,12 +191,12 @@ test('supports multi-criteria sorting in the paginated results', () => {
 test('supports single-criteria sorting by relational property in the paginated results', () => {
   const db = factory({
     book: {
-      id: primaryKey(datatype.uuid),
+      id: primaryKey(faker.datatype.uuid),
       title: String,
       author: oneOf('author'),
     },
     author: {
-      id: primaryKey(datatype.uuid),
+      id: primaryKey(faker.datatype.uuid),
       firstName: String,
     },
   })
@@ -223,12 +223,12 @@ test('supports single-criteria sorting by relational property in the paginated r
 test('supports multi-criteria sorting by relational property in the paginated results', () => {
   const db = factory({
     book: {
-      id: primaryKey(datatype.uuid),
+      id: primaryKey(faker.datatype.uuid),
       title: String,
       author: oneOf('author'),
     },
     author: {
-      id: primaryKey(datatype.uuid),
+      id: primaryKey(faker.datatype.uuid),
       firstName: String,
       bornAt: () => new Date(),
     },
@@ -292,12 +292,12 @@ test('supports multi-criteria sorting by relational property in the paginated re
 test('supports sorting by both direct and relational properties in the paginated results', () => {
   const db = factory({
     book: {
-      id: primaryKey(datatype.uuid),
+      id: primaryKey(faker.datatype.uuid),
       title: String,
       author: oneOf('author'),
     },
     author: {
-      id: primaryKey(datatype.uuid),
+      id: primaryKey(faker.datatype.uuid),
       firstName: String,
     },
   })
@@ -331,7 +331,7 @@ test('supports sorting by both direct and relational properties in the paginated
 test('supports single-criteria sorting by nested model properties', () => {
   const db = factory({
     book: {
-      id: primaryKey(datatype.uuid),
+      id: primaryKey(faker.datatype.uuid),
       publication: {
         country: String,
       },
@@ -364,7 +364,7 @@ test('supports single-criteria sorting by nested model properties', () => {
 test('supports multi-criteria sorting by nested model properties', () => {
   const db = factory({
     book: {
-      id: primaryKey(datatype.uuid),
+      id: primaryKey(faker.datatype.uuid),
       publication: {
         year: () => new Date(),
         pubilsher: {

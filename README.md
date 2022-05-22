@@ -69,11 +69,11 @@ In the example above, the `id` is the primary key for the `user` model. This mea
 Just like regular model properties, the primary key accepts a getter function that you can use to generate its value when creating entities:
 
 ```js
-import { datatype } from '@faker-js/faker'
+import { faker } from '@faker-js/faker'
 
 factory({
   user: {
-    id: primaryKey(datatype.uuid),
+    id: primaryKey(faker.datatype.uuid),
   },
 })
 ```
@@ -978,17 +978,17 @@ drop(db)
 Libraries like [Faker](https://github.com/faker-js/faker) can help you generate fake data for your models.
 
 ```js
-import { seed, datatype, name } from '@faker-js/faker'
+import { faker } from '@faker-js/faker'
 import { factory, primaryKey } from '@mswjs/data'
 
 // (Optional) Seed `faker` to ensure reproducible
 // random values of model properties.
-seed(123)
+faker.seed(123)
 
 factory({
   user: {
-    id: primaryKey(datatype.uuid),
-    firstName: name.firstName,
+    id: primaryKey(faker.datatype.uuid),
+    firstName: faker.name.firstName,
   },
 })
 ```

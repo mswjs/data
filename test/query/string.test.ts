@@ -1,10 +1,10 @@
-import { datatype } from 'faker'
+import { faker } from '@faker-js/faker'
 import { factory, primaryKey, nullable } from '@mswjs/data'
 
 const setup = () => {
   const db = factory({
     recipe: {
-      id: primaryKey(datatype.uuid),
+      id: primaryKey(faker.datatype.uuid),
       title: String,
       category: nullable<string>(() => null),
     },

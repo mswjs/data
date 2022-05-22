@@ -1,10 +1,10 @@
-import { datatype } from 'faker'
+import { faker } from '@faker-js/faker'
 import { factory, primaryKey, nullable } from '../../src'
 
 const setup = () => {
   const db = factory({
     user: {
-      id: primaryKey(datatype.uuid),
+      id: primaryKey(faker.datatype.uuid),
       firstName: String,
       createdAt: () => new Date(),
       updatedAt: nullable<Date>(() => null),
