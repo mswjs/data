@@ -19,7 +19,10 @@ export type KeyType = string | number | symbol
 export type AnyObject = Record<KeyType, any>
 export type PrimaryKeyType = string | number
 export type PrimitiveValueType = string | number | boolean | Date
-export type ModelValueType = PrimitiveValueType | PrimitiveValueType[] | Object
+export type ModelValueType =
+  | PrimitiveValueType
+  | PrimitiveValueType[]
+  | AnyObject
 export type ModelValueTypeGetter = () => ModelValueType
 
 export type ModelDefinition = Record<string, ModelDefinitionValue>
