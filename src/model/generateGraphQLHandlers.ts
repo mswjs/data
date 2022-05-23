@@ -20,9 +20,9 @@ import { ModelAPI, ModelDefinition, ModelDictionary } from '../glossary'
 import { PrimaryKey } from '../primaryKey'
 import { capitalize } from '../utils/capitalize'
 import { QueryToComparator } from '../query/queryTypes'
-import { booleanComparators } from '../comparators/boolean'
-import { stringComparators } from '../comparators/string'
-import { numberComparators } from '../comparators/number'
+import { booleanComparators } from '../query/comparators/boolean'
+import { stringComparators } from '../query/comparators/string'
+import { numberComparators } from '../query/comparators/number'
 
 interface GraphQLFieldsMap {
   fields: GraphQLFieldConfigMap<any, any>
@@ -57,7 +57,11 @@ function createComparatorGraphQLInputType(
     name,
     fields: Object.keys(comparators).reduce<GraphQLInputFieldConfigMap>(
       (fields, comparatorFn) => {
-        const fieldType = ['between', 'notBetween', 'in', 'notIn'].includes(comparatorFn) ? GraphQLList(type) : type
+        const fieldType = ['between', 'notBetween', 'in', 'notIn'].includes(
+          comparatorFn,
+        )
+          ? GraphQLList(type)
+          : type
         fields[comparatorFn] = { type: fieldType }
         return fields
       },

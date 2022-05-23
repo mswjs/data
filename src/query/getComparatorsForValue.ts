@@ -1,7 +1,7 @@
-import { booleanComparators } from '../comparators/boolean'
-import { dateComparators } from '../comparators/date'
-import { numberComparators } from '../comparators/number'
-import { stringComparators } from '../comparators/string'
+import { booleanComparators } from './comparators/boolean'
+import { dateComparators } from './comparators/date'
+import { numberComparators } from './comparators/number'
+import { stringComparators } from './comparators/string'
 import {
   DateQuery,
   NumberQuery,

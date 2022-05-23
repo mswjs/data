@@ -1,5 +1,5 @@
 import { compareAsc as compareDates } from 'date-fns'
-import { DateQuery, QueryToComparator } from '../query/queryTypes'
+import { DateQuery, QueryToComparator } from '../queryTypes'
 
 export const dateComparators: QueryToComparator<DateQuery> = {
   equals(expected, actual) {

@@ -1,4 +1,4 @@
-import { BooleanQuery, QueryToComparator } from '../query/queryTypes'
+import { BooleanQuery, QueryToComparator } from '../queryTypes'
 
 export const booleanComparators: QueryToComparator<BooleanQuery> = {
   equals(expected, actual) {

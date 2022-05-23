@@ -1,4 +1,4 @@
-import { QueryToComparator, StringQuery } from '../query/queryTypes'
+import { QueryToComparator, StringQuery } from '../queryTypes'
 
 export const stringComparators: QueryToComparator<StringQuery> = {
   equals(expected, actual) {

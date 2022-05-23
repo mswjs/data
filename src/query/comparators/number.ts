@@ -1,5 +1,5 @@
-import { NumberQuery, QueryToComparator } from '../query/queryTypes'
-import { numberInRange } from '../utils/numberInRange'
+import { NumberQuery, QueryToComparator } from '../queryTypes'
+import { numberInRange } from '../../utils/numberInRange'
 
 export const numberComparators: QueryToComparator<NumberQuery> = {
   equals(expected, actual) {

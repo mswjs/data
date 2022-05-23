@@ -1,8 +1,9 @@
 export default {
   preset: 'ts-jest',
   testTimeout: 60000,
+  rootDir: '..',
   moduleNameMapper: {
-    '^@mswjs/data(.*)': '<rootDir>/../src',
+    '^@mswjs/data(.*)': '<rootDir>/src',
   },
-  setupFilesAfterEnv: ['./jest.setup.ts'],
+  setupFilesAfterEnv: ['./test/jest.setup.ts'],
 }

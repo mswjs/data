@@ -360,8 +360,6 @@ export class Relation<
       return this.kind === RelationKind.OneOf ? first(queryResult) : queryResult
     })
 
-    console.log({ entity, refs })
-
     // Check for inverse relationships.
     this.resolveInverseWith(refs, entity)
   }
@@ -377,14 +375,6 @@ export class Relation<
     const targetModel = this.dictionary[this.target.modelName]
 
     for (const [propertyPath, definition] of Object.entries(targetModel)) {
-      console.log(
-        propertyPath,
-        definition instanceof Relation,
-        definition,
-        (definition as any)?.target?.modelName,
-        this.source.modelName,
-      )
-
       if (
         definition instanceof Relation &&
         definition.target.modelName === this.source.modelName
@@ -399,8 +389,6 @@ export class Relation<
           definition.kind === RelationKind.OneOf
             ? [entities as Entity<Dictionary, string>]
             : (entities as any as Entity<Dictionary, string>[])
-
-        console.log({ source: this, target: definition })
 
         if (!definition.source) {
           console.warn('apply first!', definition)

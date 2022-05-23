@@ -9,7 +9,7 @@
   "scripts": {
     "start": "tsc -w",
     "format": "prettier src/**/*.ts --write",
-    "test": "jest",
+    "test": "jest -c  test/jest.config.ts",
     "test:ts": "tsc -p test/tsconfig.test-d.json",
     "clean": "rimraf ./lib",
     "build": "yarn clean && tsc",
