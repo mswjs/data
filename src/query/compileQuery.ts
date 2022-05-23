@@ -3,6 +3,7 @@ import { invariant } from 'outvariant'
 import { ComparatorFn, QuerySelector } from './queryTypes'
 import { getComparatorsForValue } from './getComparatorsForValue'
 import { isObject } from '../utils/isObject'
+import { IDENTIFIER } from '../model/v2/contexts/QueryableContext'
 
 const log = debug('compileQuery')
 
@@ -63,7 +64,7 @@ export function compileQuery<Data extends Record<string, any>>(
 
             // When the actual value is a resolved relational property reference,
             // execute the current query chunk on the referenced entity.
-            if (actualValue.__type || isObject(actualValue)) {
+            if (actualValue[IDENTIFIER] || isObject(actualValue)) {
               return compileQuery({ where: queryChunk })(actualValue)
             }
 

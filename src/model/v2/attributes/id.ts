@@ -3,7 +3,7 @@ import get from 'lodash/get'
 import { invariant } from 'outvariant'
 import type { Getter } from '../Model'
 import { QueryableContext } from '../contexts/QueryableContext'
-import { TokenAttributes, TokenSetPayload } from '../Token'
+import { Token, TokenAttributes, TokenSetPayload } from '../Token'
 
 export function id(getter: Getter<string>): IdentifierAttributes {
   return new IdentifierAttributes(getter)
@@ -61,4 +61,8 @@ export class IdentifierAttributes extends TokenAttributes<
 
     return true
   }
+}
+
+export function theIdToken(token: Token): Token | undefined {
+  return token.attributes instanceof IdentifierAttributes ? token : undefined
 }

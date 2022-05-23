@@ -1,5 +1,5 @@
 import { Database } from '../Database'
-import { IdentifierAttributes } from '../attributes/id'
+import { theIdToken } from '../attributes/id'
 import { Model, ModelProduceArgs } from '../Model'
 import { EntityContext } from './EntityContext'
 
@@ -26,17 +26,15 @@ export class QueryableContext extends EntityContext {
     input: ModelProduceArgs<any>,
     model: Model,
   ) {
-    const idToken = model.tokens.find(
-      (token) => token.attributes instanceof IdentifierAttributes,
-    )
+    const idToken = model.tokens.find(theIdToken)!
 
     // Assign entity meta data used for querying.
-    const queryableEntity = Object.assign({}, entity, {
+    Object.assign(entity, {
       [MODEL_NAME]: this.modelName,
-      [IDENTIFIER]: idToken?.location[0],
+      [IDENTIFIER]: idToken.location[0],
     })
 
     // Store the created entity in the database.
-    this.db.create(this.modelName, queryableEntity)
+    this.db.create(this.modelName, entity)
   }
 }

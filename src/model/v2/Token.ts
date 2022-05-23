@@ -1,7 +1,7 @@
 import set from 'lodash/set'
 import { invariant } from 'outvariant'
+import type { EntityContext } from './contexts/EntityContext'
 import type { ModelValue, Getter, Model, ModelDefinition } from './Model'
-import { EntityContext } from './contexts/QueryableContext'
 
 export type TokenLocation = string[]
 

@@ -1,7 +1,7 @@
 import get from 'lodash/get'
 import type { AnyObject } from '../../glossary'
 import { isObject } from '../../utils/isObject'
-import type { EntityContext } from './contexts/QueryableContext'
+import type { EntityContext } from './contexts/EntityContext'
 import { Token, TokenAttributes, TokenLocation } from './Token'
 
 export type PrimitiveValue = string | number | boolean | Date
@@ -122,6 +122,6 @@ export interface ModelProduceArgs<Definition extends ModelDefinition> {
   context?: EntityContext
 }
 
-type InitialValues<Definition extends ModelDefinition> = Partial<
+export type InitialValues<Definition extends ModelDefinition> = Partial<
   Values<Definition>
 >
