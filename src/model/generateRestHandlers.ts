@@ -8,7 +8,10 @@ import {
   ModelDefinition,
 } from '../glossary'
 import { QuerySelectorWhere, WeakQuerySelectorWhere } from '../query/queryTypes'
-import { OperationErrorType, OperationError } from '../errors/OperationError'
+import {
+  OperationErrorType,
+  OperationError,
+} from '../utils/errors/OperationError'
 import { findPrimaryKey } from '../utils/findPrimaryKey'
 import { PrimaryKey } from '../primaryKey'
 

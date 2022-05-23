@@ -13,7 +13,10 @@ import { executeQuery } from './query/executeQuery'
 import { parseModelDefinition } from './model/parseModelDefinition'
 import { createModel } from './model/createModel'
 import { updateEntity } from './model/updateEntity'
-import { OperationError, OperationErrorType } from './errors/OperationError'
+import {
+  OperationError,
+  OperationErrorType,
+} from './utils/errors/OperationError'
 import { Database } from './db/Database'
 import { generateRestHandlers } from './model/generateRestHandlers'
 import {
