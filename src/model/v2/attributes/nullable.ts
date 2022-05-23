@@ -25,9 +25,9 @@ export function nullable<
   return new NullableAttributes<AnotherValue<Input>>(input)
 }
 
-class NullableAttributes<Value extends ModelValue> extends TokenAttributes<
-  Nullable<Value>
-> {
+export class NullableAttributes<
+  Value extends ModelValue,
+> extends TokenAttributes<Nullable<Value>> {
   constructor(input: Getter<any> | ModelDefinitionValue<any>) {
     invariant(
       !(input instanceof TokenAttributes),
@@ -39,7 +39,9 @@ class NullableAttributes<Value extends ModelValue> extends TokenAttributes<
       return
     }
 
-    super(() => undefined as any, input)
+    super(function nullablePlaceholderValue() {
+      return undefined as any
+    }, input)
   }
 
   public shouldProduceValue(payload: TokenSetPayload<Value>) {
