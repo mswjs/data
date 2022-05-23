@@ -1,17 +1,10 @@
 import { Database } from '../Database'
 import { IdentifierAttributes } from '../attributes/id'
 import { Model, ModelProduceArgs } from '../Model'
+import { EntityContext } from './EntityContext'
 
 export const MODEL_NAME = Symbol('modelName')
 export const IDENTIFIER = Symbol('identifier')
-
-export abstract class EntityContext {
-  public onEntityCreated(
-    entity: any,
-    input: ModelProduceArgs<any>,
-    model: Model,
-  ) {}
-}
 
 interface QueryableContextInput {
   modelName: string

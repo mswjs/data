@@ -13,24 +13,31 @@ export class IdentifierAttributes extends TokenAttributes<
   string,
   QueryableContext
 > {
-  public shouldSetValue({
+  public shouldProduceValue({
     model,
     token,
     entity,
     context,
     value,
   }: TokenSetPayload<string, QueryableContext>): boolean {
-    // Identifier must be defined in a queryable context.
+    // Identifier must be defined in a context.
+    invariant(
+      context != null,
+      'Failed to set identifier at "%s": missing context.',
+      token.pointer,
+    )
+
+    // Identifier's context must be QueryableContext.
     invariant(
       context instanceof QueryableContext,
-      'Failed to set identifier at "%s": missing context.',
+      'Failed to set identifier at "%s": provided context is not an instance of QueryableContext.',
       token.pointer,
     )
 
     // Identifier must have value.
     invariant(
       value,
-      'Failed to set identifier at "%s": identifier value was not provided.',
+      'Failed to set identifier at "%s": value was not provided.',
       token.pointer,
     )
 
