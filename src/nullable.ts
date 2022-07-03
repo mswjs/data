@@ -1,14 +1,18 @@
 import { ModelValueType } from './glossary'
 import { ManyOf, OneOf, Relation, RelationKind } from './relations/Relation'
+import { isObject } from './utils/isObject'
 
 export type NullableGetter<ValueType extends ModelValueType> =
   () => ValueType | null
 
 export class NullableProperty<ValueType extends ModelValueType> {
   public getValue: NullableGetter<ValueType>
+  // Indicates if needs to generate nested object properties when getter returns object
+  public isGetterFunctionReturningObject: boolean
 
   constructor(getter: NullableGetter<ValueType>) {
     this.getValue = getter
+    this.isGetterFunctionReturningObject = isObject(getter())
   }
 }
 

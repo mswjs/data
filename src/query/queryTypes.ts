@@ -5,6 +5,7 @@ import {
   Value,
   ModelValueType,
   ModelDefinitionValue,
+  PrimitiveValueType,
 } from '../glossary'
 
 export interface QueryOptions {
@@ -40,7 +41,7 @@ export interface WeakQuerySelectorWhere<KeyType extends PrimaryKeyType> {
 export type SortDirection = 'asc' | 'desc'
 
 export type RecursiveOrderBy<Value extends ModelDefinitionValue> =
-  Value extends ModelValueType
+  Value extends PrimitiveValueType | PrimitiveValueType[]
     ? SortDirection
     : Value extends AnyObject
     ? DeepRequiredExactlyOne<{

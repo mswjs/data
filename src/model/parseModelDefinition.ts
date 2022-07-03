@@ -71,6 +71,17 @@ function deepParseModelDefinition<Dictionary extends ModelDictionary>(
     }
 
     if (value instanceof NullableProperty) {
+      // Generate nested properties for nullable property returning object
+      if (value.isGetterFunctionReturningObject) {
+        deepParseModelDefinition(
+          dictionary,
+          modelName,
+          value.getValue(),
+          propertyPath,
+          result,
+        )
+      }
+
       // Add nullable properties to the same list as regular properties
       result.properties.push(propertyPath)
       continue
