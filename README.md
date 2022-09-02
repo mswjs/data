@@ -206,6 +206,7 @@ drop(db)
 Each model has the following methods:
 
 - [`create()`](#create)
+- [`createMany()](#createMany)
 - [`findFirst()`](#findFirst)
 - [`findMany()`](#findMany)
 - [`count()`](#count)
@@ -235,6 +236,24 @@ const user = db.user.create({
 ```
 
 > Note that all model properties _are optional_, including [relational properties](#model-relationships).
+
+### `createMany`
+
+Creates multiple entities for the model.
+
+```js
+const users = db.user.createMany({
+  firstName: 'Alice',
+}, {
+  firstName: 'Bob',
+})
+```
+
+At least one set of initial values must be passed to this method. To create entities using the getter functions specified in the model definition, you can pass empty objects:
+
+```js
+const users = db.user.createMany({}, {}, {}, {})
+```
 
 ### `findFirst`
 

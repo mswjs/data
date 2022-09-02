@@ -102,6 +102,9 @@ function createModelApi<
       db.create(modelName, entity)
       return entity
     },
+    createMany(firstInitialValue, ...otherInitialValues) {
+      return [firstInitialValue, ...otherInitialValues].map(api.create);
+    },
     count(query) {
       if (!query) {
         return db.count(modelName)
