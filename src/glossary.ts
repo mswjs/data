@@ -112,8 +112,7 @@ export interface ModelAPI<
    * Creates multiple entities for the model.
    */
   createMany(
-    firstInitialValue: InitialValues<Dictionary, ModelName>,
-    ...otherInitialValues: InitialValues<Dictionary, ModelName>[]
+    initialValues: [InitialValues<Dictionary, ModelName>, ...InitialValues<Dictionary, ModelName>[]],
   ): Entity<Dictionary, ModelName>[]
   /**
    * Return the total number of entities.

@@ -9,7 +9,7 @@ test('creates a single new entity', () => {
     },
   })
 
-  const users = db.user.createMany({})
+  const users = db.user.createMany([{}])
   expect(users.length).toEqual(1)
   expect(users[0].id).toEqual(userId)
 })
@@ -21,7 +21,7 @@ test('creates multiple new entities', () => {
     },
   })
 
-  const users = db.user.createMany({}, {}, {})
+  const users = db.user.createMany([{}, {}, {}])
   expect(users.length).toEqual(3)
 })
 
@@ -32,13 +32,13 @@ test('creates entities using the set values', () => {
     },
   })
 
-  const users = db.user.createMany({
+  const users = db.user.createMany([{
     id: 'abc-123',
   }, {
     id: 'def-456',
   }, {
     id: 'ghi-789',
-  })
+  }])
   expect(users.length).toEqual(3)
   expect(users[0].id).toEqual('abc-123')
   expect(users[1].id).toEqual('def-456')

@@ -21,13 +21,13 @@ const db = factory({
 // Most assertions are covered by create.test-d.ts, as
 // createMany calls it internally
 
-// @ts-expect-error Expected at least 1 arguments, but got 0.
-db.user.createMany()
+// @ts-expect-error Source has 0 element(s) but target requires 1.
+db.user.createMany([])
 
-db.user.createMany(
+db.user.createMany([
   {},
   {
     // @ts-expect-error Property "secondName" does not exist on "user".
     secondName: 'any'
   }
-)
+])

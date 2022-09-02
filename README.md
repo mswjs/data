@@ -242,17 +242,17 @@ const user = db.user.create({
 Creates multiple entities for the model.
 
 ```js
-const users = db.user.createMany({
+const users = db.user.createMany([{
   firstName: 'Alice',
 }, {
   firstName: 'Bob',
-})
+}])
 ```
 
 At least one set of initial values must be passed to this method. To create entities using the getter functions specified in the model definition, you can pass empty objects:
 
 ```js
-const users = db.user.createMany({}, {}, {}, {})
+const users = db.user.createMany([{}, {}, {}, {}])
 ```
 
 ### `findFirst`
