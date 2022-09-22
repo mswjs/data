@@ -38,25 +38,35 @@ const setup = () => {
 test('queries entities based on a boolean value', () => {
   const db = setup()
 
-  const doorsAndWinter = db.book.findMany({
+  const books = db.book.findMany({
     where: {
       OR: [
         {
-          title: {
-            contains: "Doors",
-          },
+          OR: [
+            {
+              title: {
+                contains: 'Doors',
+              },
+            },
+            {
+              title: {
+                equals: 'New Spring',
+              },
+            },
+          ],
         },
         {
           title: {
-            contains: "Winter",
+            contains: 'Winter',
           },
         },
       ],
     },
   })
-  const doorsAndWinterTitles = doorsAndWinter.map((book) => book.title)
-  expect(doorsAndWinterTitles).toEqual([
+  const bookTitles = books.map((book) => book.title)
+  expect(bookTitles).toEqual([
     'The Winds of Winter',
+    'New Spring',
     'The Doors of Stone',
   ])
 })
