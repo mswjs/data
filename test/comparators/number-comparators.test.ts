@@ -39,7 +39,7 @@ test('gte', () => {
   expect(numberComparators.gte(4, 2)).toEqual(false)
 })
 
-test('gt', () => {
+test('lt', () => {
   expect(numberComparators.lt(5, 2)).toEqual(true)
   expect(numberComparators.lt(20, 9)).toEqual(true)
   expect(numberComparators.lt(20, 20)).toEqual(false)
