@@ -35,6 +35,10 @@ test('generates a graphql schema', () => {
       notEquals: ID
       contains: ID
       notContains: ID
+      gt: ID
+      gte: ID
+      lt: ID
+      lte: ID
       in: [ID]
       notIn: [ID]
     }
@@ -44,6 +48,10 @@ test('generates a graphql schema', () => {
       notEquals: String
       contains: String
       notContains: String
+      gt: String
+      gte: String
+      lt: String
+      lte: String
       in: [String]
       notIn: [String]
     }
