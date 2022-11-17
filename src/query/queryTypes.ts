@@ -57,13 +57,13 @@ export interface BulkQueryBaseOptions<EntityType extends AnyObject> {
   orderBy?: OrderBy<EntityType> | OrderBy<EntityType>[]
 }
 
-interface BulkQueryOffsetOptions<EntityType>
+interface BulkQueryOffsetOptions<EntityType extends AnyObject>
   extends BulkQueryBaseOptions<EntityType> {
   skip?: number
   cursor?: never
 }
 
-interface BulkQueryCursorOptions<EntityType>
+interface BulkQueryCursorOptions<EntityType extends AnyObject>
   extends BulkQueryBaseOptions<EntityType> {
   skip?: never
   cursor: PrimaryKeyType | null
@@ -95,7 +95,7 @@ export type GetQueryFor<ValueType extends any> = ValueType extends string
   ? BooleanQuery
   : ValueType extends Date
   ? DateQuery
-  : ValueType extends Array<infer ItemType>
+  : ValueType extends Array<infer ItemType extends AnyObject>
   ? QuerySelector<ItemType>['where']
   : /**
    * Relational `oneOf`/`manyOf` invocation
