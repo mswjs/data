@@ -17,8 +17,9 @@ import { ParsedModelDefinition } from './parseModelDefinition'
 import { defineRelationalProperties } from './defineRelationalProperties'
 import { PrimaryKey } from '../primaryKey'
 import { Relation } from '../relations/Relation'
-import { NullableProperty } from '../nullable'
+import { NullableObject, NullableProperty } from '../nullable'
 import { isModelValueType } from '../utils/isModelValueType'
+import { getDefinition } from './getDefinition'
 
 const log = debug('createModel')
 
@@ -51,7 +52,7 @@ export function createModel<
   const publicProperties = properties.reduce<Record<string, unknown>>(
     (properties, propertyName) => {
       const initialValue = get(initialValues, propertyName)
-      const propertyDefinition = get(definition, propertyName)
+      const propertyDefinition = getDefinition(definition, propertyName)
 
       // Ignore relational properties at this stage.
       if (propertyDefinition instanceof Relation) {
@@ -74,6 +75,21 @@ export function createModel<
             : propertyDefinition.getValue()
 
         set(properties, propertyName, value)
+        return properties
+      }
+
+      if (propertyDefinition instanceof NullableObject) {
+        if (initialValue === null) {
+          // in case the initial value of the nullable object is null, we want
+          // to override the inner values of the object and set the
+          // object itself to be null
+          set(properties, propertyName, null)
+        } else if (propertyDefinition.getValue() === null) {
+          // in case the definition of the nullable object defaults to null
+          const valueToInitialize =
+            initialValue === undefined ? null : initialValue
+          set(properties, propertyName, valueToInitialize)
+        }
         return properties
       }
 

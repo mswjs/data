@@ -9,7 +9,7 @@ import {
 import { PrimaryKey } from '../primaryKey'
 import { isObject } from '../utils/isObject'
 import { Relation, RelationsList } from '../relations/Relation'
-import { NullableProperty } from '../nullable'
+import { NullableObject, NullableProperty } from '../nullable'
 
 const log = debug('parseModelDefinition')
 
@@ -72,6 +72,23 @@ function deepParseModelDefinition<Dictionary extends ModelDictionary>(
 
     if (value instanceof NullableProperty) {
       // Add nullable properties to the same list as regular properties
+      result.properties.push(propertyPath)
+      continue
+    }
+
+    if (value instanceof NullableObject) {
+      const objectDefinition = value.getValue()
+      // if the object definition is not null, make a recursive call
+      if (objectDefinition !== null) {
+        deepParseModelDefinition(
+          dictionary,
+          modelName,
+          objectDefinition,
+          propertyPath,
+          result,
+        )
+      }
+
       result.properties.push(propertyPath)
       continue
     }

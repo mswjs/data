@@ -3,6 +3,7 @@ import { factory, oneOf, primaryKey, nullable } from '../../src'
 import { ENTITY_TYPE, PRIMARY_KEY } from '../../src/glossary'
 import { OperationErrorType } from '../../src/errors/OperationError'
 import { getThrownError } from '../testUtils'
+import { NullableProperty } from '../../src/nullable'
 
 test('updates a unique entity that matches the query', () => {
   const userId = faker.datatype.uuid()
@@ -592,4 +593,348 @@ test('throws when setting a non-nullable property to null', () => {
   ).toThrow(
     'Failed to update "firstName" on "user": cannot set a non-nullable property to null.',
   )
+})
+
+type AddressDefinitionType = {
+  street: StringConstructor
+  number: NullableProperty<number>
+}
+
+type NullableAddressDefinitionType = AddressDefinitionType | null
+
+describe('updating nullable objects with regular definition', () => {
+  const userId = 'abc-123'
+  test('update full initial value to other non null values', () => {
+    const db = factory({
+      user: {
+        id: primaryKey(faker.datatype.uuid),
+        address: nullable({
+          street: String,
+          number: nullable(Number),
+        }),
+      },
+    })
+
+    const user = db.user.create({
+      id: userId,
+      address: {
+        street: 'Wall street',
+        number: 100,
+      },
+    })
+
+    expect(user.address).toEqual({
+      street: 'Wall street',
+      number: 100,
+    })
+
+    db.user.update({
+      where: { id: { equals: userId } },
+      data: {
+        address: {
+          street: 'Fifth Avenue',
+          number: 500,
+        },
+      },
+    })
+
+    const userResult = db.user.findFirst({
+      where: {
+        id: {
+          equals: userId,
+        },
+      },
+    })
+
+    expect(userResult?.address).toEqual({
+      street: 'Fifth Avenue',
+      number: 500,
+    })
+  })
+  test('update full initial value to null', () => {
+    const db = factory({
+      user: {
+        id: primaryKey(faker.datatype.uuid),
+        address: nullable({
+          street: String,
+          number: nullable(Number),
+        }),
+      },
+    })
+
+    const user = db.user.create({
+      id: userId,
+      address: {
+        street: 'Wall street',
+        number: 100,
+      },
+    })
+
+    expect(user.address).toEqual({
+      street: 'Wall street',
+      number: 100,
+    })
+
+    db.user.update({
+      where: { id: { equals: userId } },
+      data: {
+        address: null,
+      },
+    })
+
+    const userResult = db.user.findFirst({
+      where: {
+        id: {
+          equals: userId,
+        },
+      },
+    })
+
+    expect(userResult?.address).toEqual(null)
+  })
+  test('update null initial value to non null value', () => {
+    const db = factory({
+      user: {
+        id: primaryKey(faker.datatype.uuid),
+        address: nullable({
+          street: String,
+          number: nullable(Number),
+        }),
+      },
+    })
+
+    const user = db.user.create({
+      id: userId,
+      address: null,
+    })
+
+    expect(user.address).toEqual(null)
+
+    db.user.update({
+      where: { id: { equals: userId } },
+      data: {
+        address: {
+          street: 'Fifth Avenue',
+          number: 500,
+        },
+      },
+    })
+
+    const userResult = db.user.findFirst({
+      where: {
+        id: {
+          equals: userId,
+        },
+      },
+    })
+
+    expect(userResult?.address).toEqual({
+      street: 'Fifth Avenue',
+      number: 500,
+    })
+  })
+  test('update no initial value to non null value', () => {
+    const db = factory({
+      user: {
+        id: primaryKey(faker.datatype.uuid),
+        address: nullable({
+          street: String,
+          number: nullable(Number),
+        }),
+      },
+    })
+
+    const user = db.user.create({
+      id: userId,
+    })
+
+    expect(user.address).toEqual({
+      street: '',
+      number: 0,
+    })
+
+    db.user.update({
+      where: { id: { equals: userId } },
+      data: {
+        address: {
+          street: 'Fifth Avenue',
+          number: 500,
+        },
+      },
+    })
+
+    const userResult = db.user.findFirst({
+      where: {
+        id: {
+          equals: userId,
+        },
+      },
+    })
+
+    expect(userResult?.address).toEqual({
+      street: 'Fifth Avenue',
+      number: 500,
+    })
+  })
+})
+
+describe('updating nullable objects with null definition', () => {
+  const userId = 'abc-123'
+  test('update full initial value to other non null values', () => {
+    const db = factory({
+      user: {
+        id: primaryKey(faker.datatype.uuid),
+        address: nullable<NullableAddressDefinitionType>(null),
+      },
+    })
+
+    const user = db.user.create({
+      id: userId,
+      address: {
+        street: 'Wall street',
+        number: 100,
+      },
+    })
+
+    expect(user.address).toEqual({
+      street: 'Wall street',
+      number: 100,
+    })
+
+    db.user.update({
+      where: { id: { equals: userId } },
+      data: {
+        address: {
+          street: 'Fifth Avenue',
+          number: 500,
+        },
+      },
+    })
+
+    const userResult = db.user.findFirst({
+      where: {
+        id: {
+          equals: userId,
+        },
+      },
+    })
+
+    expect(userResult?.address).toEqual({
+      street: 'Fifth Avenue',
+      number: 500,
+    })
+  })
+  test('update full initial value to null', () => {
+    const db = factory({
+      user: {
+        id: primaryKey(faker.datatype.uuid),
+        address: nullable<NullableAddressDefinitionType>(null),
+      },
+    })
+
+    const user = db.user.create({
+      id: userId,
+      address: {
+        street: 'Wall street',
+        number: 100,
+      },
+    })
+
+    expect(user.address).toEqual({
+      street: 'Wall street',
+      number: 100,
+    })
+
+    db.user.update({
+      where: { id: { equals: userId } },
+      data: {
+        address: null,
+      },
+    })
+
+    const userResult = db.user.findFirst({
+      where: {
+        id: {
+          equals: userId,
+        },
+      },
+    })
+
+    expect(userResult?.address).toEqual(null)
+  })
+  test('update null initial value to non null value', () => {
+    const db = factory({
+      user: {
+        id: primaryKey(faker.datatype.uuid),
+        address: nullable<NullableAddressDefinitionType>(null),
+      },
+    })
+
+    const user = db.user.create({
+      id: userId,
+      address: null,
+    })
+
+    expect(user.address).toEqual(null)
+
+    db.user.update({
+      where: { id: { equals: userId } },
+      data: {
+        address: {
+          street: 'Fifth Avenue',
+          number: 500,
+        },
+      },
+    })
+
+    const userResult = db.user.findFirst({
+      where: {
+        id: {
+          equals: userId,
+        },
+      },
+    })
+
+    expect(userResult?.address).toEqual({
+      street: 'Fifth Avenue',
+      number: 500,
+    })
+  })
+  test('update no initial value to non null value', () => {
+    const db = factory({
+      user: {
+        id: primaryKey(faker.datatype.uuid),
+        address: nullable<NullableAddressDefinitionType>(null),
+      },
+    })
+
+    const user = db.user.create({
+      id: userId,
+    })
+
+    expect(user.address).toEqual(null)
+
+    db.user.update({
+      where: { id: { equals: userId } },
+      data: {
+        address: {
+          street: 'Fifth Avenue',
+          number: 500,
+        },
+      },
+    })
+
+    const userResult = db.user.findFirst({
+      where: {
+        id: {
+          equals: userId,
+        },
+      },
+    })
+
+    expect(userResult?.address).toEqual({
+      street: 'Fifth Avenue',
+      number: 500,
+    })
+  })
 })

@@ -1,4 +1,5 @@
 import { faker } from '@faker-js/faker'
+import { NullableObject, NullableProperty } from '../../src/nullable'
 import { factory, primaryKey, oneOf, manyOf, nullable } from '../../src'
 import { identity } from '../../src/utils/identity'
 
@@ -254,4 +255,408 @@ test('throws an exception when null used as initial value for non-nullable relat
   }).toThrowError(
     'Failed to define a "MANY_OF" relationship to "post" at "user.posts" (id: "user-1"): cannot set a non-nullable relationship to null.',
   )
+})
+
+type AddressDefinitionType = {
+  street: StringConstructor
+  number: NullableProperty<number>
+}
+
+type NullableAddressDefinitionType = AddressDefinitionType | null
+
+type UserDetailsType = {
+  name: StringConstructor
+  hobbies: ArrayConstructor
+  address: NullableObject<AddressDefinitionType>
+}
+
+type NullableUserDetailsType = UserDetailsType | null
+
+describe('nullable objects with regular definition', () => {
+  test('full initial value', () => {
+    const db = factory({
+      user: {
+        id: primaryKey(faker.datatype.uuid),
+        address: nullable({
+          street: String,
+          number: nullable(Number),
+        }),
+      },
+    })
+
+    const user = db.user.create({
+      id: 'abc-123',
+      address: {
+        street: 'Wall street',
+        number: 100,
+      },
+    })
+
+    expect(user.address).toEqual({
+      street: 'Wall street',
+      number: 100,
+    })
+  })
+  test('null initial value', () => {
+    const db = factory({
+      user: {
+        id: primaryKey(faker.datatype.uuid),
+        address: nullable({
+          street: String,
+          number: nullable(Number),
+        }),
+      },
+    })
+
+    const user = db.user.create({
+      id: 'abc-123',
+      address: null,
+    })
+
+    expect(user.address).toEqual(null)
+  })
+  test('no initial value', () => {
+    const db = factory({
+      user: {
+        id: primaryKey(faker.datatype.uuid),
+        address: nullable({
+          street: String,
+          number: nullable(Number),
+        }),
+      },
+    })
+
+    const user = db.user.create({
+      id: 'abc-123',
+    })
+
+    expect(user.address).toEqual({
+      street: '',
+      number: 0,
+    })
+  })
+  test('inner null initial value', () => {
+    const db = factory({
+      user: {
+        id: primaryKey(faker.datatype.uuid),
+        address: nullable({
+          street: String,
+          number: nullable(Number),
+        }),
+      },
+    })
+
+    const user = db.user.create({
+      id: 'abc-123',
+      address: {
+        street: 'Wall street',
+        number: null,
+      },
+    })
+
+    expect(user.address).toEqual({
+      street: 'Wall street',
+      number: null,
+    })
+  })
+  test('null value in inner nullable definition and no inner nullable initial value', () => {
+    const db = factory({
+      user: {
+        id: primaryKey(faker.datatype.uuid),
+        address: nullable({
+          street: String,
+          number: nullable<number>(() => null),
+        }),
+      },
+    })
+
+    const user = db.user.create({
+      id: 'abc-123',
+      address: {
+        street: 'Wall street',
+      },
+    })
+
+    expect(user.address).toEqual({
+      street: 'Wall street',
+      number: null,
+    })
+  })
+})
+
+describe('nullable objects with null definition', () => {
+  test('full initial value', () => {
+    const db = factory({
+      user: {
+        id: primaryKey(faker.datatype.uuid),
+        address: nullable<NullableAddressDefinitionType>(null),
+      },
+    })
+
+    const user = db.user.create({
+      id: 'abc-123',
+      address: {
+        street: 'Wall street',
+        number: 100,
+      },
+    })
+
+    expect(user.address).toEqual({
+      street: 'Wall street',
+      number: 100,
+    })
+  })
+  test('null initial value', () => {
+    const db = factory({
+      user: {
+        id: primaryKey(faker.datatype.uuid),
+        address: nullable<NullableAddressDefinitionType>(null),
+      },
+    })
+
+    const user = db.user.create({
+      id: 'abc-123',
+      address: null,
+    })
+
+    expect(user.address).toEqual(null)
+  })
+  test('no initial value', () => {
+    const db = factory({
+      user: {
+        id: primaryKey(faker.datatype.uuid),
+        address: nullable<NullableAddressDefinitionType>(null),
+      },
+    })
+
+    const user = db.user.create({
+      id: 'abc-123',
+    })
+
+    expect(user.address).toEqual(null)
+  })
+  test('inner null initial value', () => {
+    const db = factory({
+      user: {
+        id: primaryKey(faker.datatype.uuid),
+        address: nullable<NullableAddressDefinitionType>(null),
+      },
+    })
+
+    const user = db.user.create({
+      id: 'abc-123',
+      address: {
+        street: 'Wall street',
+        number: null,
+      },
+    })
+
+    expect(user.address).toEqual({
+      street: 'Wall street',
+      number: null,
+    })
+  })
+})
+
+describe('nullable objects with complex structure and regular definition', () => {
+  test('full initial value', () => {
+    const db = factory({
+      user: {
+        id: primaryKey(faker.datatype.uuid),
+        details: nullable({
+          name: String,
+          hobbies: Array,
+          address: nullable({
+            street: () => 'Wall street',
+            number: nullable(() => 100),
+          }),
+        }),
+      },
+    })
+
+    const user = db.user.create({
+      id: 'abc-123',
+      details: {
+        name: 'John',
+        hobbies: ['Music', 'Sports'],
+        address: {
+          street: 'Fifth Avenue',
+          number: 150,
+        },
+      },
+    })
+
+    expect(user.details).toEqual({
+      name: 'John',
+      hobbies: ['Music', 'Sports'],
+      address: {
+        street: 'Fifth Avenue',
+        number: 150,
+      },
+    })
+  })
+  test('null initial value', () => {
+    const db = factory({
+      user: {
+        id: primaryKey(faker.datatype.uuid),
+        details: nullable({
+          name: String,
+          hobbies: Array,
+          address: nullable({
+            street: () => 'Wall street',
+            number: nullable(() => 100),
+          }),
+        }),
+      },
+    })
+
+    const user = db.user.create({
+      id: 'abc-123',
+      details: null,
+    })
+
+    expect(user.details).toEqual(null)
+  })
+  test('no initial value', () => {
+    const db = factory({
+      user: {
+        id: primaryKey(faker.datatype.uuid),
+        details: nullable({
+          name: String,
+          hobbies: () => ['Cooking'],
+          address: nullable({
+            street: () => 'Wall street',
+            number: nullable(() => 100),
+          }),
+        }),
+      },
+    })
+
+    const user = db.user.create({
+      id: 'abc-123',
+    })
+
+    expect(user.details).toEqual({
+      name: '',
+      hobbies: ['Cooking'],
+      address: {
+        street: 'Wall street',
+        number: 100,
+      },
+    })
+  })
+  test('inner null initial value', () => {
+    const db = factory({
+      user: {
+        id: primaryKey(faker.datatype.uuid),
+        details: nullable({
+          name: String,
+          hobbies: Array,
+          address: nullable({
+            street: () => 'Wall street',
+            number: nullable(() => 100),
+          }),
+        }),
+      },
+    })
+
+    const user = db.user.create({
+      id: 'abc-123',
+      details: {
+        name: 'John',
+        hobbies: ['Music', 'Sports'],
+        address: null,
+      },
+    })
+
+    expect(user.details).toEqual({
+      name: 'John',
+      hobbies: ['Music', 'Sports'],
+      address: null,
+    })
+  })
+})
+
+describe('nullable objects with complex structure and null definition', () => {
+  test('full initial value', () => {
+    const db = factory({
+      user: {
+        id: primaryKey(faker.datatype.uuid),
+        details: nullable<NullableUserDetailsType>(null),
+      },
+    })
+
+    const user = db.user.create({
+      id: 'abc-123',
+      details: {
+        name: 'John',
+        hobbies: ['Music', 'Sports'],
+        address: {
+          street: 'Fifth Avenue',
+          number: 150,
+        },
+      },
+    })
+
+    expect(user.details).toEqual({
+      name: 'John',
+      hobbies: ['Music', 'Sports'],
+      address: {
+        street: 'Fifth Avenue',
+        number: 150,
+      },
+    })
+  })
+  test('null initial value', () => {
+    const db = factory({
+      user: {
+        id: primaryKey(faker.datatype.uuid),
+        details: nullable<NullableUserDetailsType>(null),
+      },
+    })
+
+    const user = db.user.create({
+      id: 'abc-123',
+      details: null,
+    })
+
+    expect(user.details).toEqual(null)
+  })
+  test('no initial value', () => {
+    const db = factory({
+      user: {
+        id: primaryKey(faker.datatype.uuid),
+        details: nullable<NullableUserDetailsType>(null),
+      },
+    })
+
+    const user = db.user.create({
+      id: 'abc-123',
+    })
+
+    expect(user.details).toEqual(null)
+  })
+  test('inner null initial value', () => {
+    const db = factory({
+      user: {
+        id: primaryKey(faker.datatype.uuid),
+        details: nullable<NullableUserDetailsType>(null),
+      },
+    })
+
+    const user = db.user.create({
+      id: 'abc-123',
+      details: {
+        name: 'John',
+        hobbies: ['Music', 'Sports'],
+        address: null,
+      },
+    })
+
+    expect(user.details).toEqual({
+      name: 'John',
+      hobbies: ['Music', 'Sports'],
+      address: null,
+    })
+  })
 })

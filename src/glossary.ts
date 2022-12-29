@@ -1,7 +1,7 @@
 import { GraphQLSchema } from 'graphql'
 import { GraphQLHandler, RestHandler } from 'msw'
 import { Database } from './db/Database'
-import { NullableProperty } from './nullable'
+import { NullableObject, NullableProperty } from './nullable'
 import { PrimaryKey } from './primaryKey'
 import {
   BulkQueryOptions,
@@ -28,6 +28,7 @@ export type ModelDefinitionValue =
   | PrimaryKey<any>
   | ModelValueTypeGetter
   | NullableProperty<any>
+  | NullableObject<any>
   | OneOf<any, boolean>
   | ManyOf<any, boolean>
   | NestedModelDefinition
@@ -36,10 +37,13 @@ export type NestedModelDefinition = {
   [propertyName: string]:
     | ModelValueTypeGetter
     | NullableProperty<any>
+    | NullableObject<any>
     | OneOf<any, boolean>
     | ManyOf<any, boolean>
     | NestedModelDefinition
 }
+
+export type NullableNestedModelDefinition = NestedModelDefinition | null
 
 export type FactoryAPI<Dictionary extends Record<string, any>> = {
   [ModelName in keyof Dictionary]: ModelAPI<Dictionary, ModelName>
@@ -221,6 +225,8 @@ export type Value<
     : // Extract underlying value type of nullable properties
     Target[Key] extends NullableProperty<any>
     ? ReturnType<Target[Key]['getValue']>
+    : Target[Key] extends NullableObject<any>
+    ? Partial<Value<ReturnType<Target[Key]['getValue']>, Dictionary>>
     : // Extract value type from OneOf relations.
     Target[Key] extends OneOf<infer ModelName, infer Nullable>
     ? Nullable extends true
