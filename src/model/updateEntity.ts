@@ -53,7 +53,6 @@ export function updateEntity(
       }
 
       if (propertyDefinition instanceof Relation) {
-        console.log('in relation')
         log(
           'property "%s" is a "%s" relationship to "%s"',
           propertyPath,
@@ -204,7 +203,6 @@ export function updateEntity(
       )
 
       log('updating a plain property "%s" to:', propertyPath, nextValue)
-
       set(nextEntity, propertyPath, nextValue)
     }
   }
