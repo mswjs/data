@@ -149,7 +149,6 @@ function createModelApi<
     update({ strict, ...query }) {
       const results = executeQuery(modelName, primaryKey, query, db)
       const prevRecord = first(results)
-      // console.log('results: ', results)
 
       if (!prevRecord) {
         if (strict) {
