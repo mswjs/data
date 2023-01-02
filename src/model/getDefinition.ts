@@ -18,7 +18,7 @@ export function getDefinition(
       // in case the propertyName array includes NullableObject, we get
       // the NullableObject definition and continue the reduce loop
       if (property !== propertyName.at(-1)) {
-        return value.getObjectDefinition()
+        return value.objectDefinition
       }
       // in case the propertyName array ends with NullableObject, we just return it and if
       // it should get the value of null, it will override its inner properties

@@ -80,7 +80,7 @@ function deepParseModelDefinition<Dictionary extends ModelDictionary>(
       deepParseModelDefinition(
         dictionary,
         modelName,
-        value.getObjectDefinition(),
+        value.objectDefinition,
         propertyPath,
         result,
       )

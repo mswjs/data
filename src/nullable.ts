@@ -1,20 +1,12 @@
 import { ModelValueType, NullableNestedModelDefinition } from './glossary'
 import { ManyOf, OneOf, Relation, RelationKind } from './relations/Relation'
-import { isObject } from './utils/isObject'
-
-export type NullableNestedGetter<
-  ValueType extends NullableNestedModelDefinition,
-> = () => ValueType | null
 
 export class NullableObject<ValueType extends NullableNestedModelDefinition> {
-  public getObjectDefinition: NullableNestedGetter<ValueType>
+  public objectDefinition: ValueType
   public defaultsToNull: boolean
 
-  constructor(
-    getter: NullableNestedGetter<ValueType>,
-    defaultsToNull: boolean,
-  ) {
-    this.getObjectDefinition = getter
+  constructor(definition: ValueType, defaultsToNull: boolean) {
+    this.objectDefinition = definition
     this.defaultsToNull = defaultsToNull
   }
 }
@@ -70,7 +62,7 @@ export function nullable(
   }
 
   if (typeof value === 'object') {
-    return new NullableObject(() => value, !!options?.defaultsToNull)
+    return new NullableObject(value, !!options?.defaultsToNull)
   }
 
   if (typeof value === 'function') {
