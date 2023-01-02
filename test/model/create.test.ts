@@ -379,7 +379,7 @@ describe('nullable objects with null definition', () => {
             street: String,
             number: nullable(Number),
           },
-          true,
+          { defaultsToNull: true },
         ),
       },
     })
@@ -406,7 +406,7 @@ describe('nullable objects with null definition', () => {
             street: String,
             number: nullable(Number),
           },
-          true,
+          { defaultsToNull: true },
         ),
       },
     })
@@ -427,7 +427,7 @@ describe('nullable objects with null definition', () => {
             street: String,
             number: nullable(Number),
           },
-          true,
+          { defaultsToNull: true },
         ),
       },
     })
@@ -447,7 +447,7 @@ describe('nullable objects with null definition', () => {
             street: String,
             number: nullable(Number),
           },
-          true,
+          { defaultsToNull: true },
         ),
       },
     })
@@ -600,7 +600,7 @@ describe('nullable objects with complex structure and null definition', () => {
               number: nullable(() => 100),
             }),
           },
-          true,
+          { defaultsToNull: true },
         ),
       },
     })
@@ -639,7 +639,7 @@ describe('nullable objects with complex structure and null definition', () => {
               number: nullable(() => 100),
             }),
           },
-          true,
+          { defaultsToNull: true },
         ),
       },
     })
@@ -664,7 +664,7 @@ describe('nullable objects with complex structure and null definition', () => {
               number: nullable(() => 100),
             }),
           },
-          true,
+          { defaultsToNull: true },
         ),
       },
     })
@@ -688,7 +688,7 @@ describe('nullable objects with complex structure and null definition', () => {
               number: nullable(() => 100),
             }),
           },
-          true,
+          { defaultsToNull: true },
         ),
       },
     })

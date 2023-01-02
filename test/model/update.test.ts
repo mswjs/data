@@ -782,7 +782,7 @@ describe('updating nullable objects with null definition', () => {
             street: String,
             number: nullable(Number),
           },
-          true,
+          { defaultsToNull: true },
         ),
       },
     })
@@ -832,7 +832,7 @@ describe('updating nullable objects with null definition', () => {
             street: String,
             number: nullable(Number),
           },
-          true,
+          { defaultsToNull: true },
         ),
       },
     })
@@ -876,7 +876,7 @@ describe('updating nullable objects with null definition', () => {
             street: String,
             number: nullable(Number),
           },
-          true,
+          { defaultsToNull: true },
         ),
       },
     })
@@ -920,7 +920,7 @@ describe('updating nullable objects with null definition', () => {
             street: String,
             number: nullable(Number),
           },
-          true,
+          { defaultsToNull: true },
         ),
       },
     })

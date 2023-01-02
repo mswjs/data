@@ -32,17 +32,19 @@ export class NullableProperty<ValueType extends ModelValueType> {
 
 export function nullable<ValueType extends NullableNestedModelDefinition>(
   value: ValueType,
-  defaultsToNull?: boolean,
+  options?: { defaultsToNull?: boolean },
 ): NullableObject<ValueType>
 
 export function nullable<ValueType extends ModelValueType>(
   value: NullableGetter<ValueType>,
+  options?: { defaultsToNull?: boolean },
 ): NullableProperty<ValueType>
 
 export function nullable<
   ValueType extends Relation<any, any, any, { nullable: false }>,
 >(
   value: ValueType,
+  options?: { defaultsToNull?: boolean },
 ): ValueType extends Relation<infer Kind, infer Key, any, { nullable: false }>
   ? Kind extends RelationKind.ManyOf
     ? ManyOf<Key, true>
@@ -54,7 +56,7 @@ export function nullable(
     | NullableGetter<ModelValueType>
     | Relation<any, any, any, { nullable: false }>
     | NullableNestedModelDefinition,
-  defaultsToNull?: boolean,
+  options?: { defaultsToNull?: boolean },
 ) {
   if (value instanceof Relation) {
     return new Relation({
@@ -67,8 +69,8 @@ export function nullable(
     })
   }
 
-  if (typeof value === 'object' || value === null) {
-    return new NullableObject(() => value, !!defaultsToNull)
+  if (typeof value === 'object') {
+    return new NullableObject(() => value, !!options?.defaultsToNull)
   }
 
   if (typeof value === 'function') {
