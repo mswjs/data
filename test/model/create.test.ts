@@ -257,21 +257,6 @@ test('throws an exception when null used as initial value for non-nullable relat
   )
 })
 
-type AddressDefinitionType = {
-  street: StringConstructor
-  number: NullableProperty<number>
-}
-
-type NullableAddressDefinitionType = AddressDefinitionType | null
-
-type UserDetailsType = {
-  name: StringConstructor
-  hobbies: ArrayConstructor
-  address: NullableObject<AddressDefinitionType>
-}
-
-type NullableUserDetailsType = UserDetailsType | null
-
 describe('nullable objects with regular definition', () => {
   test('full initial value', () => {
     const db = factory({
@@ -389,7 +374,13 @@ describe('nullable objects with null definition', () => {
     const db = factory({
       user: {
         id: primaryKey(faker.datatype.uuid),
-        address: nullable<NullableAddressDefinitionType>(null),
+        address: nullable(
+          {
+            street: String,
+            number: nullable(Number),
+          },
+          true,
+        ),
       },
     })
 
@@ -410,7 +401,13 @@ describe('nullable objects with null definition', () => {
     const db = factory({
       user: {
         id: primaryKey(faker.datatype.uuid),
-        address: nullable<NullableAddressDefinitionType>(null),
+        address: nullable(
+          {
+            street: String,
+            number: nullable(Number),
+          },
+          true,
+        ),
       },
     })
 
@@ -425,7 +422,13 @@ describe('nullable objects with null definition', () => {
     const db = factory({
       user: {
         id: primaryKey(faker.datatype.uuid),
-        address: nullable<NullableAddressDefinitionType>(null),
+        address: nullable(
+          {
+            street: String,
+            number: nullable(Number),
+          },
+          true,
+        ),
       },
     })
 
@@ -439,7 +442,13 @@ describe('nullable objects with null definition', () => {
     const db = factory({
       user: {
         id: primaryKey(faker.datatype.uuid),
-        address: nullable<NullableAddressDefinitionType>(null),
+        address: nullable(
+          {
+            street: String,
+            number: nullable(Number),
+          },
+          true,
+        ),
       },
     })
 
@@ -582,7 +591,17 @@ describe('nullable objects with complex structure and null definition', () => {
     const db = factory({
       user: {
         id: primaryKey(faker.datatype.uuid),
-        details: nullable<NullableUserDetailsType>(null),
+        details: nullable(
+          {
+            name: String,
+            hobbies: Array,
+            address: nullable({
+              street: () => 'Wall street',
+              number: nullable(() => 100),
+            }),
+          },
+          true,
+        ),
       },
     })
 
@@ -611,7 +630,17 @@ describe('nullable objects with complex structure and null definition', () => {
     const db = factory({
       user: {
         id: primaryKey(faker.datatype.uuid),
-        details: nullable<NullableUserDetailsType>(null),
+        details: nullable(
+          {
+            name: String,
+            hobbies: Array,
+            address: nullable({
+              street: () => 'Wall street',
+              number: nullable(() => 100),
+            }),
+          },
+          true,
+        ),
       },
     })
 
@@ -626,7 +655,17 @@ describe('nullable objects with complex structure and null definition', () => {
     const db = factory({
       user: {
         id: primaryKey(faker.datatype.uuid),
-        details: nullable<NullableUserDetailsType>(null),
+        details: nullable(
+          {
+            name: String,
+            hobbies: Array,
+            address: nullable({
+              street: () => 'Wall street',
+              number: nullable(() => 100),
+            }),
+          },
+          true,
+        ),
       },
     })
 
@@ -640,7 +679,17 @@ describe('nullable objects with complex structure and null definition', () => {
     const db = factory({
       user: {
         id: primaryKey(faker.datatype.uuid),
-        details: nullable<NullableUserDetailsType>(null),
+        details: nullable(
+          {
+            name: String,
+            hobbies: Array,
+            address: nullable({
+              street: () => 'Wall street',
+              number: nullable(() => 100),
+            }),
+          },
+          true,
+        ),
       },
     })
 

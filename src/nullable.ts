@@ -7,10 +7,15 @@ export type NullableNestedGetter<
 > = () => ValueType | null
 
 export class NullableObject<ValueType extends NullableNestedModelDefinition> {
-  public getValue: NullableNestedGetter<ValueType>
+  public getObjectDefinition: NullableNestedGetter<ValueType>
+  public defaultsToNull: boolean
 
-  constructor(getter: NullableNestedGetter<ValueType>) {
-    this.getValue = getter
+  constructor(
+    getter: NullableNestedGetter<ValueType>,
+    defaultsToNull: boolean,
+  ) {
+    this.getObjectDefinition = getter
+    this.defaultsToNull = defaultsToNull
   }
 }
 
@@ -19,16 +24,15 @@ export type NullableGetter<ValueType extends ModelValueType> =
 
 export class NullableProperty<ValueType extends ModelValueType> {
   public getValue: NullableGetter<ValueType>
-  public isGetterFunctionReturningObject: boolean
 
   constructor(getter: NullableGetter<ValueType>) {
     this.getValue = getter
-    this.isGetterFunctionReturningObject = isObject(getter)
   }
 }
 
 export function nullable<ValueType extends NullableNestedModelDefinition>(
   value: ValueType,
+  defaultsToNull?: boolean,
 ): NullableObject<ValueType>
 
 export function nullable<ValueType extends ModelValueType>(
@@ -50,6 +54,7 @@ export function nullable(
     | NullableGetter<ModelValueType>
     | Relation<any, any, any, { nullable: false }>
     | NullableNestedModelDefinition,
+  defaultsToNull?: boolean,
 ) {
   if (value instanceof Relation) {
     return new Relation({
@@ -63,7 +68,7 @@ export function nullable(
   }
 
   if (typeof value === 'object' || value === null) {
-    return new NullableObject(() => value)
+    return new NullableObject(() => value, !!defaultsToNull)
   }
 
   if (typeof value === 'function') {

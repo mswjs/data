@@ -79,16 +79,15 @@ export function createModel<
       }
 
       if (propertyDefinition instanceof NullableObject) {
-        if (initialValue === null) {
-          // in case the initial value of the nullable object is null, we want
-          // to override the inner values of the object and set the
-          // object itself to be null
+        if (
+          initialValue === null ||
+          (propertyDefinition.defaultsToNull && initialValue === undefined)
+        ) {
+          // this is for all the cases we want to override the inner values of
+          // the nullable object and just set it to be null. it happens when:
+          // 1. the initial value of the nullable object is null
+          // 2. the initial value of the nullable object is not defined and the definition defaults to null
           set(properties, propertyName, null)
-        } else if (propertyDefinition.getValue() === null) {
-          // in case the definition of the nullable object defaults to null
-          const valueToInitialize =
-            initialValue === undefined ? null : initialValue
-          set(properties, propertyName, valueToInitialize)
         }
         return properties
       }

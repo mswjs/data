@@ -226,7 +226,7 @@ export type Value<
     Target[Key] extends NullableProperty<any>
     ? ReturnType<Target[Key]['getValue']>
     : Target[Key] extends NullableObject<any>
-    ? Partial<Value<ReturnType<Target[Key]['getValue']>, Dictionary>>
+    ? Partial<Value<ReturnType<Target[Key]['getObjectDefinition']>, Dictionary>>
     : // Extract value type from OneOf relations.
     Target[Key] extends OneOf<infer ModelName, infer Nullable>
     ? Nullable extends true

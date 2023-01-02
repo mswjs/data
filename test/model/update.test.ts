@@ -595,13 +595,6 @@ test('throws when setting a non-nullable property to null', () => {
   )
 })
 
-type AddressDefinitionType = {
-  street: StringConstructor
-  number: NullableProperty<number>
-}
-
-type NullableAddressDefinitionType = AddressDefinitionType | null
-
 describe('updating nullable objects with regular definition', () => {
   const userId = 'abc-123'
   test('update full initial value to other non null values', () => {
@@ -784,7 +777,13 @@ describe('updating nullable objects with null definition', () => {
     const db = factory({
       user: {
         id: primaryKey(faker.datatype.uuid),
-        address: nullable<NullableAddressDefinitionType>(null),
+        address: nullable(
+          {
+            street: String,
+            number: nullable(Number),
+          },
+          true,
+        ),
       },
     })
 
@@ -828,7 +827,13 @@ describe('updating nullable objects with null definition', () => {
     const db = factory({
       user: {
         id: primaryKey(faker.datatype.uuid),
-        address: nullable<NullableAddressDefinitionType>(null),
+        address: nullable(
+          {
+            street: String,
+            number: nullable(Number),
+          },
+          true,
+        ),
       },
     })
 
@@ -866,7 +871,13 @@ describe('updating nullable objects with null definition', () => {
     const db = factory({
       user: {
         id: primaryKey(faker.datatype.uuid),
-        address: nullable<NullableAddressDefinitionType>(null),
+        address: nullable(
+          {
+            street: String,
+            number: nullable(Number),
+          },
+          true,
+        ),
       },
     })
 
@@ -904,7 +915,13 @@ describe('updating nullable objects with null definition', () => {
     const db = factory({
       user: {
         id: primaryKey(faker.datatype.uuid),
-        address: nullable<NullableAddressDefinitionType>(null),
+        address: nullable(
+          {
+            street: String,
+            number: nullable(Number),
+          },
+          true,
+        ),
       },
     })
 

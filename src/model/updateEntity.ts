@@ -173,15 +173,6 @@ export function updateEntity(
         continue
       }
 
-      if (
-        propertyDefinition instanceof NullableObject &&
-        propertyDefinition.getValue() === null
-      ) {
-        // in case the NullableObject definition is null
-        set(nextEntity, propertyPath, nextValue)
-        continue
-      }
-
       // Support updating nested objects.
       if (isObject(nextValue)) {
         log(

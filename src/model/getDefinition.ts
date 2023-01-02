@@ -8,10 +8,6 @@ export function getDefinition(
   propertyName: string[],
 ) {
   return propertyName.reduce((reducedDefinition, property) => {
-    if (reducedDefinition === null) {
-      // this is for the case where NullableObject definition defaults to null
-      return
-    }
     const value = reducedDefinition[property]
 
     if (value instanceof NullableProperty) {
@@ -19,16 +15,17 @@ export function getDefinition(
     }
 
     if (value instanceof NullableObject) {
-      // in case the value which is NullableObject is NOT in the last position in the propertyName array
-      // we want to get its value and continue the reduce loop to get its children definition
+      // in case the propertyName array includes NullableObject, we get
+      // the NullableObject definition and continue the reduce loop
       if (property !== propertyName.at(-1)) {
-        return value.getValue()
+        return value.getObjectDefinition()
       }
-      // if it is in the last position of the propertyName array, just return it to the caller at createModel
+      // in case the propertyName array ends with NullableObject, we just return it and if
+      // it should get the value of null, it will override its inner properties
       return value
     }
 
-    // this is for getter functions (String, Number or () => 'some value') and nested objects
+    // getter functions and nested objects
     if (isFunction(value) || isObject(value)) {
       return value
     }

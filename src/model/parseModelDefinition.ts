@@ -77,18 +77,16 @@ function deepParseModelDefinition<Dictionary extends ModelDictionary>(
     }
 
     if (value instanceof NullableObject) {
-      const objectDefinition = value.getValue()
-      // if the object definition is not null, make a recursive call
-      if (objectDefinition !== null) {
-        deepParseModelDefinition(
-          dictionary,
-          modelName,
-          objectDefinition,
-          propertyPath,
-          result,
-        )
-      }
+      deepParseModelDefinition(
+        dictionary,
+        modelName,
+        value.getObjectDefinition(),
+        propertyPath,
+        result,
+      )
 
+      // after the recursion calls we want to set the nullable object itself to be part of the properties
+      // because in case it will get the value of null we want to override its inner values
       result.properties.push(propertyPath)
       continue
     }
