@@ -1,7 +1,7 @@
-import { ModelValueType, NullableNestedModelDefinition } from './glossary'
+import { ModelValueType, NestedModelDefinition } from './glossary'
 import { ManyOf, OneOf, Relation, RelationKind } from './relations/Relation'
 
-export class NullableObject<ValueType extends NullableNestedModelDefinition> {
+export class NullableObject<ValueType extends NestedModelDefinition> {
   public objectDefinition: ValueType
   public defaultsToNull: boolean
 
@@ -22,7 +22,7 @@ export class NullableProperty<ValueType extends ModelValueType> {
   }
 }
 
-export function nullable<ValueType extends NullableNestedModelDefinition>(
+export function nullable<ValueType extends NestedModelDefinition>(
   value: ValueType,
   options?: { defaultsToNull?: boolean },
 ): NullableObject<ValueType>
@@ -47,7 +47,7 @@ export function nullable(
   value:
     | NullableGetter<ModelValueType>
     | Relation<any, any, any, { nullable: false }>
-    | NullableNestedModelDefinition,
+    | NestedModelDefinition,
   options?: { defaultsToNull?: boolean },
 ) {
   if (value instanceof Relation) {

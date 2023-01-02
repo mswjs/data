@@ -43,8 +43,6 @@ export type NestedModelDefinition = {
     | NestedModelDefinition
 }
 
-export type NullableNestedModelDefinition = NestedModelDefinition | null
-
 export type FactoryAPI<Dictionary extends Record<string, any>> = {
   [ModelName in keyof Dictionary]: ModelAPI<Dictionary, ModelName>
 } & {
