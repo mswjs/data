@@ -57,7 +57,7 @@ function createComparatorGraphQLInputType(
     name,
     fields: Object.keys(comparators).reduce<GraphQLInputFieldConfigMap>(
       (fields, comparatorFn) => {
-        const fieldType = ['between', 'notBetween', 'in', 'notIn'].includes(comparatorFn) ? GraphQLList(type) : type
+        const fieldType = ['between', 'notBetween', 'in', 'notIn'].includes(comparatorFn) ? new GraphQLList(type) : type
         fields[comparatorFn] = { type: fieldType }
         return fields
       },
