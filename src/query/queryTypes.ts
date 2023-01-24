@@ -95,7 +95,7 @@ export type GetQueryFor<ValueType extends any> = ValueType extends string
   ? BooleanQuery
   : ValueType extends Date
   ? DateQuery
-  : ValueType extends Array<infer ItemType extends AnyObject>
+  : ValueType extends Array<infer ItemType>
   ? QuerySelector<ItemType>['where']
   : /**
    * Relational `oneOf`/`manyOf` invocation
