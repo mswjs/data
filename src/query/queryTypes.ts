@@ -57,13 +57,13 @@ export interface BulkQueryBaseOptions<EntityType extends AnyObject> {
   orderBy?: OrderBy<EntityType> | OrderBy<EntityType>[]
 }
 
-interface BulkQueryOffsetOptions<EntityType>
+interface BulkQueryOffsetOptions<EntityType extends AnyObject>
   extends BulkQueryBaseOptions<EntityType> {
   skip?: number
   cursor?: never
 }
 
-interface BulkQueryCursorOptions<EntityType>
+interface BulkQueryCursorOptions<EntityType extends AnyObject>
   extends BulkQueryBaseOptions<EntityType> {
   skip?: never
   cursor: PrimaryKeyType | null
