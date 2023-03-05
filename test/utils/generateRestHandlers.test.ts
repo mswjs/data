@@ -1,5 +1,5 @@
 import { response, restContext } from 'msw'
-import { primaryKey } from '../..'
+import { primaryKey } from '../../src'
 import { ModelDefinition } from '../../src/glossary'
 import {
   OperationError,
@@ -15,12 +15,22 @@ import {
 describe('createUrlBuilder', () => {
   it('builds a relative URL given no base URL', () => {
     const buildUrl = createUrlBuilder()
-    expect(buildUrl('/users')).toEqual('/users')
+    expect(buildUrl('users')).toEqual('/users')
+  })
+
+  it('builds a relative URL given a prefix as a base URL', () => {
+    const buildUrl = createUrlBuilder('/api/v1')
+    expect(buildUrl('users')).toEqual('/api/v1/users')
   })
 
   it('builds an absolute URL given a base URL', () => {
     const buildUrl = createUrlBuilder('https://example.com')
-    expect(buildUrl('/users')).toEqual('https://example.com/users')
+    expect(buildUrl('users')).toEqual('https://example.com/users')
+  })
+
+  it('builds an absolute URL given a base URL with trailing slash', () => {
+    const buildUrl = createUrlBuilder('https://example.com/')
+    expect(buildUrl('users')).toEqual('https://example.com/users')
   })
 })
 

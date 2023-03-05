@@ -31,8 +31,9 @@ type RequestParams<Key extends PrimaryKeyType> = {
 
 export function createUrlBuilder(baseUrl?: string) {
   return (path: string) => {
-    const url = new URL(path, baseUrl || 'http://localhost')
-    return baseUrl ? url.toString() : url.pathname
+    // For the previous implementation trailing slash didn't matter, we must keep it this way for backward compatibility
+    const normalizedBaseUrl = baseUrl && baseUrl.slice(-1) === '/' ? baseUrl.slice(0, -1) : baseUrl || '';
+    return `${normalizedBaseUrl}/${path}`
   }
 }
 
