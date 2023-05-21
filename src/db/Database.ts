@@ -9,6 +9,7 @@ import {
   PrimaryKeyType,
   PRIMARY_KEY,
 } from '../glossary'
+import { inheritInternalProperties } from '../utils/inheritInternalProperties'
 
 export const SERIALIZED_INTERNAL_PROPERTIES_KEY =
   'SERIALIZED_INTERNAL_PROPERTIES'
@@ -85,6 +86,26 @@ export class Database<Dictionary extends ModelDictionary> {
     return md5(salt)
   }
 
+  /**
+   * Sets the serialized internal properties as symbols
+   * on the given entity.
+   * @note `Symbol` properties are stripped off when sending
+   * an object over an event emitter.
+   */
+  deserializeEntity(entity: SerializedEntity): Entity<any, any> {
+    const {
+      [SERIALIZED_INTERNAL_PROPERTIES_KEY]: internalProperties,
+      ...publicProperties
+    } = entity
+
+    inheritInternalProperties(publicProperties, {
+      [ENTITY_TYPE]: internalProperties.entityType,
+      [PRIMARY_KEY]: internalProperties.primaryKey,
+    })
+
+    return publicProperties
+  }
+
   private serializeEntity(entity: Entity<Dictionary, any>): SerializedEntity {
     return {
       ...entity,
@@ -93,6 +114,31 @@ export class Database<Dictionary extends ModelDictionary> {
         primaryKey: entity[PRIMARY_KEY],
       },
     }
+  }
+
+  hydrate(data: Record<string, any>) {
+    Object.entries(data).forEach(([modelName, entities]) => {
+      for (const [, entity] of entities.entries()) {
+        this.create(modelName, this.deserializeEntity(entity))
+      }
+    })
+  }
+
+  toJson() {
+    return Object.entries(this.models).reduce<Record<string, any>>(
+      (json, [modelName, entities]) => {
+        const modelJson: Entity<any, any>[] = []
+
+        for (const [, entity] of entities.entries()) {
+          modelJson.push(this.serializeEntity(entity))
+        }
+
+        json[modelName] = modelJson
+
+        return json
+      },
+      {},
+    )
   }
 
   getModel<ModelName extends keyof Dictionary>(name: ModelName) {

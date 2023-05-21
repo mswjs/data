@@ -1190,6 +1190,12 @@ const server = setupServer(...handlers)
 server.listen()
 ```
 
+## Extensions
+
+### persist
+
+TODO://
+
 ## Honorable mentions
 
 - [Prisma](https://www.prisma.io) for inspiring the querying client.

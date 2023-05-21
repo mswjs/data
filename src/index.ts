@@ -1,4 +1,5 @@
 export { factory } from './factory'
+export { persist } from './extensions/persist'
 export { primaryKey } from './primaryKey'
 export { nullable } from './nullable'
 export { oneOf } from './relations/oneOf'
