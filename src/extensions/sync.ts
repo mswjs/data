@@ -1,11 +1,5 @@
-import { ENTITY_TYPE, PRIMARY_KEY, Entity } from '../glossary'
-import {
-  Database,
-  DatabaseEventsMap,
-  SerializedEntity,
-  SERIALIZED_INTERNAL_PROPERTIES_KEY,
-} from '../db/Database'
-import { inheritInternalProperties } from '../utils/inheritInternalProperties'
+import { isBrowser, supports } from '../utils/env'
+import { Database, DatabaseEventsMap } from '../db/Database'
 
 export type DatabaseMessageEventData =
   | {
@@ -39,33 +33,10 @@ function removeListeners<Event extends keyof DatabaseEventsMap>(
 }
 
 /**
- * Sets the serialized internal properties as symbols
- * on the given entity.
- * @note `Symbol` properties are stripped off when sending
- * an object over an event emitter.
- */
-function deserializeEntity(entity: SerializedEntity): Entity<any, any> {
-  const {
-    [SERIALIZED_INTERNAL_PROPERTIES_KEY]: internalProperties,
-    ...publicProperties
-  } = entity
-
-  inheritInternalProperties(publicProperties, {
-    [ENTITY_TYPE]: internalProperties.entityType,
-    [PRIMARY_KEY]: internalProperties.primaryKey,
-  })
-
-  return publicProperties
-}
-
-/**
  * Synchronizes database operations across multiple clients.
  */
 export function sync(db: Database<any>) {
-  const IS_BROWSER = typeof window !== 'undefined'
-  const SUPPORTS_BROADCAST_CHANNEL = typeof BroadcastChannel !== 'undefined'
-
-  if (!IS_BROWSER || !SUPPORTS_BROADCAST_CHANNEL) {
+  if (!isBrowser() || !supports.broadcastChannel()) {
     return
   }
 
@@ -91,7 +62,7 @@ export function sync(db: Database<any>) {
       switch (event.data.operationType) {
         case 'create': {
           const [modelName, entity, customPrimaryKey] = event.data.payload[1]
-          db.create(modelName, deserializeEntity(entity), customPrimaryKey)
+          db.create(modelName, db.deserializeEntity(entity), customPrimaryKey)
           break
         }
 
@@ -99,8 +70,8 @@ export function sync(db: Database<any>) {
           const [modelName, prevEntity, nextEntity] = event.data.payload[1]
           db.update(
             modelName,
-            deserializeEntity(prevEntity),
-            deserializeEntity(nextEntity),
+            db.deserializeEntity(prevEntity),
+            db.deserializeEntity(nextEntity),
           )
           break
         }

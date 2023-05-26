@@ -1190,6 +1190,31 @@ const server = setupServer(...handlers)
 server.listen()
 ```
 
+## Extensions
+
+### persist
+
+To persist database state and hydrate on page reload you can use persist extention. By default this one save database snapshoot in `sessionStorage` every time when any action was fired (like create new entity, update or delete).
+
+```ts
+import { factory, persist, primaryKey } from '@mswjs/data'
+
+const db = factory({
+  user: {
+    id: primaryKey(String),
+    firstName: String,
+  },
+})
+
+persist(db)
+```
+
+You can pass any key-value storage with `getItem` and `setItem` methods (like `localStorage`) by second argument:
+
+```
+persist(db, { storage: localStorage })
+```
+
 ## Honorable mentions
 
 - [Prisma](https://www.prisma.io) for inspiring the querying client.
