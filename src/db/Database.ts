@@ -1,6 +1,6 @@
 import md5 from 'md5'
 import { invariant } from 'outvariant'
-import { Emitter, EventMap } from 'strict-event-emitter'
+import { Emitter } from 'strict-event-emitter'
 import {
   Entity,
   ENTITY_TYPE,
