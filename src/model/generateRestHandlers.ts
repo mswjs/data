@@ -32,7 +32,10 @@ type RequestParams<Key extends PrimaryKeyType> = {
 export function createUrlBuilder(baseUrl?: string) {
   return (path: string) => {
     // For the previous implementation trailing slash didn't matter, we must keep it this way for backward compatibility
-    const normalizedBaseUrl = baseUrl && baseUrl.slice(-1) === '/' ? baseUrl.slice(0, -1) : baseUrl || '';
+    const normalizedBaseUrl =
+      baseUrl && baseUrl.slice(-1) === '/'
+        ? baseUrl.slice(0, -1)
+        : baseUrl || ''
     return `${normalizedBaseUrl}/${path}`
   }
 }
