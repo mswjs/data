@@ -6,26 +6,29 @@ import {
   SERIALIZED_INTERNAL_PROPERTIES_KEY,
 } from '../db/Database'
 import { inheritInternalProperties } from '../utils/inheritInternalProperties'
+import { Listener } from 'strict-event-emitter'
 
 export type DatabaseMessageEventData =
   | {
       operationType: 'create'
-      payload: Parameters<DatabaseEventsMap['create']>
+      payload: DatabaseEventsMap['create']
     }
   | {
       operationType: 'update'
-      payload: Parameters<DatabaseEventsMap['update']>
+      payload: DatabaseEventsMap['update']
     }
   | {
       operationType: 'delete'
-      payload: Parameters<DatabaseEventsMap['delete']>
+      payload: DatabaseEventsMap['delete']
     }
 
 function removeListeners<Event extends keyof DatabaseEventsMap>(
   event: Event,
   db: Database<any>,
 ) {
-  const listeners = db.events.listeners(event) as DatabaseEventsMap[Event][]
+  const listeners = db.events.listeners(event) as Listener<
+    DatabaseEventsMap[Event]
+  >[]
 
   listeners.forEach((listener) => {
     db.events.removeListener(event, listener)
@@ -90,13 +93,13 @@ export function sync(db: Database<any>) {
       // to the current database instance.
       switch (event.data.operationType) {
         case 'create': {
-          const [modelName, entity, customPrimaryKey] = event.data.payload[1]
+          const [_, modelName, entity, customPrimaryKey] = event.data.payload
           db.create(modelName, deserializeEntity(entity), customPrimaryKey)
           break
         }
 
         case 'update': {
-          const [modelName, prevEntity, nextEntity] = event.data.payload[1]
+          const [_, modelName, prevEntity, nextEntity] = event.data.payload
           db.update(
             modelName,
             deserializeEntity(prevEntity),
@@ -105,8 +108,10 @@ export function sync(db: Database<any>) {
           break
         }
 
-        default: {
-          db[event.data.operationType](...event.data.payload[1])
+        case 'delete': {
+          const [_, modelName, primaryKey] = event.data.payload
+          db.delete(modelName, primaryKey)
+          break
         }
       }
 
@@ -120,7 +125,7 @@ export function sync(db: Database<any>) {
   function broadcastDatabaseEvent<Event extends keyof DatabaseEventsMap>(
     operationType: Event,
   ) {
-    return (...payload: Parameters<DatabaseEventsMap[Event]>) => {
+    return (...payload: DatabaseEventsMap[Event]) => {
       channel.postMessage({
         operationType,
         payload,

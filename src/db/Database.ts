@@ -1,6 +1,6 @@
 import md5 from 'md5'
 import { invariant } from 'outvariant'
-import { StrictEventEmitter } from 'strict-event-emitter'
+import { Emitter, EventMap } from 'strict-event-emitter'
 import {
   Entity,
   ENTITY_TYPE,
@@ -27,40 +27,31 @@ export interface SerializedEntity extends Entity<any, any> {
   [SERIALIZED_INTERNAL_PROPERTIES_KEY]: SerializedInternalEntityProperties
 }
 
-export type DatabaseMethodToEventFn<ArgsType extends unknown[]> = (
-  sourceId: string,
-  args: ArgsType,
-) => void
-
-export interface DatabaseEventsMap {
-  create: DatabaseMethodToEventFn<
-    [
-      modelName: KeyType,
-      entity: SerializedEntity,
-      customPrimaryKey?: PrimaryKeyType,
-    ]
-  >
-  update: DatabaseMethodToEventFn<
-    [
-      modelName: KeyType,
-      prevEntity: SerializedEntity,
-      nextEntity: SerializedEntity,
-    ]
-  >
-  delete: DatabaseMethodToEventFn<
-    [modelName: KeyType, primaryKey: PrimaryKeyType]
-  >
+export type DatabaseEventsMap = {
+  create: [
+    sourceId: string,
+    modelName: KeyType,
+    entity: SerializedEntity,
+    customPrimaryKey?: PrimaryKeyType,
+  ]
+  update: [
+    sourceId: string,
+    modelName: KeyType,
+    prevEntity: SerializedEntity,
+    nextEntity: SerializedEntity,
+  ]
+  delete: [sourceId: string, modelName: KeyType, primaryKey: PrimaryKeyType]
 }
 
 let callOrder = 0
 
 export class Database<Dictionary extends ModelDictionary> {
   public id: string
-  public events: StrictEventEmitter<DatabaseEventsMap>
+  public events: Emitter<DatabaseEventsMap>
   private models: Models<Dictionary>
 
   constructor(dictionary: Dictionary) {
-    this.events = new StrictEventEmitter()
+    this.events = new Emitter()
     this.models = Object.keys(dictionary).reduce<Models<Dictionary>>(
       (acc, modelName: keyof Dictionary) => {
         acc[modelName] = new Map<string, Entity<Dictionary, string>>()
@@ -120,11 +111,13 @@ export class Database<Dictionary extends ModelDictionary> {
     const primaryKey =
       customPrimaryKey || (entity[entity[PRIMARY_KEY]] as string)
 
-    this.events.emit('create', this.id, [
+    this.events.emit(
+      'create',
+      this.id,
       modelName,
       this.serializeEntity(entity),
       customPrimaryKey,
-    ])
+    )
     return this.getModel(modelName).set(primaryKey, entity)
   }
 
@@ -143,11 +136,13 @@ export class Database<Dictionary extends ModelDictionary> {
     this.getModel(modelName).set(nextPrimaryKey, nextEntity)
 
     // this.create(modelName, nextEntity, nextPrimaryKey)
-    this.events.emit('update', this.id, [
+    this.events.emit(
+      'update',
+      this.id,
       modelName,
       this.serializeEntity(prevEntity),
       this.serializeEntity(nextEntity),
-    ])
+    )
   }
 
   delete<ModelName extends keyof Dictionary>(
@@ -155,7 +150,7 @@ export class Database<Dictionary extends ModelDictionary> {
     primaryKey: PrimaryKeyType,
   ): void {
     this.getModel(modelName).delete(primaryKey)
-    this.events.emit('delete', this.id, [modelName, primaryKey])
+    this.events.emit('delete', this.id, modelName, primaryKey)
   }
 
   has<ModelName extends keyof Dictionary>(
