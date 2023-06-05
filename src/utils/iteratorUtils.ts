@@ -1,4 +1,4 @@
-import { PrimaryKeyType } from "../glossary"
+import { PrimaryKeyType } from '../glossary'
 
 export function forEach<K extends PrimaryKeyType, V>(
   fn: (key: K, value: V) => any,
