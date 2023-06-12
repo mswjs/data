@@ -1,6 +1,5 @@
 import { faker } from '@faker-js/faker'
-import { factory, primaryKey, oneOf, manyOf, nullable } from '../../src'
-import { identity } from '../../src/utils/identity'
+import { factory, identity, primaryKey, oneOf, manyOf, nullable } from '../../src'
 
 test('creates a new entity', () => {
   const userId = faker.datatype.uuid()
@@ -253,5 +252,25 @@ test('throws an exception when null used as initial value for non-nullable relat
     })
   }).toThrowError(
     'Failed to define a "MANY_OF" relationship to "post" at "user.posts" (id: "user-1"): cannot set a non-nullable relationship to null.',
+  )
+})
+
+test('throws an exception when value is not provided for a non-nullable oneOf relation', () => {
+  const db = factory({
+    user: {
+      id: primaryKey(String),
+      city: oneOf('city'),
+    },
+    city: {
+      id: primaryKey(String),
+    },
+  })
+
+  expect(() => {
+    db.user.create({
+      id: 'user-1',
+    })
+  }).toThrowError(
+    'Failed to define a "ONE_OF" relationship to "city" at "user.city" (id: "user-1"): a value must be provided for a non-nullable relationship.',
   )
 })

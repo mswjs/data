@@ -325,7 +325,7 @@ test('updates a many-to-one relational property without initial value', () => {
     },
     post: {
       id: primaryKey(String),
-      author: oneOf('user'),
+      author: nullable(oneOf('user')),
     },
   })
 
@@ -423,7 +423,7 @@ test('does not throw any error when a many-to-one entity is created without a re
     post: {
       id: primaryKey(String),
       title: String,
-      author: oneOf('user'),
+      author: nullable(oneOf('user')),
     },
   })
 
@@ -437,6 +437,7 @@ test('does not throw any error when a many-to-one entity is created without a re
     [PRIMARY_KEY]: 'id',
     id: 'post-1',
     title: 'First post',
+    author: null,
   })
 })
 
