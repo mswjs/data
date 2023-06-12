@@ -1,5 +1,4 @@
 import { faker } from '@faker-js/faker'
-import { NullableObject, NullableProperty } from '../../src/nullable'
 import { factory, primaryKey, oneOf, manyOf, nullable } from '../../src'
 import { identity } from '../../src/utils/identity'
 
@@ -708,4 +707,24 @@ describe('nullable objects with complex structure and null definition', () => {
       address: null,
     })
   })
+})
+
+test('throws an exception when value is not provided for a non-nullable oneOf relation', () => {
+  const db = factory({
+    user: {
+      id: primaryKey(String),
+      city: oneOf('city'),
+    },
+    city: {
+      id: primaryKey(String),
+    },
+  })
+
+  expect(() => {
+    db.user.create({
+      id: 'user-1',
+    })
+  }).toThrowError(
+    'Failed to define a "ONE_OF" relationship to "city" at "user.city" (id: "user-1"): a value must be provided for a non-nullable relationship.',
+  )
 })

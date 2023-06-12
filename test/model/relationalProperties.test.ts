@@ -5,7 +5,7 @@ import {
   RelationsList,
 } from '../../src/relations/Relation'
 import { defineRelationalProperties } from '../../src/model/defineRelationalProperties'
-import { testFactory } from '../../test/testUtils'
+import { testFactory } from '../testUtils'
 
 it('marks relational properties as enumerable', () => {
   const { db, dictionary, databaseInstance } = testFactory({
@@ -27,6 +27,7 @@ it('marks relational properties as enumerable', () => {
   const post = db.post.create({
     id: 'post-1',
     title: 'Test Post',
+    author: user,
   })
 
   const relations: RelationsList = [

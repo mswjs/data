@@ -9,9 +9,20 @@ import {
   PRIMARY_KEY,
   Value,
 } from '../glossary'
-import { RelationKind, RelationsList } from '../relations/Relation'
+import { Relation, RelationKind, RelationsList } from '../relations/Relation'
 
 const log = debug('defineRelationalProperties')
+
+const getInvariantMessagePrefix = (
+  entity: Entity<any, any>,
+  relation: Relation<any, any, any, any>,
+  propertyPath: string[],
+) =>
+  `Failed to define a "${relation.kind}" relationship to "${
+    relation.target.modelName
+  }" at "${entity[ENTITY_TYPE]}.${propertyPath.join('.')}" (${
+    entity[PRIMARY_KEY]
+  }: "${entity[entity[PRIMARY_KEY]]}")`
 
 export function defineRelationalProperties(
   entity: Entity<any, any>,
@@ -23,12 +34,15 @@ export function defineRelationalProperties(
   log('defining relational properties...', { entity, initialValues, relations })
 
   for (const { propertyPath, relation } of relations) {
+    const invariantMessagePrefix = getInvariantMessagePrefix(
+      entity,
+      relation,
+      propertyPath,
+    )
+
     invariant(
       dictionary[relation.target.modelName],
-      'Failed to define a "%s" relational property to "%s" on "%s": cannot find a model by the name "%s".',
-      relation.kind,
-      propertyPath.join('.'),
-      entity[ENTITY_TYPE],
+      `${invariantMessagePrefix}: cannot find a model by the name "%s".`,
       relation.target.modelName,
     )
 
@@ -39,14 +53,14 @@ export function defineRelationalProperties(
 
     invariant(
       references !== null || relation.attributes.nullable,
-      'Failed to define a "%s" relationship to "%s" at "%s.%s" (%s: "%s"): cannot set a non-nullable relationship to null.',
+      `${invariantMessagePrefix}: cannot set a non-nullable relationship to null.`,
+    )
 
-      relation.kind,
-      relation.target.modelName,
-      entity[ENTITY_TYPE],
-      propertyPath.join('.'),
-      entity[PRIMARY_KEY],
-      entity[entity[PRIMARY_KEY]],
+    invariant(
+      relation.kind !== RelationKind.OneOf ||
+        references !== undefined ||
+        relation.attributes.nullable,
+      `${invariantMessagePrefix}: a value must be provided for a non-nullable relationship.`,
     )
 
     log(

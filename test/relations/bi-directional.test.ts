@@ -1,13 +1,13 @@
 /**
  * @see https://github.com/mswjs/data/issues/139
  */
-import { factory, manyOf, oneOf, primaryKey } from '@mswjs/data'
+import { factory, manyOf, oneOf, primaryKey, nullable } from '@mswjs/data'
 
 test('supports creating a bi-directional one-to-one relationship', () => {
   const db = factory({
     user: {
       id: primaryKey(String),
-      partner: oneOf('user'),
+      partner: nullable(oneOf('user')),
     },
   })
 
@@ -117,7 +117,7 @@ test('supports querying by a bi-directional one-to-one relationship', () => {
   const db = factory({
     user: {
       id: primaryKey(String),
-      partner: oneOf('user'),
+      partner: nullable(oneOf('user'))
     },
   })
 
@@ -202,8 +202,8 @@ test('supports querying by a bi-directional one-to-many relationship', () => {
   })
 
   // Create unrelated user and post to ensure they are not included.
-  db.user.create({ id: 'user-unrelated' })
-  db.post.create({ id: 'post-unrelated' })
+  const unrelatedUser = db.user.create({ id: 'user-unrelated' })
+  db.post.create({ id: 'post-unrelated', author: unrelatedUser })
 
   // Find posts in one-to-many direction
   const posts = db.post.findMany({
@@ -304,7 +304,7 @@ test('supports updating using an entity with a bi-directional one-to-one relatio
   const db = factory({
     user: {
       id: primaryKey(String),
-      partner: oneOf('user'),
+      partner: nullable(oneOf('user')),
     },
   })
 
@@ -343,7 +343,7 @@ test('supports updating using an entity with a bi-directional one-to-many relati
     post: {
       id: primaryKey(String),
       title: String,
-      author: oneOf('user'),
+      author: nullable(oneOf('user')),
     },
   })
 

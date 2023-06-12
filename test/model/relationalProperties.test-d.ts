@@ -8,7 +8,7 @@ const db = factory({
   post: {
     id: primaryKey(String),
     text: String,
-    author: oneOf('user'),
+    author: nullable(oneOf('user')),
     reply: nullable(oneOf('post')),
     likedBy: nullable(manyOf('user')),
   },
@@ -17,7 +17,7 @@ const db = factory({
 const user = db.user.create()
 const post = db.post.create()
 
-// @ts-expect-error author is potentially undefined
+// @ts-expect-error author is potentially null
 post.author.id
 
 // @ts-expect-error reply is potentially null

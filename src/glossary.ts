@@ -229,7 +229,7 @@ export type Value<
     Target[Key] extends OneOf<infer ModelName, infer Nullable>
     ? Nullable extends true
       ? PublicEntity<Dictionary, ModelName> | null
-      : PublicEntity<Dictionary, ModelName> | undefined
+      : PublicEntity<Dictionary, ModelName>
     : // Extract value type from ManyOf relations.
     Target[Key] extends ManyOf<infer ModelName, infer Nullable>
     ? Nullable extends true

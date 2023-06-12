@@ -53,32 +53,6 @@ it('supports querying through a non-nullable relationship with initial value', (
   ).toEqual(null)
 })
 
-it('supports querying through a non-nullable relationship without initial value', () => {
-  const { db } = testFactory({
-    country: {
-      code: primaryKey(String),
-      capital: oneOf('city'),
-    },
-    city: {
-      name: primaryKey(String),
-    },
-  })
-
-  db.country.create({
-    code: 'uk',
-  })
-
-  // Querying through the relationship is permitted
-  // but since it hasn't been set, no queries will match.
-  expect(
-    db.country.findFirst({
-      where: {
-        capital: { name: { equals: 'London' } },
-      },
-    }),
-  ).toEqual(null)
-})
-
 it('supports querying through a deeply nested non-nullable relationship', () => {
   const { db, entity } = testFactory({
     user: {

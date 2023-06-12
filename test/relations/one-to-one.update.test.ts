@@ -338,46 +338,6 @@ it('updates a non-nullable relationship with initial value to a new entity', () 
   )
 })
 
-it('updates a non-nullable relationship without initial value to a new entity', () => {
-  const { db, entity } = testFactory({
-    country: {
-      code: primaryKey(String),
-      capital: oneOf('city'),
-    },
-    city: {
-      name: primaryKey(String),
-    },
-  })
-
-  db.country.create({ code: 'uk' })
-
-  const nextCapital = db.city.create({ name: 'Leads' })
-  const nextCountry = db.country.update({
-    where: { code: { equals: 'uk' } },
-    data: { capital: nextCapital },
-  })
-
-  const expectedCountry = entity('country', {
-    code: 'uk',
-    capital: nextCapital,
-  })
-
-  expect(nextCountry).toHaveRelationalProperty('capital', nextCapital)
-
-  expect(nextCountry).toEqual(expectedCountry)
-  expect(db.country.findFirst({ where: { code: { equals: 'uk' } } })).toEqual(
-    expectedCountry,
-  )
-  expect(
-    db.country.findFirst({ where: { capital: { name: { equals: 'Leads' } } } }),
-  ).toEqual(expectedCountry)
-
-  // Newly referenced entity is created.
-  expect(db.city.findFirst({ where: { name: { equals: 'Leads' } } })).toEqual(
-    nextCapital,
-  )
-})
-
 it('preserves the relational property after arbitrary parent entity update', () => {
   const { db } = testFactory({
     country: {
@@ -410,71 +370,6 @@ it('preserves the relational property after arbitrary parent entity update', () 
   expect(
     db.country.findFirst({ where: { code: { equals: 'uk' } } }),
   ).toHaveRelationalProperty('capital', london)
-})
-
-it('forbids updating a non-nullable relationship without initial value to null', () => {
-  const { db } = testFactory({
-    country: {
-      code: primaryKey(String),
-      capital: oneOf('city'),
-    },
-    city: {
-      name: primaryKey(String),
-    },
-  })
-
-  const country = db.country.create({ code: 'uk' })
-
-  expect(() =>
-    db.country.update({
-      where: { code: { equals: 'uk' } },
-      data: {
-        // @ts-expect-error Runtime value incompatibility.
-        capital: null,
-      },
-    }),
-  ).toThrow(
-    'Failed to update a "ONE_OF" relationship to "city" at "country.capital" (code: "uk"): cannot update a non-nullable relationship to null.',
-  )
-  // Non-nullable relationships are not instantiated without a value.
-  expect(country).not.toHaveProperty('capital')
-})
-
-it('forbids updating a non-nullable relationship without initial value to a different model', () => {
-  const { db } = testFactory({
-    country: {
-      code: primaryKey(String),
-      capital: oneOf('city'),
-    },
-    city: {
-      name: primaryKey(String),
-    },
-    user: {
-      id: primaryKey(String),
-    },
-  })
-
-  const country = db.country.create({ code: 'uk' })
-
-  expect(() =>
-    db.country.update({
-      where: { code: { equals: 'uk' } },
-      data: {
-        // @ts-expect-error Runtime value incompatibility.
-        capital: db.user.create({ id: 'user-1' }),
-      },
-    }),
-  ).toThrow(
-    'Failed to update a "ONE_OF" relationship to "city" at "country.capital" (code: "uk"): expected the next value to reference a "city" but got "user" (id: "user-1").',
-  )
-  expect(country).not.toHaveProperty('capital')
-  expect(db.user.getAll()).toEqual([
-    {
-      [ENTITY_TYPE]: 'user',
-      [PRIMARY_KEY]: 'id',
-      id: 'user-1',
-    },
-  ])
 })
 
 it('forbids updating a unique non-nullable relationship to already referenced entity', () => {
