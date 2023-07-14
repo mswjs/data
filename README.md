@@ -22,7 +22,7 @@ When testing API interactions you often need to mock data. Instead of keeping a 
 ```bash
 $ npm install @mswjs/data --save-dev
 # or
-$ yarn add @mswjs/data --save-dev
+$ yarn add @mswjs/data --dev
 ```
 
 ### Describe data
