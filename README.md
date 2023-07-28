@@ -85,10 +85,10 @@ Once your data is modeled, you can use [Model methods](#model-methods) to intera
 ## API
 
 - [`factory`](#factory)
-- [`primaryKey`](#primaryKey)
+- [`primaryKey`](#primarykey)
 - [`nullable`](#nullable)
-- [`oneOf`](#oneOf)
-- [`manyOf`](#manyOf)
+- [`oneOf`](#oneof)
+- [`manyOf`](#manyof)
 - [`drop`](#drop)
 
 ### `factory`
@@ -206,15 +206,15 @@ drop(db)
 Each model has the following methods:
 
 - [`create()`](#create)
-- [`findFirst()`](#findFirst)
-- [`findMany()`](#findMany)
+- [`findFirst()`](#findfirst)
+- [`findMany()`](#findmany)
 - [`count()`](#count)
-- [`getAll()`](#getAll)
+- [`getAll()`](#getall)
 - [`update()`](#update)
-- [`updateMany()`](#updateMany)
+- [`updateMany()`](#updatemany)
 - [`delete()`](#delete)
-- [`deleteMany()`](#deleteMany)
-- [`toHandlers()`](#toHandlers)
+- [`deleteMany()`](#deletemany)
+- [`toHandlers()`](#tohandlers)
 
 ### `create`
 
