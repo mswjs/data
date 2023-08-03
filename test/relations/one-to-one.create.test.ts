@@ -231,7 +231,7 @@ it('creates a non-nullable relationship', () => {
   ).toEqual(expectedCountry)
 })
 
-it('creates a non-nullable relationship without the initial value', () => {
+it('forbids creating a non-nullable relationship without the initial value', () => {
   const { db, entity } = testFactory({
     country: {
       code: primaryKey(String),
@@ -242,24 +242,13 @@ it('creates a non-nullable relationship without the initial value', () => {
     },
   })
 
-  const country = db.country.create({
-    code: 'uk',
-  })
-
-  const expectedCountry = entity('country', {
-    code: 'uk',
-    capital: undefined,
-  })
-
-  expect(country).toEqual(expectedCountry)
-  expect(db.country.findFirst({ where: { code: { equals: 'uk' } } })).toEqual(
-    expectedCountry,
+  expect(() =>
+    db.country.create({
+      code: 'uk',
+    })
+  ).toThrow(
+    'Failed to define a "ONE_OF" relationship to "city" at "country.capital" (code: "uk"): a value must be provided for a non-nullable relationship.',
   )
-  expect(
-    db.country.findFirst({
-      where: { capital: { name: { equals: 'Manchester' } } },
-    }),
-  ).toEqual(null)
 })
 
 it('forbids creating a non-nullable relationship with null as initial value', () => {
@@ -348,32 +337,6 @@ it('creates a non-nullable unique relationship with initial value', () => {
       where: { capital: { name: { equals: 'London' } } },
     }),
   ).toEqual(expectedCountry)
-})
-
-it('creates a non-nullable unique relationship without initial value', () => {
-  const { db, entity } = testFactory({
-    country: {
-      code: primaryKey(String),
-      capital: oneOf('city', { unique: true }),
-    },
-    city: {
-      name: primaryKey(String),
-    },
-  })
-
-  const country = db.country.create({
-    code: 'uk',
-  })
-
-  const expectedCountry = entity('country', {
-    code: 'uk',
-    capital: undefined,
-  })
-
-  expect(country).toEqual(expectedCountry)
-  expect(db.country.findFirst({ where: { code: { equals: 'uk' } } })).toEqual(
-    expectedCountry,
-  )
 })
 
 it('forbids creating a unique relationship to already referenced entity', () => {
