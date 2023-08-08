@@ -593,3 +593,52 @@ test('throws when setting a non-nullable property to null', () => {
     'Failed to update "firstName" on "user": cannot set a non-nullable property to null.',
   )
 })
+
+describe('nullable object properties', () => {
+  it('updates property initially set to null with some value', () => {
+    const db = factory({
+      user: {
+        id: primaryKey(faker.datatype.uuid),
+        address: nullable(() => ({
+          street: String,
+          number: nullable<number>(() => null),
+        })),
+      },
+    })
+
+    const user = db.user.create({ address: null })
+
+    const updatedUser = db.user.update({
+      where: { id: { equals: user.id } },
+      data: { address: { street: 'Wall Street', number: 123 } },
+    })
+
+    expect(updatedUser?.address).toEqual({ street: 'Wall Street', number: 123 })
+  })
+
+  it('updates property initially set to some value with null', () => {
+    const db = factory({
+      user: {
+        id: primaryKey(faker.datatype.uuid),
+        address: nullable(() => ({
+          street: String,
+          number: nullable<number>(() => null),
+        })),
+      },
+    })
+
+    const user = db.user.create({
+      address: {
+        street: 'Wall Street',
+        number: 123,
+      },
+    })
+
+    const updatedUser = db.user.update({
+      where: { id: { equals: user.id } },
+      data: { address: null },
+    })
+
+    expect(updatedUser?.address).toEqual(null)
+  })
+})

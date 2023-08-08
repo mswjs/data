@@ -19,7 +19,10 @@ export type KeyType = string | number | symbol
 export type AnyObject = Record<KeyType, any>
 export type PrimaryKeyType = string | number
 export type PrimitiveValueType = string | number | boolean | Date
-export type ModelValueType = PrimitiveValueType | PrimitiveValueType[]
+export type ModelValueType =
+  | PrimitiveValueType
+  | PrimitiveValueType[]
+  | AnyObject
 export type ModelValueTypeGetter = () => ModelValueType
 
 export type ModelDefinition = Record<string, ModelDefinitionValue>
@@ -219,8 +222,14 @@ export type Value<
   [Key in keyof Target]: Target[Key] extends PrimaryKey<any>
     ? ReturnType<Target[Key]['getPrimaryKeyValue']>
     : // Extract underlying value type of nullable properties
-    Target[Key] extends NullableProperty<any>
+    Target[Key] extends NullableProperty<
+        PrimitiveValueType | PrimitiveValueType[]
+      >
     ? ReturnType<Target[Key]['getValue']>
+    : // Extract underlying value type of nullable object properties
+    // - retrieve values of properties from object returned by getter
+    Target[Key] extends NullableProperty<AnyObject>
+    ? Partial<Value<ReturnType<Target[Key]['getValue']>, Dictionary>>
     : // Extract value type from OneOf relations.
     Target[Key] extends OneOf<infer ModelName, infer Nullable>
     ? Nullable extends true

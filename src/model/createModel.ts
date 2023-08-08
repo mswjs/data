@@ -19,6 +19,7 @@ import { PrimaryKey } from '../primaryKey'
 import { Relation } from '../relations/Relation'
 import { NullableProperty } from '../nullable'
 import { isModelValueType } from '../utils/isModelValueType'
+import { getDefinition } from './getDefinition'
 
 const log = debug('createModel')
 
@@ -51,7 +52,7 @@ export function createModel<
   const publicProperties = properties.reduce<Record<string, unknown>>(
     (properties, propertyName) => {
       const initialValue = get(initialValues, propertyName)
-      const propertyDefinition = get(definition, propertyName)
+      const propertyDefinition = getDefinition(definition, propertyName)
 
       // Ignore relational properties at this stage.
       if (propertyDefinition instanceof Relation) {
@@ -68,6 +69,15 @@ export function createModel<
       }
 
       if (propertyDefinition instanceof NullableProperty) {
+        if (propertyDefinition.isGetterFunctionReturningObject) {
+          // Set the property to null to override default nested values returned from factory definition
+          if (initialValue === null) {
+            set(properties, propertyName, null)
+          }
+
+          return properties
+        }
+
         const value =
           initialValue === null || isModelValueType(initialValue)
             ? initialValue

@@ -1,4 +1,5 @@
 import { ModelValueType, PrimitiveValueType } from '../glossary'
+import { isObject } from './isObject'
 
 function isPrimitiveValueType(value: any): value is PrimitiveValueType {
   return (
@@ -10,5 +11,5 @@ function isPrimitiveValueType(value: any): value is PrimitiveValueType {
 }
 
 export function isModelValueType(value: any): value is ModelValueType {
-  return isPrimitiveValueType(value) || Array.isArray(value)
+  return isPrimitiveValueType(value) || Array.isArray(value) || isObject(value)
 }
