@@ -30,7 +30,7 @@ test('creates a new entity with initial values', () => {
   expect(exactUser.id).toEqual('abc-123')
 })
 
-test.only('creates a new entity with an object property and no value specified', () => {
+test('creates a new entity with an object property and no value specified', () => {
   const db = factory({
     user: {
       id: primaryKey(faker.datatype.uuid),

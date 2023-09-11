@@ -1,4 +1,3 @@
-import isObjectLike from 'lodash/isObjectLike'
 import { ModelValueType, PrimitiveValueType } from '../glossary'
 import { isObject } from './isObject'
 
