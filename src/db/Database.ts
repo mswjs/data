@@ -44,7 +44,6 @@ export type DatabaseEventsMap = {
 }
 
 let callOrder = 0
-const seed = Math.random() * 10_000_000;
 
 export class Database<Dictionary extends ModelDictionary> {
   public id: string
@@ -73,7 +72,7 @@ export class Database<Dictionary extends ModelDictionary> {
   private generateId() {
     const { stack } = new Error()
     const callFrame = stack?.split('\n')[4]
-    const salt = `${callOrder}-${callFrame?.trim()}-${Math.round(seed)}`
+    const salt = `${callOrder}-${callFrame?.trim()}`
     return md5(salt)
   }
 
