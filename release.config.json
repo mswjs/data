@@ -1,0 +1,8 @@
+{
+  "profiles": [
+    {
+      "name": "latest",
+      "use": "yarn publish --new-version $RELEASE_VERSION"
+    }
+  ]
+}

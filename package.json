@@ -25,7 +25,7 @@
     "@commitlint/cli": "^16.0.1",
     "@commitlint/config-conventional": "^16.0.0",
     "@faker-js/faker": "^6.3.1",
-    "@ossjs/release": "^0.2.1",
+    "@ossjs/release": "^0.8.0",
     "@types/debug": "^4.1.7",
     "@types/jest": "^26.0.22",
     "@types/node-fetch": "^2.5.10",
