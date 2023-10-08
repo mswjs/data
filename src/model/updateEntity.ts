@@ -6,8 +6,9 @@ import { Relation, RelationKind } from '../relations/Relation'
 import { ENTITY_TYPE, PRIMARY_KEY, Entity, ModelDefinition } from '../glossary'
 import { isObject } from '../utils/isObject'
 import { inheritInternalProperties } from '../utils/inheritInternalProperties'
-import { NullableProperty } from '../nullable'
+import { NullableObject, NullableProperty } from '../nullable'
 import { spread } from '../utils/spread'
+import { getDefinition } from './getDefinition'
 
 const log = debug('updateEntity')
 
@@ -38,7 +39,8 @@ export function updateEntity(
         typeof value === 'function' ? value(prevValue, entity) : value
       log('next value for "%s":', propertyPath, nextValue)
 
-      const propertyDefinition = get(definition, propertyPath)
+      const propertyDefinition = getDefinition(definition, propertyPath)
+
       log('property definition for "%s":', propertyPath, propertyDefinition)
 
       if (propertyDefinition == null) {
@@ -183,7 +185,9 @@ export function updateEntity(
       }
 
       invariant(
-        nextValue !== null || propertyDefinition instanceof NullableProperty,
+        nextValue !== null ||
+          propertyDefinition instanceof NullableProperty ||
+          propertyDefinition instanceof NullableObject,
         'Failed to update "%s" on "%s": cannot set a non-nullable property to null.',
         propertyName,
         entity[ENTITY_TYPE],
