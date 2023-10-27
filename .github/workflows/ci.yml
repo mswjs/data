@@ -18,6 +18,9 @@ jobs:
       - name: Install dependencies
         run: yarn install --frozen-lockfile
 
+      - name: Install browsers
+        run: yarn playwright install
+
       - name: Environment (versions)
         run: |
           echo "node: $(node -v)"

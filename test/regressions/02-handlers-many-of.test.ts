@@ -53,7 +53,7 @@ it('updates database entity modified via a generated request handler', async () 
         strict: true,
         where: {
           id: {
-            equals: noteId,
+            equals: noteId as string,
           },
         },
         data: {
