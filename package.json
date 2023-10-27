@@ -49,7 +49,7 @@
     "@types/uuid": "^8.3.0",
     "date-fns": "^2.21.1",
     "debug": "^4.3.1",
-    "graphql": "^15.5.0",
+    "graphql": "^16.8.1",
     "lodash": "^4.17.21",
     "md5": "^2.3.0",
     "outvariant": "^1.2.1",

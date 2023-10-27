@@ -14,6 +14,7 @@ import {
   GraphQLInputType,
   GraphQLScalarType,
   GraphQLFieldConfigArgumentMap,
+  GraphQLError,
 } from 'graphql'
 import { GraphQLHandler, graphql } from 'msw'
 import { ModelAPI, ModelDefinition, ModelDictionary } from '../glossary'

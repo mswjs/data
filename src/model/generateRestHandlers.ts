@@ -1,5 +1,12 @@
 import pluralize from 'pluralize'
-import { RestContext, RestRequest, ResponseResolver, rest } from 'msw'
+import {
+  RestContext,
+  RestRequest,
+  ResponseResolver,
+  rest,
+  DefaultBodyType,
+  PathParams,
+} from 'msw'
 import {
   Entity,
   ModelDictionary,
@@ -55,7 +62,10 @@ export function getResponseStatusByErrorType(
   }
 }
 
-export function withErrors<RequestBodyType = any, RequestParamsType = any>(
+export function withErrors<
+  RequestBodyType extends DefaultBodyType = any,
+  RequestParamsType extends PathParams = any,
+>(
   handler: ResponseResolver<
     RestRequest<RequestBodyType, RequestParamsType>,
     RestContext
@@ -68,12 +78,14 @@ export function withErrors<RequestBodyType = any, RequestParamsType = any>(
     try {
       return handler(req, res, ctx)
     } catch (error) {
-      return res(
-        ctx.status(getResponseStatusByErrorType(error)),
-        ctx.json({
-          message: error.message,
-        }),
-      )
+      if (error instanceof Error) {
+        return res(
+          ctx.status(getResponseStatusByErrorType(error as HTTPError)),
+          ctx.json({
+            message: error.message,
+          }),
+        )
+      }
     }
   }
 }

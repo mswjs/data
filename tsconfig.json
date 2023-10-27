@@ -2,6 +2,7 @@
   "compilerOptions": {
     "strict": true,
     "strictNullChecks": true,
+    "skipLibCheck": true,
     "outDir": "lib",
     "declaration": true,
     "moduleResolution": "node",
