@@ -81,7 +81,6 @@ test('generates a graphql schema', () => {
       id: ID
       firstName: String
       age: Int
-    }
-    "
+    }"
   `)
 })
