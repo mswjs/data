@@ -1,4 +1,4 @@
-import fetch from 'node-fetch'
+// @vitest-environment jsdom
 import { setupServer } from 'msw/node'
 import { factory, drop, primaryKey } from '@mswjs/data'
 

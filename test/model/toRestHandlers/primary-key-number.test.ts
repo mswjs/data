@@ -1,4 +1,4 @@
-import fetch from 'node-fetch'
+// @jest-environment jsdom
 import { setupServer } from 'msw/node'
 import { factory, drop, primaryKey } from '../../../src'
 

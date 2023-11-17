@@ -9,7 +9,7 @@
   "scripts": {
     "start": "tsc -w",
     "format": "prettier src/**/*.ts --write",
-    "test": "jest -c test/jest.config.ts",
+    "test": "vitest -c test/vitest.config.ts",
     "test:ts": "tsc -p test/tsconfig.test-d.json",
     "clean": "rimraf ./lib",
     "build": "yarn clean && tsc",
@@ -27,20 +27,19 @@
     "@faker-js/faker": "^6.3.1",
     "@ossjs/release": "^0.8.0",
     "@types/debug": "^4.1.7",
-    "@types/jest": "^26.0.22",
     "@types/node-fetch": "^2.5.10",
     "commitizen": "^4.2.4",
     "cz-conventional-changelog": "3.3.0",
-    "jest": "^26.6.0",
-    "msw": "^1.0.0",
+    "jsdom": "^22.1.0",
+    "msw": "^2.0.7",
     "node-fetch": "^2.6.1",
     "page-with": "^0.6.0",
     "prettier": "^2.2.1",
     "rimraf": "^3.0.2",
     "simple-git-hooks": "^2.7.0",
-    "ts-jest": "^26.5.5",
     "ts-node": "^9.1.1",
-    "typescript": "4.3.5"
+    "typescript": "4.3.5",
+    "vitest": "^0.34.6"
   },
   "dependencies": {
     "@types/lodash": "^4.14.172",
@@ -58,7 +57,7 @@
     "uuid": "^8.3.1"
   },
   "optionalDependencies": {
-    "msw": "^1.0.0"
+    "msw": "^2.0.7"
   },
   "config": {
     "commitizen": {

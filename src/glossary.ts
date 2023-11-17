@@ -1,5 +1,5 @@
 import { GraphQLSchema } from 'graphql'
-import { GraphQLHandler, RestHandler } from 'msw'
+import { GraphQLHandler, HttpHandler } from 'msw'
 import { Database } from './db/Database'
 import { NullableObject, NullableProperty } from './nullable'
 import { PrimaryKey } from './primaryKey'
@@ -167,7 +167,7 @@ export interface ModelAPI<
   /**
    * Generate request handlers of the given type based on the model definition.
    */
-  toHandlers(type: 'rest', baseUrl?: string): RestHandler[]
+  toHandlers(type: 'rest', baseUrl?: string): HttpHandler[]
   /**
    * Generate request handlers of the given type based on the model definition.
    */

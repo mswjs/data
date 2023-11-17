@@ -14,9 +14,8 @@ import {
   GraphQLInputType,
   GraphQLScalarType,
   GraphQLFieldConfigArgumentMap,
-  GraphQLError,
 } from 'graphql'
-import { GraphQLHandler, graphql } from 'msw'
+import { GraphQLHandler, HttpResponse, graphql } from 'msw'
 import { ModelAPI, ModelDefinition, ModelDictionary } from '../glossary'
 import { PrimaryKey } from '../primaryKey'
 import { capitalize } from '../utils/capitalize'
@@ -289,18 +288,14 @@ export function generateGraphQLHandlers<
   const objectSchema = generateGraphQLSchema(modelName, definition, model)
 
   return [
-    target.operation(async (req, res, ctx) => {
-      if (!req.body) {
-        return
-      }
-
+    target.operation(async ({ query, variables }) => {
       const result = await executeGraphQL({
         schema: objectSchema,
-        source: req.body?.query,
-        variableValues: req.variables,
+        source: query,
+        variableValues: variables,
       })
 
-      return res(ctx.data(result.data!), ctx.errors(result.errors))
+      return HttpResponse.json(result)
     }),
   ]
 }

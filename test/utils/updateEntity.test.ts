@@ -190,7 +190,7 @@ describe('evolver function', () => {
       age: 24,
     })
 
-    const firstNameEvolver = jest.fn(() => 'Jack')
+    const firstNameEvolver = vi.fn(() => 'Jack')
     const nextUser = updateEntity(
       user,
       {
@@ -224,8 +224,8 @@ describe('evolver function', () => {
       age: 24,
     })
 
-    const firstNameEvolver = jest.fn(() => 'Jack')
-    const ageEvolver = jest.fn(() => 31)
+    const firstNameEvolver = vi.fn(() => 'Jack')
+    const ageEvolver = vi.fn(() => 31)
     const nextUser = updateEntity(
       user,
       {
@@ -265,7 +265,7 @@ describe('evolver function', () => {
       },
     })
 
-    const streetEvolver = jest.fn(() => 'Sunwell ave.')
+    const streetEvolver = vi.fn(() => 'Sunwell ave.')
     const nextUser = updateEntity(
       user,
       {
@@ -310,8 +310,8 @@ describe('evolver function', () => {
       },
     })
 
-    const billingStreetEvolver = jest.fn(() => 'Sunwell ave.')
-    const deliveryStreetEvolver = jest.fn(() => 'Theodor')
+    const billingStreetEvolver = vi.fn(() => 'Sunwell ave.')
+    const deliveryStreetEvolver = vi.fn(() => 'Theodor')
     const nextUser = updateEntity(
       user,
       {
