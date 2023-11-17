@@ -2,13 +2,14 @@ import {
   Database,
   SerializedEntity,
   SERIALIZED_INTERNAL_PROPERTIES_KEY,
+  DatabaseEventsMap,
 } from '../../src/db/Database'
 import { createModel } from '../../src/model/createModel'
 import { primaryKey } from '../../src/primaryKey'
 import { parseModelDefinition } from '../../src/model/parseModelDefinition'
 import { ENTITY_TYPE, PRIMARY_KEY } from '../../src/glossary'
 
-test('emits the "create" event when a new entity is created', (done) => {
+test('emits the "create" event when a new entity is created', async () => {
   const dictionary = {
     user: {
       id: primaryKey(String),
@@ -19,28 +20,11 @@ test('emits the "create" event when a new entity is created', (done) => {
     user: dictionary.user,
   })
 
-  db.events.on('create', (id, modelName, entity, primaryKey) => {
-    expect(id).toEqual(db.id)
-    expect(modelName).toEqual('user')
-    expect(entity).toEqual({
-      /**
-       * @note Entity reference in the database event listener
-       * contains its serialized internal properties.
-       * This allows for this listener to re-create the entity
-       * when the data is transferred over other channels
-       * (i.e. via "BroadcastChannel" which strips object symbols).
-       */
-      [SERIALIZED_INTERNAL_PROPERTIES_KEY]: {
-        entityType: 'user',
-        primaryKey: 'id',
-      },
-      [ENTITY_TYPE]: 'user',
-      [PRIMARY_KEY]: 'id',
-      id: 'abc-123',
-    } as SerializedEntity)
-    expect(primaryKey).toBeUndefined()
-    done()
-  })
+  const createCallbackPromise = new Promise<DatabaseEventsMap['create']>(
+    (resolve) => {
+      db.events.on('create', (...args) => resolve(args))
+    },
+  )
 
   db.create(
     'user',
@@ -55,9 +39,30 @@ test('emits the "create" event when a new entity is created', (done) => {
       db,
     ),
   )
+
+  const [id, modelName, entity, customPrimaryKey] = await createCallbackPromise
+  expect(id).toEqual(db.id)
+  expect(modelName).toEqual('user')
+  expect(entity).toEqual({
+    /**
+     * @note Entity reference in the database event listener
+     * contains its serialized internal properties.
+     * This allows for this listener to re-create the entity
+     * when the data is transferred over other channels
+     * (i.e. via "BroadcastChannel" which strips object symbols).
+     */
+    [SERIALIZED_INTERNAL_PROPERTIES_KEY]: {
+      entityType: 'user',
+      primaryKey: 'id',
+    },
+    [ENTITY_TYPE]: 'user',
+    [PRIMARY_KEY]: 'id',
+    id: 'abc-123',
+  } as SerializedEntity)
+  expect(customPrimaryKey).toBeUndefined()
 })
 
-test('emits the "update" event when an existing entity is updated', (done) => {
+test('emits the "update" event when an existing entity is updated', async () => {
   const dictionary = {
     user: {
       id: primaryKey(String),
@@ -69,32 +74,11 @@ test('emits the "update" event when an existing entity is updated', (done) => {
     user: dictionary.user,
   })
 
-  db.events.on('update', (id, modelName, prevEntity, nextEntity) => {
-    expect(id).toEqual(db.id)
-    expect(modelName).toEqual('user')
-    expect(prevEntity).toEqual({
-      [SERIALIZED_INTERNAL_PROPERTIES_KEY]: {
-        entityType: 'user',
-        primaryKey: 'id',
-      },
-      [ENTITY_TYPE]: 'user',
-      [PRIMARY_KEY]: 'id',
-      id: 'abc-123',
-      firstName: 'John',
-    } as SerializedEntity)
-
-    expect(nextEntity).toEqual({
-      [SERIALIZED_INTERNAL_PROPERTIES_KEY]: {
-        entityType: 'user',
-        primaryKey: 'id',
-      },
-      [ENTITY_TYPE]: 'user',
-      [PRIMARY_KEY]: 'id',
-      id: 'def-456',
-      firstName: 'Kate',
-    } as SerializedEntity)
-    done()
-  })
+  const updateCallbackPromise = new Promise<DatabaseEventsMap['update']>(
+    (resolve) => {
+      db.events.on('update', (...args) => resolve(args))
+    },
+  )
 
   db.create(
     'user',
@@ -119,9 +103,34 @@ test('emits the "update" event when an existing entity is updated', (done) => {
       db,
     ),
   )
+
+  const [id, modelName, prevEntity, nextEntity] = await updateCallbackPromise
+  expect(id).toEqual(db.id)
+  expect(modelName).toEqual('user')
+  expect(prevEntity).toEqual({
+    [SERIALIZED_INTERNAL_PROPERTIES_KEY]: {
+      entityType: 'user',
+      primaryKey: 'id',
+    },
+    [ENTITY_TYPE]: 'user',
+    [PRIMARY_KEY]: 'id',
+    id: 'abc-123',
+    firstName: 'John',
+  } as SerializedEntity)
+
+  expect(nextEntity).toEqual({
+    [SERIALIZED_INTERNAL_PROPERTIES_KEY]: {
+      entityType: 'user',
+      primaryKey: 'id',
+    },
+    [ENTITY_TYPE]: 'user',
+    [PRIMARY_KEY]: 'id',
+    id: 'def-456',
+    firstName: 'Kate',
+  } as SerializedEntity)
 })
 
-test('emits the "delete" event when an existing entity is deleted', (done) => {
+test('emits the "delete" event when an existing entity is deleted', async () => {
   const dictionary = {
     user: {
       id: primaryKey(String),
@@ -133,12 +142,13 @@ test('emits the "delete" event when an existing entity is deleted', (done) => {
     user: dictionary.user,
   })
 
-  db.events.on('delete', (id, modelName, primaryKey) => {
-    expect(id).toEqual(db.id)
-    expect(modelName).toEqual('user')
-    expect(primaryKey).toEqual('abc-123')
-    done()
-  })
+  const deleteCallbackPromise = new Promise<DatabaseEventsMap['delete']>(
+    (resolve) => {
+      db.events.on('delete', (...args) => {
+        resolve(args)
+      })
+    },
+  )
 
   db.create(
     'user',
@@ -152,4 +162,9 @@ test('emits the "delete" event when an existing entity is deleted', (done) => {
     ),
   )
   db.delete('user', 'abc-123')
+
+  const [id, modelName, deletedPrimaryKey] = await deleteCallbackPromise
+  expect(id).toEqual(db.id)
+  expect(modelName).toEqual('user')
+  expect(deletedPrimaryKey).toEqual('abc-123')
 })

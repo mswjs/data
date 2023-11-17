@@ -1,11 +1,10 @@
 import pluralize from 'pluralize'
 import {
-  RestContext,
-  RestRequest,
   ResponseResolver,
-  rest,
+  http,
   DefaultBodyType,
   PathParams,
+  HttpResponse,
 } from 'msw'
 import {
   Entity,
@@ -65,25 +64,18 @@ export function getResponseStatusByErrorType(
 export function withErrors<
   RequestBodyType extends DefaultBodyType = any,
   RequestParamsType extends PathParams = any,
->(
-  handler: ResponseResolver<
-    RestRequest<RequestBodyType, RequestParamsType>,
-    RestContext
-  >,
-): ResponseResolver<
-  RestRequest<RequestBodyType, RequestParamsType>,
-  RestContext
-> {
-  return (req, res, ctx) => {
+>(resolver: ResponseResolver<any, RequestBodyType, DefaultBodyType>) {
+  return async (...args: Parameters<ResponseResolver>): Promise<any> => {
     try {
-      return handler(req, res, ctx)
+      const response = await resolver(...args)
+      return response
     } catch (error) {
       if (error instanceof Error) {
-        return res(
-          ctx.status(getResponseStatusByErrorType(error as HTTPError)),
-          ctx.json({
-            message: error.message,
-          }),
+        return HttpResponse.json(
+          { message: error.message },
+          {
+            status: getResponseStatusByErrorType(error as HTTPError),
+          },
         )
       }
     }
@@ -153,13 +145,14 @@ export function generateRestHandlers<
   }
 
   return [
-    rest.get(
+    http.get(
       buildUrl(modelPath),
-      withErrors<Entity<Dictionary, ModelName>>((req, res, ctx) => {
+      withErrors<Entity<Dictionary, ModelName>>(({ request }) => {
+        const url = new URL(request.url)
         const { skip, take, cursor, filters } = parseQueryParams(
           modelName,
           modelDefinition,
-          req.url.searchParams,
+          url.searchParams,
         )
 
         let options = { where: filters }
@@ -172,14 +165,14 @@ export function generateRestHandlers<
 
         const records = model.findMany(options)
 
-        return res(ctx.json(records))
+        return HttpResponse.json(records)
       }),
     ),
-    rest.get(
+    http.get(
       buildUrl(`${modelPath}/:${primaryKey}`),
       withErrors<Entity<Dictionary, ModelName>, RequestParams<PrimaryKeyType>>(
-        (req, res, ctx) => {
-          const id = extractPrimaryKey(req.params)
+        ({ params }) => {
+          const id = extractPrimaryKey(params)
           const where: WeakQuerySelectorWhere<PrimaryKeyType> = {
             [primaryKey]: {
               equals: id as string,
@@ -190,22 +183,24 @@ export function generateRestHandlers<
             where: where as any,
           })
 
-          return res(ctx.json(entity))
+          return HttpResponse.json(entity)
         },
       ),
     ),
-    rest.post(
+    http.post(
       buildUrl(modelPath),
-      withErrors<Entity<Dictionary, ModelName>>((req, res, ctx) => {
-        const createdEntity = model.create(req.body)
-        return res(ctx.status(201), ctx.json(createdEntity))
+      withErrors<Entity<Dictionary, ModelName>>(async ({ request }) => {
+        const definition = await request.json()
+        const createdEntity = model.create(definition)
+
+        return HttpResponse.json(createdEntity, { status: 201 })
       }),
     ),
-    rest.put(
+    http.put(
       buildUrl(`${modelPath}/:${primaryKey}`),
       withErrors<Entity<Dictionary, ModelName>, RequestParams<PrimaryKeyType>>(
-        (req, res, ctx) => {
-          const id = extractPrimaryKey(req.params)
+        async ({ request, params }) => {
+          const id = extractPrimaryKey(params)
           const where: WeakQuerySelectorWhere<PrimaryKeyType> = {
             [primaryKey]: {
               equals: id as string,
@@ -214,18 +209,18 @@ export function generateRestHandlers<
           const updatedEntity = model.update({
             strict: true,
             where: where as any,
-            data: req.body,
+            data: await request.json(),
           })!
 
-          return res(ctx.json(updatedEntity))
+          return HttpResponse.json(updatedEntity)
         },
       ),
     ),
-    rest.delete(
+    http.delete(
       buildUrl(`${modelPath}/:${primaryKey}`),
       withErrors<Entity<Dictionary, ModelName>, RequestParams<PrimaryKeyType>>(
-        (req, res, ctx) => {
-          const id = extractPrimaryKey(req.params)
+        ({ params }) => {
+          const id = extractPrimaryKey(params)
           const where: WeakQuerySelectorWhere<PrimaryKeyType> = {
             [primaryKey]: {
               equals: id as string,
@@ -236,7 +231,7 @@ export function generateRestHandlers<
             where: where as any,
           })!
 
-          return res(ctx.json(deletedEntity))
+          return HttpResponse.json(deletedEntity)
         },
       ),
     ),

@@ -1,4 +1,4 @@
-import { response, restContext } from 'msw'
+import { HttpResponse } from 'msw'
 import { primaryKey } from '../../src'
 import { ModelDefinition } from '../../src/glossary'
 import {
@@ -60,75 +60,50 @@ describe('getResponseStatusByErrorType', () => {
 
 describe('withErrors', () => {
   it('executes a successful handler as-is', async () => {
-    const handler = withErrors((req, res, ctx) => {
-      return res(ctx.text('ok'))
+    const resolver = withErrors(() => {
+      return HttpResponse.text('ok')
     })
-    const result = await handler(
-      // @ts-expect-error
-      {},
-      response,
-      restContext,
-    )
+    const response = (await resolver({})) as Response
 
-    expect(result).toHaveProperty('status', 200)
-    expect(result).toHaveProperty('body', 'ok')
+    expect(response.status).toBe(200)
+    expect(await response.text()).toBe('ok')
   })
 
   it('handles a not-found error as a 404', async () => {
-    const handler = withErrors(() => {
+    const resolver = withErrors(() => {
       throw new OperationError(OperationErrorType.EntityNotFound, 'Not found')
     })
-    const result = await handler(
-      // @ts-expect-error
-      {},
-      response,
-      restContext,
-    )
+    const response = (await resolver({})) as Response
 
-    expect(result).toHaveProperty('status', 404)
-    expect(result).toHaveProperty(
-      'body',
-      JSON.stringify({ message: 'Not found' }),
-    )
+    expect(response.status).toBe(404)
+    expect(await response.json()).toEqual({
+      message: 'Not found',
+    })
   })
 
   it('handles a duplicate key error as 409', async () => {
-    const handler = withErrors(() => {
+    const resolver = withErrors(() => {
       throw new OperationError(
         OperationErrorType.DuplicatePrimaryKey,
         'Duplicate key',
       )
     })
-    const result = await handler(
-      // @ts-expect-error
-      {},
-      response,
-      restContext,
-    )
+    const response = (await resolver({})) as Response
 
-    expect(result).toHaveProperty('status', 409)
-    expect(result).toHaveProperty(
-      'body',
-      JSON.stringify({ message: 'Duplicate key' }),
-    )
+    expect(response.status).toBe(409)
+    expect(await response.json()).toEqual({ message: 'Duplicate key' })
   })
 
   it('handles internal errors as a 500', async () => {
-    const handler = withErrors(() => {
+    const resolver = withErrors(() => {
       throw new Error('Arbitrary error')
     })
-    const result = await handler(
-      // @ts-expect-error
-      {},
-      response,
-      restContext,
-    )
+    const response = (await resolver({})) as Response
 
-    expect(result).toHaveProperty('status', 500)
-    expect(result).toHaveProperty(
-      'body',
-      JSON.stringify({ message: 'Arbitrary error' }),
-    )
+    expect(response.status).toBe(500)
+    expect(await response.json()).toEqual({
+      message: 'Arbitrary error',
+    })
   })
 })
 

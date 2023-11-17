@@ -1,5 +1,6 @@
+// @vitest-environment jsdom
 import fetch from 'node-fetch'
-import { rest } from 'msw'
+import { HttpResponse, http } from 'msw'
 import { setupServer } from 'msw/node'
 import { factory, manyOf, primaryKey } from '../../src'
 import { ENTITY_TYPE, PRIMARY_KEY } from '../../src/glossary'
@@ -35,7 +36,7 @@ it('updates database entity modified via a generated request handler', async () 
   })
 
   server.use(
-    rest.get('/user', (req, res, ctx) => {
+    http.get('/user', () => {
       const user = db.user.findFirst({
         strict: true,
         where: {
@@ -44,25 +45,27 @@ it('updates database entity modified via a generated request handler', async () 
           },
         },
       })
-      return res(ctx.json(user))
+      return HttpResponse.json(user)
     }),
-    rest.put<{ title: string }>('/note/:noteId', (req, res, ctx) => {
-      const { noteId } = req.params
-
-      const updatedNote = db.note.update({
-        strict: true,
-        where: {
-          id: {
-            equals: noteId as string,
+    http.put<{ noteId: string }, { title: string }>(
+      '/note/:noteId',
+      async ({ request, params }) => {
+        const note = await request.json()
+        const updatedNote = db.note.update({
+          strict: true,
+          where: {
+            id: {
+              equals: params.noteId,
+            },
           },
-        },
-        data: {
-          title: req.body.title,
-        },
-      })
+          data: {
+            title: note.title,
+          },
+        })
 
-      return res(ctx.json(updatedNote))
-    }),
+        return HttpResponse.json(updatedNote)
+      },
+    ),
   )
 
   // Update a referenced relational property via request handler.

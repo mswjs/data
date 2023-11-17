@@ -1,3 +1,5 @@
+import { expect } from 'vitest'
+
 expect.extend({
   toHaveRelationalProperty(entity, propertyName, value) {
     expect(entity).toHaveProperty(propertyName)
