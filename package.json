@@ -31,7 +31,7 @@
     "commitizen": "^4.2.4",
     "cz-conventional-changelog": "3.3.0",
     "jsdom": "^22.1.0",
-    "msw": "^2.0.7",
+    "msw": "^2.0.8",
     "node-fetch": "^2.6.1",
     "page-with": "^0.6.0",
     "prettier": "^2.2.1",
@@ -57,7 +57,7 @@
     "uuid": "^8.3.1"
   },
   "optionalDependencies": {
-    "msw": "^2.0.7"
+    "msw": "^2.0.8"
   },
   "config": {
     "commitizen": {

@@ -2995,10 +2995,10 @@ ms@2.1.3:
   resolved "https://registry.yarnpkg.com/ms/-/ms-2.1.3.tgz#574c8138ce1d2b5861f0b44579dbadd60c6615b2"
   integrity sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==
 
-msw@^2.0.7:
-  version "2.0.7"
-  resolved "https://registry.yarnpkg.com/msw/-/msw-2.0.7.tgz#913b3f9a2b0e98899188aeb4e4aaf0e2a64ff7f0"
-  integrity sha512-P8mT/O1C0N18t1ZbK+ubYOGF8TFwHrmZktAXmlTR2b0+UXQiFEiuymXoUyfVmx8qGKSlrIL3HllnwT04+Brt3g==
+msw@^2.0.8:
+  version "2.0.8"
+  resolved "https://registry.yarnpkg.com/msw/-/msw-2.0.8.tgz#de1153cac8030c33d19f6a1e14bb61221ec36d48"
+  integrity sha512-/5nQCotVka62lvubQ3tMfUS3TukyeBwvWyvAthcXvDlXGhkA/85HlEwZyFlJ3ZsPW45Ty+ao0S4oFvuM12R/kA==
   dependencies:
     "@bundled-es-modules/cookie" "^2.0.0"
     "@bundled-es-modules/js-levenshtein" "^2.0.1"
@@ -3016,7 +3016,6 @@ msw@^2.0.7:
     inquirer "^8.2.0"
     is-node-process "^1.2.0"
     js-levenshtein "^1.1.6"
-    node-fetch "^2.6.7"
     outvariant "^1.4.0"
     path-to-regexp "^6.2.0"
     strict-event-emitter "^0.5.0"
@@ -3055,7 +3054,7 @@ node-fetch@2.6.7:
   dependencies:
     whatwg-url "^5.0.0"
 
-node-fetch@^2.6.1, node-fetch@^2.6.7:
+node-fetch@^2.6.1:
   version "2.7.0"
   resolved "https://registry.yarnpkg.com/node-fetch/-/node-fetch-2.7.0.tgz#d0f0fa6e3e2dc1d27efcd8ad99d550bda94d187d"
   integrity sha512-c4FRfUm/dbcWZ7U+1Wq0AwCyFL+3nt2bEw05wfxSz+DWpWsitgmSgYmy2dQdWyKC1694ELPqMs/YzUSNozLt8A==
