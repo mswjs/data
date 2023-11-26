@@ -102,8 +102,8 @@ const db = factory({
   user: {
     id: primaryKey(String),
     firstName: String,
-    age: Number
-  }
+    age: Number,
+  },
 })
 ```
 
@@ -1159,7 +1159,7 @@ To gain more control over the mocks and implement more complex mocking scenarios
 Take a look at how you can create an entity based on the user's authentication status in a test:
 
 ```js
-import { rest } from 'msw'
+import { http, HttpResponse } from 'msw'
 import { setupServer } from 'msw/node'
 import { factory, primaryKey } from '@mswjs/data'
 
@@ -1171,17 +1171,17 @@ const db = factory({
 })
 
 const handlers = [
-  rest.post('/post', (req, res, cxt) => {
+  http.post('/post', (req, res, cxt) => {
     // Only authenticated users can create new posts.
     if (req.headers.get('authorization') === 'Bearer AUTH_TOKEN') {
-      return res(ctx.status(403))
+      return new HttpResponse(null, { status: 403 })
     }
 
     // Create a new entity for the "post" model.
     const newPost = db.post.create(req.body)
 
     // Respond with a mocked response.
-    return res(ctx.status(201), ctx.json({ post: newPost }))
+    return HttpResponse.json({ post: newPost }, { status: 201 })
   }),
 ]
 
