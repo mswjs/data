@@ -31,6 +31,37 @@ test('creates a new entity with initial values', () => {
   expect(exactUser.id).toEqual('abc-123')
 })
 
+test('creates a new entity with an object property and no value specified', () => {
+  const db = factory({
+    user: {
+      id: primaryKey(faker.datatype.uuid),
+      settings: Object,
+    },
+  })
+
+  const exactUser = db.user.create({
+    id: 'abc-123',
+  })
+  expect(exactUser.id).toEqual('abc-123')
+  expect(exactUser.settings).toEqual({})
+})
+
+test('creates a new entity with an object property and a value specified', () => {
+  const db = factory({
+    user: {
+      id: primaryKey(faker.datatype.uuid),
+      settings: Object,
+    },
+  })
+
+  const exactUser = db.user.create({
+    id: 'abc-123',
+    settings: { minHue: 1 },
+  })
+  expect(exactUser.id).toEqual('abc-123')
+  expect(exactUser.settings).toEqual({ minHue: 1 })
+})
+
 test('creates a new entity with an array property', () => {
   const db = factory({
     user: {

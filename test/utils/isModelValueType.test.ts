@@ -36,6 +36,10 @@ it('returns true when given nested primitive arrays', () => {
   expect(isModelValueType(['I am a string', [100]])).toBe(true)
 })
 
+it('returns true when given a literal object', () => {
+  expect(isModelValueType({ intensity: 1 })).toBe(true)
+})
+
 it('returns false given an undefined', () => {
   expect(isModelValueType(undefined)).toBe(false)
 })
