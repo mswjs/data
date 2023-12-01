@@ -25,8 +25,8 @@ export enum RelationKind {
   ManyOf = 'MANY_OF',
 }
 
-export interface RelationAttributes {
-  nullable: boolean
+export interface RelationAttributes<Nullable extends boolean = boolean> {
+  nullable: Nullable
   unique: boolean
 }
 
