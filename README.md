@@ -472,10 +472,16 @@ When using Typescript, you can manually set the type of the property when it can
 ```typescript
 import { factory, primaryKey, nullable } from '@mswjs/data'
 
+type Car = {
+  brand: string
+  model: string
+}
+
 const db = factory({
   user: {
     id: primaryKey(String),
     age: nullable<number>(() => null),
+    car: nullable<Car>(() => null),
   },
 })
 ```

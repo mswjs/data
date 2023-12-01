@@ -98,6 +98,70 @@ test('creates a new entity with nullable properties', () => {
   expect(user.address.number).toEqual(null)
 })
 
+test('supports nested nullable object', () => {
+  type Car = {
+    brand: string
+    model: string
+  }
+  type Bike = Car
+
+  const db = factory({
+    user: {
+      id: primaryKey(datatype.uuid),
+      name: name.findName,
+      vehicule: {
+        car: nullable<Car>(() => null),
+        bike: nullable<Bike>(() => null),
+      },
+    },
+  })
+
+  const DIDDY = {
+    id: '🐵',
+    name: 'Diddy',
+    vehicule: {
+      car: {
+        brand: 'Diddy Kong',
+        model: 'Super Racing Model with extra 🍌 carriage',
+      },
+    },
+  }
+
+  const diddyUser = db.user.create({
+    id: DIDDY.id,
+    name: DIDDY.name,
+    vehicule: { car: DIDDY.vehicule.car },
+  })
+
+  expect(diddyUser.id).toEqual(DIDDY.id)
+  expect(diddyUser.name).toEqual(DIDDY.name)
+  expect(diddyUser.vehicule.car).toEqual(DIDDY.vehicule.car)
+  expect(diddyUser.vehicule.bike).toEqual(null)
+
+  const DONKEY = {
+    id: '🦍',
+    name: 'Donkey',
+    vehicule: {
+      car: null,
+      bike: {
+        brand: 'Donkey Kong Choppers',
+        model: 'Chuck Norris, the fastest',
+      },
+    },
+  }
+
+  const donkeyUser = db.user.create({
+    id: DONKEY.id,
+    name: DONKEY.name,
+    vehicule: DONKEY.vehicule,
+  })
+
+  expect(donkeyUser.id).toEqual(DONKEY.id)
+  expect(donkeyUser.name).toEqual(DONKEY.name)
+  expect(donkeyUser.vehicule.bike).toEqual(DONKEY.vehicule.bike)
+  expect(donkeyUser.vehicule.car).toEqual(null)
+})
+
 test('supports nested objects in the model definition', () => {
   const db = factory({
     user: {
