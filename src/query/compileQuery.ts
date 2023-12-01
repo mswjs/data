@@ -1,6 +1,6 @@
 import { debug } from 'debug'
 import { invariant } from 'outvariant'
-import { ComparatorFn, QuerySelector } from './queryTypes'
+import { ComparatorFn, isOrQuery, QuerySelector } from './queryTypes'
 import { getComparatorsForValue } from './getComparatorsForValue'
 import { isObject } from '../utils/isObject'
 
@@ -14,8 +14,18 @@ export function compileQuery<Data extends Record<string, any>>(
   query: QuerySelector<any>,
 ) {
   log('%j', query)
-
   return (data: Data): boolean => {
+    if (isOrQuery(query.where)) {
+      const { OR: orConditions } = query.where;
+      for (const condition of orConditions) {
+        const subQuery = compileQuery({ where: condition })
+        if (subQuery(data)) {
+          return true;
+        }
+      }
+      return false;
+    }
+  
     return Object.entries(query.where)
       .map<boolean>(([property, queryChunk]) => {
         const actualValue = data[property]

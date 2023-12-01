@@ -29,9 +29,19 @@ export type RecursiveQuerySelectorWhere<Value extends ModelValueType> =
       }
     : never
 
-export type QuerySelectorWhere<EntityType extends AnyObject> = {
+export type NormalQuerySelectorWhere<EntityType extends AnyObject> = {
   [Key in keyof EntityType]?: RecursiveQuerySelectorWhere<EntityType[Key]>
 }
+
+export type OrQuerySelectorWhere<EntityType extends AnyObject> = {
+  OR: Array<QuerySelectorWhere<EntityType>>
+}
+
+export function isOrQuery<EntityType extends AnyObject>(queryWhere: QuerySelectorWhere<EntityType>): queryWhere is OrQuerySelectorWhere<EntityType> {
+  return (queryWhere as OrQuerySelectorWhere<EntityType>).OR !== undefined;
+}
+
+export type QuerySelectorWhere<EntityType extends AnyObject> = OrQuerySelectorWhere<EntityType> | NormalQuerySelectorWhere<EntityType>
 
 export interface WeakQuerySelectorWhere<KeyType extends PrimaryKeyType> {
   [key: string]: Partial<GetQueryFor<KeyType>>

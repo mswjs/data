@@ -3,6 +3,7 @@ import { Entity, PrimaryKeyType, PRIMARY_KEY } from '../glossary'
 import { compileQuery } from './compileQuery'
 import {
   BulkQueryOptions,
+  isOrQuery,
   QuerySelector,
   WeakQuerySelector,
 } from './queryTypes'
@@ -57,8 +58,9 @@ export function executeQuery(
   const records = db.getModel(modelName)
 
   // Reduce the query scope if there's a query by primary key of the model.
+  const queryWhere = query.where || {}
   const { [primaryKey]: primaryKeyComparator, ...restQueries } =
-    query.where || {}
+    isOrQuery(queryWhere) ? { [primaryKey]: undefined, ...queryWhere } : queryWhere
   log('primary key query', primaryKeyComparator)
 
   const scopedRecords = primaryKeyComparator
