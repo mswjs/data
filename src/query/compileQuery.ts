@@ -32,16 +32,24 @@ export function compileQuery<Data extends Record<string, any>>(
           return true
         }
 
-        // If an entity doesn't have any value for the property
-        // is being queried for, treat it as non-matching.
-        if (actualValue == null) {
-          return false
-        }
-
         return Object.entries(queryChunk).reduce<boolean>(
           (acc, [comparatorName, expectedValue]) => {
             if (!acc) {
               return acc
+            }
+
+            if (comparatorName === "equals" && expectedValue === null) {
+              return actualValue === null
+            }
+
+            if (comparatorName === "notEquals" && expectedValue === null) {
+              return actualValue !== null
+            }
+
+            // If an entity doesn't have any value for the property
+            // is being queried for, treat it as non-matching.
+            if (actualValue == null) {
+              return false
             }
 
             if (Array.isArray(actualValue)) {

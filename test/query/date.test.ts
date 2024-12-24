@@ -140,3 +140,35 @@ test('ignores entities with missing values when querying using date', () => {
   expect(updatedUserNames).toHaveLength(2)
   expect(updatedUserNames).not.toContain('Sedrick')
 })
+
+test('queries entities that are null', () => {
+  const db = setup()
+
+  const userResults = db.user.findMany({
+    where: {
+      updatedAt: {
+        equals: null,
+      },
+    },
+  })
+  expect(userResults).toHaveLength(1)
+
+  const userNames = userResults.map((user) => user.firstName)
+  expect(userNames).toEqual(['Sedrik'])
+})
+
+test('queries entities that are not null', () => {
+  const db = setup()
+
+  const userResults = db.user.findMany({
+    where: {
+      updatedAt: {
+        notEquals: null,
+      },
+    },
+  })
+  expect(userResults).toHaveLength(2)
+
+  const userNames = userResults.map((user) => user.firstName)
+  expect(userNames).toEqual(['John', 'Kate'])
+})

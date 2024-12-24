@@ -207,3 +207,35 @@ test('ignores entities with missing values when querying using number', () => {
   expect(userNames).toHaveLength(2)
   expect(userNames).toEqual(['Alice', 'John'])
 })
+
+test('queries entities that are null', () => {
+  const db = setup()
+
+  const users = db.user.findMany({
+    where: {
+      height: {
+        equals: null,
+      },
+    },
+  })
+  expect(users).toHaveLength(1)
+
+  const names = users.map((user) => user.firstName)
+  expect(names).toEqual(['Kate'])
+})
+
+test('queries entities that are not null', () => {
+  const db = setup()
+
+  const users = db.user.findMany({
+    where: {
+      height: {
+        notEquals: null,
+      },
+    },
+  })
+  expect(users).toHaveLength(2)
+
+  const names = users.map((user) => user.firstName)
+  expect(names).toEqual(['John', 'Alice'])
+})

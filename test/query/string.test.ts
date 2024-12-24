@@ -144,3 +144,33 @@ test('ignores entities with missing values when querying using strings', () => {
   expect(pizzaOrCakeRecipeTitles).toHaveLength(3)
   expect(pizzaOrCakeRecipeTitles).not.toContain('Pizza Cake')
 })
+
+test('queries entities where property is null', () => {
+  const db = setup()
+
+  const pizzaCake = db.recipe.findMany({
+    where: {
+      category: {
+        equals: null,
+      },
+    },
+  })
+
+  const titles = pizzaCake.map((recipe) => recipe.title)
+  expect(titles).toEqual(['Pizza Cake'])
+})
+
+test('queries entities where property is not null', () => {
+  const db = setup()
+
+  const pizzaCake = db.recipe.findMany({
+    where: {
+      category: {
+        notEquals: null,
+      },
+    },
+  })
+
+  const titles = pizzaCake.map((recipe) => recipe.title)
+  expect(titles).toEqual(['New York Pizza', 'Chocolate Cake', 'Pizza Mozzarrela'])
+})

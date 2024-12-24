@@ -3,10 +3,10 @@ import { DateQuery, QueryToComparator } from '../query/queryTypes'
 
 export const dateComparators: QueryToComparator<DateQuery> = {
   equals(expected, actual) {
-    return compareDates(expected, actual) === 0
+    return compareDates(expected as unknown as Date, actual as unknown as Date) === 0
   },
   notEquals(expected, actual) {
-    return compareDates(expected, actual) !== 0
+    return compareDates(expected as unknown as Date, actual as unknown as Date) !== 0
   },
   gt(expected, actual) {
     return compareDates(actual, expected) === 1

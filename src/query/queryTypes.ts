@@ -106,8 +106,8 @@ export type GetQueryFor<ValueType extends any> = ValueType extends string
   : never
 
 export interface StringQuery {
-  equals: string
-  notEquals: string
+  equals: string | null
+  notEquals: string | null
   contains: string
   notContains: string
   gt: string
@@ -119,8 +119,8 @@ export interface StringQuery {
 }
 
 export interface NumberQuery {
-  equals: number
-  notEquals: number
+  equals: number | null
+  notEquals: number | null
   between: [number, number]
   notBetween: [number, number]
   gt: number
@@ -137,8 +137,8 @@ export interface BooleanQuery {
 }
 
 export interface DateQuery {
-  equals: Date
-  notEquals: Date
+  equals: Date | null
+  notEquals: Date | null
   gt: Date
   gte: Date
   lt: Date
