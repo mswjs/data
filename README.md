@@ -73,12 +73,12 @@ import { faker } from '@faker-js/faker'
 
 factory({
   user: {
-    id: primaryKey(faker.datatype.uuid),
+    id: primaryKey(faker.string.uuid),
   },
 })
 ```
 
-> Each time a new `user` is created, its `user.id` property is seeded with the value returned from the `datatype.uuid` function call.
+> Each time a new `user` is created, its `user.id` property is seeded with the value returned from the `string.uuid` function call.
 
 Once your data is modeled, you can use [Model methods](#model-methods) to interact with it (create/update/delete). Apart from serving as interactive, queryable fixtures, you can also [integrate your data models into API mocks](#usage-with-api-mocks) to supercharge your prototyping/testing workflow.
 
@@ -987,7 +987,7 @@ faker.seed(123)
 
 factory({
   user: {
-    id: primaryKey(faker.datatype.uuid),
+    id: primaryKey(faker.string.uuid),
     firstName: faker.name.firstName,
   },
 })
