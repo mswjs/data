@@ -145,11 +145,4 @@ await posts.update(q => q.where({ id: 'post-1' }), {
 
 ### Deprecated: `.toHandlers()`
 
-The `.toHandlers()` method has been deprecated. Generating request handlers is no longer the responsibility of this library. Please use `@msw/source` to generate request handlers from your data collections instead:
-
-```ts
-import { fromCollection } from '@msw/source/data'
-import { Collection } from '@msw/data'
-
-// ...
-```
+The `.toHandlers()` method has been deprecated. Generating request handlers is no longer a responsibility of this library. Instead, it should be possible via [Source](https://github.com/mswjs/source) (follow [this issue](https://github.com/mswjs/source/issues/80) for progress).
