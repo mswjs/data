@@ -2,8 +2,7 @@
   "profiles": [
     {
       "name": "latest",
-      "use": "yarn publish --new-version $RELEASE_VERSION",
-      "prerelease": true
+      "use": "NPM_CONFIG_PROVENANCE=true pnpm publish --no-git-checks"
     }
   ]
 }

@@ -1,67 +1,63 @@
 {
-  "name": "@mswjs/data",
-  "description": "Data modeling and relation library for testing JavaScript applications.",
-  "version": "0.16.2",
-  "main": "lib/index.js",
-  "typings": "lib/index.d.ts",
-  "author": "Artem Zakharchenko",
-  "license": "MIT",
+  "type": "module",
+  "name": "@msw/data",
+  "version": "0.0.0",
+  "description": "Data querying library for testing JavaScript applications.",
   "scripts": {
-    "start": "tsc -w",
-    "format": "prettier src/**/*.ts --write",
-    "test": "vitest -c test/vitest.config.ts",
-    "test:ts": "tsc -p test/typings/tsconfig.json",
-    "clean": "rimraf ./lib",
-    "build": "yarn clean && tsc",
-    "release": "release publish",
-    "prepare": "yarn simple-git-hooks init",
-    "prepublishOnly": "yarn build && yarn test:ts && yarn test"
+    "dev": "tsdown -w",
+    "test:node": "vitest",
+    "test:browser": "playwright test",
+    "lint": "publint",
+    "build": "tsdown",
+    "release": "release publish"
+  },
+  "imports": {
+    "#/src/*": "./src/*"
+  },
+  "exports": {
+    ".": {
+      "types": "./build/index.d.ts",
+      "default": "./build/index.js"
+    },
+    "./extensions": {
+      "types": "./build/extensions/index.d.ts",
+      "default": "./build/extensions/index.js"
+    }
   },
   "files": [
-    "lib",
-    "README.md"
+    "./build",
+    "./src",
+    "./tests"
   ],
+  "keywords": [
+    "data",
+    "query",
+    "mock",
+    "model",
+    "testing",
+    "fake",
+    "msw"
+  ],
+  "license": "MIT",
+  "author": "Artem Zakharchenko <kettanaito@gmail.com>",
   "devDependencies": {
-    "@commitlint/cli": "^16.0.1",
-    "@commitlint/config-conventional": "^16.0.0",
-    "@faker-js/faker": "^6.3.1",
     "@ossjs/release": "^0.10.0",
-    "@types/debug": "^4.1.7",
-    "@types/node-fetch": "^2.5.10",
-    "commitizen": "^4.2.4",
-    "cz-conventional-changelog": "3.3.0",
-    "jsdom": "^22.1.0",
-    "msw": "^2.0.8",
-    "node-fetch": "^2.6.1",
-    "page-with": "^0.6.0",
-    "prettier": "^2.2.1",
-    "rimraf": "^3.0.2",
-    "simple-git-hooks": "^2.7.0",
-    "ts-node": "^9.1.1",
-    "typescript": "4.3.5",
-    "vitest": "^0.34.6"
+    "@playwright/test": "^1.55.0",
+    "@types/node": "^24.5.2",
+    "prettier": "^3.6.2",
+    "publint": "^0.3.13",
+    "tsdown": "^0.15.4",
+    "typescript": "^5.9.2",
+    "vite": "^7.1.7",
+    "vitest": "^3.2.4",
+    "zod": "^4.1.11"
   },
   "dependencies": {
-    "@types/lodash": "^4.14.172",
-    "@types/md5": "^2.3.0",
-    "@types/pluralize": "^0.0.29",
-    "@types/uuid": "^8.3.0",
-    "date-fns": "^2.21.1",
-    "debug": "^4.3.1",
-    "graphql": "^16.8.1",
-    "lodash": "^4.17.21",
-    "md5": "^2.3.0",
-    "outvariant": "^1.2.1",
-    "pluralize": "^8.0.0",
-    "strict-event-emitter": "^0.5.0",
-    "uuid": "^8.3.1"
-  },
-  "optionalDependencies": {
-    "msw": "^2.0.8"
-  },
-  "config": {
-    "commitizen": {
-      "path": "./node_modules/cz-conventional-changelog"
-    }
+    "@standard-schema/spec": "^1.0.0",
+    "@types/lodash-es": "^4.17.12",
+    "lodash-es": "^4.17.21",
+    "mutative": "^1.3.0",
+    "outvariant": "^1.4.3",
+    "rettime": "^0.7.0"
   }
 }

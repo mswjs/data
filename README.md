@@ -1,1196 +1,798 @@
-<p align="center">
-  <img src="logo.svg" alt="Data library logo" width="124" />
-</p>
+[standard-schema]: https://standardschema.dev/
 
-<h1 align="center"><code>@mswjs/data</code></h1>
-
-<p align="center">Data modeling and relation library for testing JavaScript applications.</p>
-<br />
+<h1 align="center"><code>@msw/data</code></h1>
+<p align="center">Data querying library for testing JavaScript applications.</p>
 
 ## Motivation
 
-When testing API interactions you often need to mock data. Instead of keeping a hard-coded set of fixtures, this library provides you with must-have tools for data-driven API mocking:
+This library exists to help developers model and query data when testing and developing their applications. It acts as a convenient way of creating schema-based fixtures and querying them with a familiar ORM-inspired syntax. It can be used standalone or in conjuncture with [Mock Service Worker](https://mswjs.io) for seamless mocking experience both on the network and the data layers.
 
-- An intuitive interface to model data;
-- The ability to create relationships between models;
-- The ability to query data in a manner similar to an actual database.
+## Features
+
+- Relies on [Standard Schema][standard-schema] instead of inventing a proprietary modeling syntax you have to learn. You can use any Standard Schema-compliant object modeling library to describe your data, like Zod, ArkType, Valibot, yup, and many others.
+- Full runtime and type-safety.
+- Provides a powerful [querying syntax](#querying) inspired by Prizma;
+- Supports [relations](#relations) for database-like behaviors (inspired by Drizzle);
+- Supports extensions (including custom extensions) for things like cross-tab collection synchronization or record persistence.
+
+---
 
 ## Getting started
 
 ### Install
 
-```bash
-$ npm install @mswjs/data --save-dev
-# or
-$ yarn add @mswjs/data --dev
+```
+npm i @msw/data
 ```
 
-### Describe data
+### Create collection
 
-With this library, you're modeling data using the `factory` function. That function accepts an object where each key represents a _model name_ and the values are _model definitions_. A model definition is an object where the keys represent model properties and the values are value getters.
+You start by defining a data _collection_.
 
-```js
-// src/mocks/db.js
-import { factory, primaryKey } from '@mswjs/data'
+```ts
+import { Collection } from '@msw/data'
+import z from 'zod'
 
-export const db = factory({
-  // Create a "user" model,
-  user: {
-    // ...with these properties and value getters.
-    id: primaryKey(() => 'abc-123'),
-    firstName: () => 'John',
-    lastName: () => 'Maverick',
+const users = new Collection({
+  schema: z.object({
+    id: z.number(),
+    name: z.string(),
+  }),
+})
+```
+
+> Above, I'm using [Zod](https://zod.dev/) to describe the `schema` for my users collection. You can use whichever [Standard Schema][standard-schema] compliant library of your choice instead.
+
+### Seed collection
+
+Next, let's put some values into our collection. Those values are called _records_ and you can create individual records via the `.create()` method or create a bunch of them with `.createMany()`.
+
+```ts
+await users.create({ id: 1, name: 'John' })
+
+await users.createMany(5, (index) => ({
+  id: index + 1,
+  name: faker.person.firstName(),
+}))
+```
+
+> Combine `.createMany()` with tools like [Faker](https://fakerjs.dev/) for random values in your records.
+
+### Use collection
+
+From this point on, you can use your `users` collection for anything data-related. You can create more records, query them, define relations to other collections, update and delete records, etc. Learn more you can do with the library in the documentation below. Good luck!
+
+---
+
+## Querying
+
+### Query syntax
+
+Whenever you have to target a record(s), you construct a _query_. A query acts as a predicate that a record must match in order to be targeted. The most basic query is that describing expected values of the record's properties:
+
+```ts
+users.findFirst((q) => q.where({ name: 'John' }))
+```
+
+> Above, we are defining a query using the `q` builder that targets the first user whose `name` property equals to `'John'`.
+
+Additionally, any property in a query can be expanded into a function that accepts the value and returns a boolean, indicating whether the record matches:
+
+```ts
+users.findFirst((q) =>
+  q.where({
+    name: (name) => name.startsWith('John'),
+  }),
+)
+```
+
+> This query matches the first user whose `name` starts with `'John'`. Use functions as predicates to express more advanced logic in your queries.
+
+Query functions are supported at any level of nesting, including the top-level record itself.
+
+```ts
+users.findFirst((q) => q.where((user) => user.posts.length > 0))
+
+users.findFirst((q) =>
+  q.where({
+    address: {
+      street: (street) => street !== 'Baker st.',
+    },
+  }),
+)
+```
+
+#### Logical operators
+
+You can build complex queries via `.or()` and `.and()` logical operators exposed through the query builder. For example, here's a query that matches all users who have posts _or_ are editors:
+
+```ts
+users.findMany((q) =>
+  q.where({ posts: (posts) => posts.length > 0 }).or({ role: 'editor' }),
+)
+```
+
+If you prefer functional composition over method chaining, you can wrap predicates in `q.or()` and `q.and()` instead. Both syntaxes result in the same query.
+
+```ts
+users.findMany((q) =>
+  q.or(
+    q.where({ posts: (posts) => posts.length > 0 }),
+    q.where({ role: 'editor' }),
+  ),
+)
+```
+
+## Pagination
+
+This library supports offset and cursor-based pagination.
+
+### Offset-based pagination
+
+Provide the `take` property onto the options object of any bulk operation method, like `.findMany()`, `.updateMany()`, or `.deleteMany()`, to limit the number of results returned by the query.
+
+```ts
+const users = new Collection({ schema })
+
+users.findMany(
+  (q) => q.where({ email: (email) => email.includes('@google.com') }),
+  {
+    // Return the first 5 matching records.
+    take: 5,
+  },
+)
+```
+
+You can also skip the number of first matching results by providing the `skip` property:
+
+```ts
+const users = new Collection({ schema })
+
+users.findMany(
+  (q) => q.where({ email: (email) => email.includes('@google.com') }),
+  {
+    // Skip the first 10 matching records.
+    skip: 10,
+    // And return the next 5.
+    take: 5,
+  },
+)
+```
+
+### Cursor-based pagination
+
+Provide a reference to the record of the same collection as the `cursor` property for cursor-based pagination.
+
+```ts
+const users = new Collection({ schema })
+
+const john = users.findFirst((q) => q.where({ name: 'John' }))
+
+users.findMany((q) => q.where({ subscribed: true }), {
+  cursor: john,
+  take: 5,
+})
+```
+
+## Sorting
+
+You can sort the results of bulk operations, like `.findMany()`, `.updateMany()`, and `.deleteMany()`, by providing the `orderBy` property in that operation's options.
+
+```ts
+// Find all users whose name starts with "J"
+// and return them sorted by their `name`.
+users.findMany((q) => q.where({ name: (name) => name.startsWith('J') }), {
+  orderBy: { name: 'asc' },
+})
+```
+
+You can sort by multiple criteria by providing them in the `orderBy` object:
+
+```ts
+users.updateMany((q) => q.where({ name: (name) => name.startsWith('J') }), {
+  data(user) {
+    user.name = user.name.toUpperCase(),
+  },
+  orderBy: {
+    name: 'asc',
+    id: 'desc',
   },
 })
 ```
 
-> See the [Recipes](#recipes) for more guidelines on data modeling.
+## Relations
 
-Throughout this document native JavaScript constructors (i.e. String, Number) will be used as values getters for the models, as they both create a value and define its type. In practice, you may consider using value generators or tools like [Faker](#usage-with-faker) for value getters.
+You can define relations by calling the `.defineRelations()` method on the collection.
 
-#### Using the primary key
+- [One-to-one](#one-to-one)
+- [One-to-many](#one-to-many)
+- [One-to-many (inversed)](#one-to-many-inversed)
+- [Many-to-many](#many-to-many)
+- [Through relations](#through-relations)
+- [Unique relations](#unique-relations)
+- [Ambiguous relations](#ambiguous-relations)
+- [Polymorphic relations](#polymorphic-relations)
 
-Each model **must have a primary key**. That is a root-level property representing the model's identity. Think of it as an "id" column for a particular table in a database.
+### Defining relations
 
-Declare a primary key by using the `primaryKey` function:
+Below, you can find examples of defining various types of relations, but there are a few things that apply to all of them:
 
-```js
-import { factory, primaryKey } from '@mswjs/data'
+- Describe relations on the schema level using your schema library. The `.defineRelations()` API has no effect on the model's schema/types and only operates on known properties;
+- Relations are described _after_ a collection is defined (to prevent circular references);
+- Relations do not require explicit `foreignKey` associations and instead are bound to internal IDs of related records.
 
-factory({
-  user: {
-    id: primaryKey(String),
+### One-to-one
+
+```ts
+const userSchema = z.object({
+  // In Zod, relational properties are best described as getters
+  // so they can produce self-referencing schemas.
+  get country() {
+    return countrySchema
   },
+})
+const countrySchema = z.object({ code: z.string() })
+
+const users = new Collection({ schema: userSchema })
+const contries = new Collection({ schema: countrySchema })
+
+// Declare the relations on the `users` collection.
+users.defineRelations(({ one }) => ({
+  // `user.country` is a one-of relation to the `countries` collection.
+  country: one(countries),
+}))
+
+const user = await users.create({
+  country: await countries.create({ code: 'usa' }),
+})
+user.country // { code: 'usa' }
+```
+
+### One-to-many
+
+```ts
+const postSchema = z.object({
+  get comments() {
+    return z.array(countrySchema)
+  },
+})
+const commentSchema = z.object({
+  text: z.string(),
+})
+
+const posts = new Collection({ schema: postSchema })
+const comments = new Collection({ schema: commentSchema })
+
+posts.defineRelations(({ many }) => ({
+  comments: many(comments),
+}))
+
+await posts.create({
+  comments: [
+    await comments.create({ text: 'First!' }),
+    await comments.create({ text: 'Thanks for watching.' }),
+  ],
 })
 ```
 
-In the example above, the `id` is the primary key for the `user` model. This means that whenever a `user` is created it must have the `id` property that equals a unique `String`. Any property can be marked as a primary key, it doesn't have to be named "id".
+### One-to-many (inversed)
 
-Just like regular model properties, the primary key accepts a getter function that you can use to generate its value when creating entities:
+Two collections may self-reference each other. For example, `post.comments` is a list of comments while each `comment.post` references to the parent post.
 
-```js
-import { faker } from '@faker-js/faker'
-
-factory({
-  user: {
-    id: primaryKey(faker.string.uuid),
+```ts
+const postSchema = z.object({
+  get comments() {
+    return z.array(countrySchema)
   },
 })
+const commentSchema = z.object({
+  text: z.string(),
+  get post() {
+    return postSchema
+  },
+})
+
+const posts = new Collection({ schema: postSchema })
+const comments = new Collection({ schema: commentSchema })
+
+posts.defineRelations(({ many }) => ({
+  comments: many(comments),
+}))
+comments.defineRelations(({ one }) => ({
+  post: one(posts),
+}))
+
+await posts.create({
+  comments: [await comments.create({ text: 'First!' })],
+})
+
+const comment = comments.findFirst((q) => q.where({ text: 'First!' }))
+comment.post // { comments: [{ text: 'First', post: Circular }] }
 ```
 
-> Each time a new `user` is created, its `user.id` property is seeded with the value returned from the `string.uuid` function call.
+> Inversed relations are updated automatically. Whenever you add a new comment to a post, both `post.comments` and `comment.post` are updated to reference each other. The same is true when setting a new parent `post` on the comment.
 
-Once your data is modeled, you can use [Model methods](#model-methods) to interact with it (create/update/delete). Apart from serving as interactive, queryable fixtures, you can also [integrate your data models into API mocks](#usage-with-api-mocks) to supercharge your prototyping/testing workflow.
+### Many-to-many
+
+In the next example, every `user` may have multiple `posts` while each `post` may have multiple `authors`.
+
+```ts
+const userSchema = z.object({
+  get posts() {
+    return z.array(postSchemas)
+  },
+})
+const postSchema = z.object({
+  get authors() {
+    return z.array(userSchema)
+  },
+})
+
+const users = new Collection({ schema: userSchema })
+const posts = new Collection({ schema: postSchema })
+
+users.defineRelations(({ many }) => ({
+  posts: many(posts),
+}))
+posts.defineRelations(({ many }) => ({
+  authors: many(users),
+}))
+```
+
+### Through relations
+
+Since relational properties resolve via getters, there's no need to define special "through" relations to reference one model through a relation from another.
+
+```ts
+const owners = new Collection({ schema: ownerSchema })
+const cars = new Collection({ schema: carSchema })
+const mechanics = new Collection({ schema: mechanicSchema })
+
+owners.defineRelations(({ many }) => ({
+  cars: many(cars),
+}))
+cars.defineRelations(({ one }) => ({
+  owner: one(owners),
+}))
+mechanics.defineRelations(({ one }) => ({
+  car: one(cars),
+}))
+
+const owner = await owners.create({ name: 'John' })
+const car = await cars.create({ brand: 'bmw', owner })
+const mechanic = await mechanics.create({ name: 'Kyle', car })
+
+mechanic.car.owner.name // "John"
+```
+
+> Note that although `mechanics` does not define an explcit relation to `owners`, you can get the owner of the car associated with a mechanic through the `car` relation.
+
+### Unique relations
+
+You can mark a relation as unique by setting the `unique` property of the relation options to `true`. Unique relations cannot reference foreign records that are already associated with other owner records.
+
+```ts
+posts.defineRelations(({ one }) => ({
+  author: one(users, { unique: true }),
+}))
+```
+
+> In this example, the `author` of each post points to a single _unique_ user. If a post attempts to set its author to a user that's already associated with another post, an error will be thrown.
+
+### Ambiguous relations
+
+You can use the `role` option of the relation to disambiguate between multiple properties referencing the same foreign model.
+
+For example, a single `post` may have both `author` and `reviewer` referencing the same `user` model. To make those properties pointing to _different_ user records, use the `role` that acts as a relation identifier. This way, the library will update the corresponding relational properties for both `users` and `posts` when the referenced relation is updated.
+
+```ts
+const users = new Collection({ schema: userSchema })
+const posts = new Collection({ schema: postSchema })
+
+users.defineRelations(({ many }) => ({
+  posts: many(posts, { role: 'author' }),
+  reviews: many(posts, { role: 'reviewer' }),
+}))
+
+posts.defineRelations(({ one }) => ({
+  author: one(user, { role: 'author' }),
+  reviewer: one(user, { role: 'reviewer' }),
+}))
+```
+
+> The `role` property acts as a de-facto ID of a relation when synchronizing related models.
+
+### Polymorphic relations
+
+Provide an array of foreign collections to a relation to define it as _polymorphic_.
+
+```ts
+const posts = new Collection({ schema: postSchema })
+const images = new Collection({ schema: imageSchema })
+const videos = new Collection({ schema: videoSchema })
+
+posts.defineRelations(({ many }) => ({
+  // Providing a record of foreign collections allows
+  // all of their records to be set as the value.
+  attachments: many([images, videos]),
+}))
+images.defineRelations(({ one }) => ({
+  post: one(posts),
+}))
+videos.defineRelations(({ one }) => ({
+  post: one(posts),
+}))
+```
+
+> In this example, `post.attachments` is an array of either `images` or `videos`, where records from both collections are allowed.
+
+---
 
 ## API
 
-- [`factory`](#factory)
-- [`primaryKey`](#primarykey)
-- [`nullable`](#nullable)
-- [`oneOf`](#oneof)
-- [`manyOf`](#manyof)
-- [`drop`](#drop)
+### `new Collection(options)`
 
-### `factory`
+- `options` `<Object>`
+  - `schema` [Standard Schema][standard-schema] A schema describing each record in this collection.
+  - `extensions` (optional) An array of [extensions](#extensions) to use on this collection.
 
-The `factory` function is used to model a database. It accepts a _model dictionary_ and returns an API to interact with the described models.
+Creates a new collection of data.
 
-```js
-import { factory, primaryKey } from '@mswjs/data'
+#### `.create(initialValues)`
 
-const db = factory({
-  user: {
-    id: primaryKey(String),
-    firstName: String,
-    age: Number,
-  },
-})
-```
+- `initialValues` Initial values for the new record.
 
-> Learn more about the [Model methods](#model-methods) and how you can interact with the described models.
-
-Each `factory` call encapsulates an in-memory database instance that holds the respective models. It's possible to create multiple database instances by calling `factory` multiple times. The entities and relationships, however, are not shared between different database instances.
-
-### `primaryKey`
-
-Marks the property of a model as a primary key.
-
-```js
-import { factory, primaryKey } from '@mswjs/data'
-
-const db = factory({
-  user: {
-    id: primaryKey(String),
-  },
-})
-
-// Create a new "user" with the primary key "id" equal to "user-1".
-db.user.create({ id: 'user-1' })
-```
-
-Primary key must be unique for each entity and is used as the identifier to query a particular entity.
-
-### `nullable`
-
-Marks the current model property as nullable.
-
-```js
-import { factory, primaryKey, nullable } from '@mswjs/data'
-
-factory({
-  user: {
-    id: primaryKey(String)
-    // "user.title" is a nullable property.
-    title: nullable(String)
-  }
-})
-```
-
-> Learn more how to work with [Nullable properties](#nullable-properties).
-
-### `oneOf`
-
-Creates a `*-to-one` relationship with another model.
-
-```js
-import { factory, primaryKey, oneOf } from '@mswjs/data'
-
-factory({
-  user: {
-    id: primaryKey(String),
-    role: oneOf('userGroup'),
-  },
-  userGroup: {
-    name: primaryKey(String),
-  },
-})
-```
-
-> Learn more about [Modeling relationships](#model-relationships).
-
-### `manyOf`
-
-Creates a `*-to-many` relationship with another model.
-
-```js
-import { factory, primaryKey, manyOf } from '@mswjs/data'
-
-factory({
-  user: {
-    id: primaryKey(String),
-    publications: manyOf('post'),
-  },
-  post: {
-    id: primaryKey(String),
-    title: String,
-  },
-})
-```
-
-> Learn more about [Modeling relationships](#model-relationships).
-
-### `drop`
-
-Deletes all entities in the given database instance.
-
-```js
-import { factory, drop } from '@mswjs/data'
-
-const db = factory(...models)
-
-drop(db)
-```
-
-## Model methods
-
-Each model has the following methods:
-
-- [`create()`](#create)
-- [`findFirst()`](#findfirst)
-- [`findMany()`](#findmany)
-- [`count()`](#count)
-- [`getAll()`](#getall)
-- [`update()`](#update)
-- [`updateMany()`](#updatemany)
-- [`delete()`](#delete)
-- [`deleteMany()`](#deletemany)
-- [`toHandlers()`](#tohandlers)
-
-### `create`
-
-Creates an entity for the model.
-
-```js
-const user = db.user.create()
-```
-
-When called without arguments, `.create()` will populate the entity properties using the getter functions you've specified in the model definition.
-
-You can also provide a partial initial values when creating an entity:
-
-```js
-const user = db.user.create({
-  firstName: 'John',
-})
-```
-
-> Note that all model properties _are optional_, including [relational properties](#model-relationships).
-
-### `findFirst`
-
-Returns the first entity that satisfies the given query.
-
-```js
-const user = db.user.findFirst({
-  where: {
-    id: {
-      equals: 'abc-123',
-    },
-  },
-})
-```
-
-### `findMany`
-
-Returns all the entities that satisfy the given query.
-
-```js
-const users = db.user.findMany({
-  where: {
-    followersCount: {
-      gte: 1000,
-    },
-  },
-})
-```
-
-### `count`
-
-Returns the number of records for the given model.
-
-```js
-db.user.create()
-db.user.create()
-
-db.user.count() // 2
-```
-
-Can accept an optional query argument to filter the records before counting them.
-
-```js
-db.user.count({
-  where: {
-    role: {
-      equals: 'reader',
-    },
-  },
-})
-```
-
-### `getAll`
-
-Returns all the entities of the given model.
-
-```js
-const allUsers = db.user.getAll()
-```
-
-### `update`
-
-Updates the first entity that matches the query.
-
-```js
-const updatedUser = db.user.update({
-  // Query for the entity to modify.
-  where: {
-    id: {
-      equals: 'abc-123',
-    },
-  },
-  // Provide partial next data to be
-  // merged with the existing properties.
-  data: {
-    // Specify the exact next value.
-    firstName: 'John',
-
-    // Alternatively, derive the next value from
-    // the previous one and the unmodified entity.
-    role: (prevRole, user) => reformatRole(prevRole),
-  },
-})
-```
-
-### `updateMany`
-
-Updates multiple entities that match the query.
-
-```js
-const updatedUsers = db.user.updateMany({
-  // Query for the entity to modify.
-  where: {
-    id: {
-      in: ['abc-123', 'def-456'],
-    },
-  },
-  // Provide partial next data to be
-  // merged with the existing properties.
-  data: {
-    firstName: (firstName) => firstName.toUpperCase(),
-  },
-})
-```
-
-### `delete`
-
-Deletes the entity that satisfies the given query.
-
-```js
-const deletedUser = db.user.delete({
-  where: {
-    followersCount: {
-      equals: 0,
-    },
-  },
-})
-```
-
-### `deleteMany`
-
-Deletes multiple entities that match the query.
-
-```js
-const deletedUsers = db.user.deleteMany({
-  where: {
-    followersCount: {
-      lt: 10,
-    },
-  },
-})
-```
-
-### `toHandlers`
-
-Generates request handlers for the given model to use with [Mock Service Worker](https://github.com/mswjs/msw). All generated handlers are automatically connected to the respective [model methods](#model-methods), enabling you to perform CRUD operations against your mocked database.
-
-#### REST handlers
-
-```js
-import { factory, primaryKey } from '@mswjs/data'
-
-const db = factory({
-  user: {
-    id: primaryKey(String),
-    firstName: String,
-  },
-})
-
-// Generates REST API request handlers.
-db.user.toHandlers('rest')
-```
-
-- Learn more about [REST API mocking integration](#generate-rest-api).
-
-#### GraphQL handlers
-
-```js
-import { factory, primaryKey } from '@mswjs/data'
-
-const db = factory({
-  user: {
-    id: primaryKey(String),
-    firstName: String,
-  },
-})
-
-// Generates GraphQL API request handlers.
-db.user.toHandlers('graphql')
-```
-
-- Learn more about [GraphQL API mocking integration](#generate-graphql-api).
-
-#### Scoping handlers
-
-The `.toHandlers()` method supports an optional second `baseUrl` argument to scope the generated handlers to a given endpoint:
-
-```js
-db.user.toHandlers('rest', 'https://example.com')
-db.user.toHandlers('graphql', 'https://example.com/graphql')
-```
-
-## Recipes
-
-- **Modeling:**
-  - [Nullable properties](#nullable-properties)
-  - [Nested structures](#nested-structures)
-  - [Model relationships](#model-relationships)
-- **Querying:**
-  - [Querying data](#querying-data)
-  - [Strict mode](#strict-mode)
-  - [Pagination](#pagination)
-  - [Sorting](#sorting)
-
-### Nullable properties
-
-By default, all model properties are non-nullable. You can use the `nullable` function to mark a property as nullable:
-
-```js
-import { factory, primaryKey, nullable } from '@mswjs/data'
-
-const db = factory({
-  user: {
-    id: primaryKey(String),
-    firstName: String,
-    // "user.age" is a nullable property.
-    age: nullable(Number),
-  },
-})
-
-db.user.create({
-  id: 'user-1',
-  firstName: 'John',
-  // Nullable properties can be explicit null as the initial value.
-  age: null,
-})
-
-db.user.update({
-  where: {
-    id: {
-      equals: 'user-1',
-    },
-  },
-  data: {
-    // Nullable properties can be updated to null.
-    age: null,
-  },
-})
-```
-
-> You can define [Nullable relationships](#nullable-relationships) in the same manner.
-
-When using Typescript, you can manually set the type of the property when it cannot be otherwise inferred from the seeding function, such as when you want a property to default to `null`:
-
-```typescript
-import { factory, primaryKey, nullable } from '@mswjs/data'
-
-const db = factory({
-  user: {
-    id: primaryKey(String),
-    age: nullable<number>(() => null),
-  },
-})
-```
-
-### Nested structures
-
-You may use nested objects to design a complex structure of your model:
-
-```js
-import { factory, primaryKey, nullable } from '@mswjs/data'
-
-const db = factory({
-  user: {
-    id: primaryKey(String),
-    address: {
-      billing: {
-        street: String,
-        city: nullable(String),
-      },
-    },
-  },
-})
-
-// You can then create and query your data
-// based on the nested properties.
-
-db.user.create({
-  id: 'user-1',
-  address: {
-    billing: {
-      street: 'Baker st.',
-      city: 'London',
-    },
-  },
-})
-
-db.user.update({
-  where: {
-    id: {
-      equals: 'user-1',
-    },
-  },
-  data: {
-    address: {
-      billing: {
-        street: 'Sunwell ave.',
-        city: null,
-      },
-    },
-  },
-})
-```
-
-> Note that you **cannot** mark a nested property as the [primary key](#using-the-primary-key).
-
-You may also specify _relationships_ nested deeply in your model:
-
-```js
-factory({
-  user: {
-    id: primaryKey(String),
-    address: {
-      billing: {
-        country: oneOf('country'),
-      },
-    },
-  },
-  country: {
-    code: primaryKey(String),
-  },
-})
-```
-
-> Learn more about [Model relationships](#model-relationships).
-
-### Model relationships
-
-- [One-to-One](#one-to-one)
-- [One-to-Many](#one-to-many)
-- [Many-to-One](#many-to-one)
-- [Unique relationships](#unique-relationships)
-- [Nullable relationships](#nullable-relationships)
-
-Relationship is a way for a model to reference another model.
-
-#### One-to-One
-
-```js
-import { factory, primaryKey, oneOf } from '@mswjs/data'
-
-const db = factory({
-  user: {
-    id: primaryKey(String),
-    firstName: String,
-  },
-  post: {
-    id: primaryKey(String),
-    title: String,
-    // The "post.author" references a "user" model.
-    author: oneOf('user'),
-  },
-})
-
-const user = db.user.create({ firstName: 'John' })
-const post = db.post.create({
-  title: 'My journey',
-  // Use a "user" entity as the actual value of this post's author.
-  author: user,
-})
-
-post.author.firstName // "John"
-```
-
-#### One-to-Many
-
-```js
-import { factory, primaryKey, manyOf } from '@mswjs/data'
-
-const db = factory({
-  user: {
-    id: primaryKey(String),
-    // "user.posts" is a list of the "post" entities.
-    posts: manyOf('post'),
-  },
-  post: {
-    id: primaryKey(String),
-    title: String,
-  },
-})
-
-const posts = [
-  db.post.create({ title: 'First' }),
-  db.post.create({ title: 'Second' }),
-]
-
-const user = db.user.create({
-  // Assign the list of existing posts to this user.
-  posts,
-})
-
-user.posts // [{ title: "First" }, { title: "Second" }]
-```
-
-#### Many-to-One
-
-```js
-import { factory, primaryKey, oneOf } from '@mswjs/data'
-
-const db = factory({
-  country: {
-    name: primaryKey(String),
-  },
-  user: {
-    id: primaryKey(String),
-    country: oneOf('country'),
-  },
-  car: {
-    serialNumber: primaryKey(String),
-    country: oneOf('country'),
-  },
-})
-
-const usa = db.country.create({ name: 'The United States of America' })
-
-// Create a "user" and a "car" with the same country.
-db.user.create({ country: usa })
-db.car.create({ country: usa })
-```
-
-#### Unique relationships
-
-Both `oneOf` and `manyOf` relationships may be marked as unique. A unique relationship is where a referenced entity cannot be assigned to another entity more than once.
-
-In the example below we define the "user" and "invitation" models, and design their relationship so that one invitation cannot be assigned to multiple users.
-
-```js
-import { factory, primaryKey, oneOf } from '@mswjs/data'
-
-const db = factory({
-  user: {
-    id: primaryKey(String),
-    invitation: oneOf('invitation', { unique: true }),
-  },
-  invitation: {
-    id: primaryKey(String),
-  },
-})
-
-const invitation = db.invitation.create()
-
-const john = db.user.create({ invitation })
-
-// Assigning the invitation already used by "john"
-// will throw an exception when creating this entity.
-const karl = db.user.create({ invitation })
-```
-
-#### Nullable relationships
-
-Both `oneOf` and `manyOf` relationships may be passed to `nullable` to allow
-instantiating and updating that relation to null.
-
-```js
-import { factory, primaryKey, oneOf, nullable } from '@mswjs/data'
-
-const db = factory({
-  user: {
-    id: primaryKey(String),
-    invitation: nullable(oneOf('invitation')),
-    friends: nullable(manyOf('user')),
-  },
-  invitation: {
-    id: primaryKey(String),
-  },
-})
-
-const invitation = db.invitation.create()
-
-// Nullable relationships are instantiated with null.
-const john = db.user.create({ invitation }) // john.friends === null
-const kate = db.user.create({ friends: [john] }) // kate.invitation === null
-
-db.user.updateMany({
-  where: {
-    id: {
-      in: [john.id, kate.id],
-    },
-  },
-  data: {
-    // Nullable relationships can be updated to null.
-    invitation: null,
-    friends: null,
-  },
-})
-```
-
-### Querying data
-
-This library supports querying of the seeded data similar to how one would query a SQL database. The data is queried based on its properties. A query you construct depends on the value type you are querying.
-
-#### String operators
-
-- `equals`
-- `notEquals`
-- `contains`
-- `notContains`
-- `in`
-- `notIn`
-
-#### Number operators
-
-- `equals`
-- `notEquals`
-- `gt`
-- `gte`
-- `lt`
-- `lte`
-- `between`
-- `notBetween`
-- `in`
-- `notIn`
-
-#### Boolean operators
-
-- `equals`
-- `notEquals`
-
-#### Date operators
-
-- `equals`
-- `notEquals`
-- `gt`
-- `gte`
-- `lt`
-- `lte`
-
-#### Query example
-
-```js
-const db = factory({
-  post: {
-    id: String,
-    likes: Number,
-    isDraft: Boolean,
-  },
-})
-
-// Returns the list of `post` entities
-// that satisfy the given query.
-const popularPosts = db.post.findMany({
-  where: {
-    likes: {
-      gte: 1000,
-    },
-    isDraft: {
-      equals: false,
-    },
-  },
-})
-```
-
-### Strict mode
-
-When querying or updating the entities you can supply the `strict: boolean` property on the query. When supplied, if a query operation fails (i.e. no entity found), the library will throw an exception.
-
-```js
-import { factory, primaryKey } from '@mswjs/data'
-
-const db = factory({
-  user: {
-    id: primaryKey(String),
-  },
-})
-
-db.user.create({ id: 'abc-123' })
-
-// This will throw an exception, because there are
-// no "user" entities matching this query.
-db.user.findFirst({
-  where: {
-    id: {
-      equals: 'def-456',
-    },
-  },
-  strict: true,
-})
-```
-
-### Pagination
-
-This library supports _offset-based_ and _cursor-based_ pagination of the `findMany` method results.
-
-#### Offset-based pagination
-
-```js
-const db = factory({
-  post: {
-    id: primaryKey(String),
-    category: String,
-  },
-})
-
-db.post.findMany({
-  where: {
-    category: {
-      equals: 'Science',
-    },
-  },
-  take: 15,
-  skip: 10,
-})
-```
-
-#### Cursor-based pagination
-
-The `cursor` option of the `findMany` query expects a primary key value of a model to start the pagination from.
-
-```js
-const db = factory({
-  post: {
-    // The `id` primary key will be used as a cursor.
-    id: primaryKey(String),
-    category: String,
-  },
-})
-
-const firstPage = db.post.findMany({
-  where: {
-    category: {
-      equals: 'Science',
-    },
-  },
-  take: 15,
-  cursor: null,
-})
-
-const secondPage = db.post.findMany({
-  where: {
-    category: {
-      equals: 'Science',
-    },
-  },
-  take: 15,
-  // The second page will start from the last post
-  // of the `firstPage`.
-  cursor: firstPage[firstPage.length - 1].id,
-})
-```
-
-### Sorting
-
-#### Basic sorting
-
-```js
-const db = factory({
-  post: {
-    id: primaryKey(String),
-    title: String,
-  },
-})
-
-// Return first 10 posts in the "Science" category
-// sorted by the post's "title".
-db.post.findMany({
-  where: {
-    category: {
-      equals: 'Science',
-    },
-  },
-  take: 10,
-  orderBy: {
-    title: 'asc',
-  },
-})
-```
-
-> You can use `orderBy` with [pagination](#pagination).
-
-#### Sorting by relational properties
-
-```js
-const db = factory({
-  post: {
-    id: primaryKey(String),
-    title: String,
-    author: oneOf('user'),
-  },
-  user: {
-    id: primaryKey(String),
-    firstName: String,
-  },
-})
-
-// Return all posts in the "Science" category
-// sorted by the post author's first name.
-db.post.findMany({
-  where: {
-    category: {
-      equals: 'Science',
-    },
-  },
-  orderBy: {
-    author: {
-      firstName: 'asc',
-    },
-  },
-})
-```
-
-#### Sorting by multiple criteria
-
-Provide a list of criteria to sort the query result against.
-
-```js
-db.post.findMany({
-  orderBy: [
-    {
-      title: 'asc',
-    },
-    {
-      views: 'desc',
-    },
-  ],
-})
-```
-
-You can also use a combination of direct and relational properties on a single query:
-
-```js
-db.post.findMany({
-  orderBy: [
-    {
-      title: 'asc',
-    },
-    {
-      author: {
-        firstName: 'asc',
-      },
-    },
-  ],
-})
-```
-
-### Database utilities
-
-#### `drop`
-
-Drops the given database, deleting all its entities.
-
-```js
-import { factory, drop } from '@mswjs/data'
-
-const db = factory({...})
-
-drop(db)
-```
-
-### Usage with `Faker`
-
-Libraries like [Faker](https://github.com/faker-js/faker) can help you generate fake data for your models.
-
-```js
-import { faker } from '@faker-js/faker'
-import { factory, primaryKey } from '@mswjs/data'
-
-// (Optional) Seed `faker` to ensure reproducible
-// random values of model properties.
-faker.seed(123)
-
-factory({
-  user: {
-    id: primaryKey(faker.string.uuid),
-    firstName: faker.name.firstName,
-  },
-})
-```
-
-### Collocated updates
-
-When you wish to update a parent entity and one of its relational properties at the same time, collocate such an update operation via the updater function of the [`update`](#update) method.
-
-```js
-import { factory, primaryKey, oneOf } from '@mswjs/data'
-
-const db = factory({
-  post: {
-    id: primaryKey(String),
-    title: String,
-    revision: oneOf('revision'),
-  },
-  revision: {
-    id: primaryKey(String),
-    updatedAt: () => new Date(),
-  },
-})
-
-db.post.update({
-  where: {
-    id: { equals: 'post-1' },
-  },
-  data: {
-    title: 'Renamed post',
-    // The next value of the "post.revision"
-    // is returned from this updater function.
-    revision(prevRevision, post) {
-      // Update this post's revision as you'd do usually,
-      // but nested within the post's update operation.
-      return db.revision.update({
-        where: {
-          id: { equals: post.revision.id },
-        },
-        data: {
-          updatedAt: Date.now(),
-        },
-      })
-    },
-  },
-})
-```
-
-> While the `post` above will get updated, both `post.revision` and the respective `revision` standalone will be updated as well.
-
-Collocating nested updates grants you a predictable behavior when changing multiple related entities.
-
-## Usage with API mocks
-
-While this library can be used standalone, it brings a tremendous benefit in a combination with tools like [Mock Service Worker](https://github.com/mswjs). We provide a build-in API to quickly generate API request handlers based on your models, representing model interactions via HTTP requests.
-
-### Generate request handlers
-
-Both REST and GraphQL [request handlers]() can be generated from a model using the [`.toHandlers()`](#toHandlers) method of that model. When generated, request handlers automatically have that model's CRUD methods like `POST /user` or `mutation CreateUser`.
-
-#### Generate REST API
-
-REST API request handlers can be generated by calling the `.toHandlers('rest')` method on the respective factory model.
+Creates a single record with the provided initial values.
 
 ```ts
-import { setupServer } from 'msw/node'
-import { factory, primaryKey } from '@mswjs/data'
-
-const db = factory({
-  user: {
-    id: primaryKey(String),
-    firstName: String,
-  },
-})
-
-const handlers = [...db.user.toHandlers('rest')]
-
-// Establish requests interception.
-const server = setupServer(...handlers)
-server.listen()
+const user = await users.create({ id: 1, name: 'John' })
 ```
 
-Given the "user" model definition above, the following request handlers are generated and connected to the respective database operations:
+> The `.create()` method returns a promise to support potential asynchronous transformations in your schema.
 
-- `GET /users/:id` (where "id" is your model's primary key), returns a user by ID;
-- `GET /users`, returns all users (supports [pagination](#pagination));
-- `POST /users`, creates a new user;
-- `PUT /users/:id`, updates an existing user by ID;
-- `DELETE /users/:id`, deletes an existing user by ID;
+#### `.createMany(count, initialValuesFactory)`
 
-The "/user" part of the route is derived from your model name. For example, if you had a "post" model defined in your `factory`, then the generated handlers would be `/posts`, `/posts/:id`, etc.
+- `count` `<number>` A number of records to create.
+- `initialValuesFactory` `<Function>` A function that returns initial values for each record.
 
-With the request handlers generated and MSW configured, you can query the "database" using REST API:
+Creates multiple records with the initial value factory.
 
-```js
-// Create a new user in the database.
-fetch('/users', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  body: JSON.stringify({
-    id: 'abc-123',
-    firstName: 'John',
+```ts
+const users = await users.createMany(5, (index) => ({
+  id: index + 1,
+  name: 'John',
+}))
+```
+
+The initial value factory function accepts the `index` argument indicating the index of the record that's being created. Use it, as well as the function's closure, to generate unique or random values.
+
+#### `.findFirst(query)`
+
+- `query` [`Query`](#new-querypredicate) A query matching the record.
+
+Returns the first record matching the query.
+
+```ts
+const users = new Collection({
+  schema: z.object({
+    id: z.number(),
+    name: z.string(),
   }),
 })
+
+await users.create({ id: 1, name: 'John' })
+await users.create({ id: 2, name: 'John' })
+
+users.findFirst((q) => q.where({ name: 'John' }))
+// { id: 1, name: 'John' }
 ```
 
-#### Generate GraphQL API
+#### `.findMany(query)`
 
-GraphQL API request handlers can be generated by calling the `.toHandlers('graphql')` method on the respective factory model.
+- `query` [`Query`](#new-querypredicate) A query matching the records.
 
-```js
-import { setupServer } from 'msw/node'
-import { factory, primaryKey } from '@mswjs/data'
+Returns all records matching the query.
 
-const db = factory({
-  user: {
-    id: primaryKey(String),
-    firstName: String,
-  },
+```ts
+const users = new Collection({
+  schema: z.object({
+    id: z.number(),
+    name: z.string(),
+  }),
 })
 
-const handlers = [...db.user.toHandlers('graphql')]
+await users.create({ id: 1, name: 'John' })
+await users.create({ id: 2, name: 'John' })
 
-// Establish requests interception.
-const server = setupServer(...handlers)
-server.listen()
+users.findFirst((q) => q.where({ name: 'John' }))
+// [{ id: 1, name: 'John' }, { id: 2, name: 'John' }]
 ```
 
-Given the "user" model definition above, the following request handlers are generated and connected to the respective database operations:
+#### `.update(query, options)`
 
-- `user(where: UserQueryInput): User`, returns a user matching the query;
-- `users(where: UserQueryInput, cursor: ID, skip: Int, take: Int): [User!]`, returns all users matching the query (supports [pagination](#pagination));
-- `createUser(data: UserInput!): User!`, creates a new user;
-- `updateUser(where: UserQueryInput!, data: UserInput!): User!`, updates a user that match the `where` query;
-- `updateUsers(where: UserQueryInput!, data: UserInput!): [User!]`, updates multiple users that match the `where` query;
-- `deleteUser(where: UserQueryInput!): User!`, deletes a user that match the `where` query;
-- `deleteUsers(where: UserQueryInput!): [User!]`, deletes multiple users that match the `where` query.
+- `query` [`Query`](#new-querypredicate) A query matching the record.
+- `options` `<Object>`
+  - `data` A function that produces changes by modifying the previous record.
 
-The "User" part of the GraphQL operation names is derived from your model's name. For example, if you had a "post" model defined in your `factory`, then the generated handlers would have operations like `post`, `createPost`, `updatePosts`, etc.
+Updates the first record matching the query. Returns a promise that resolves with the updated record.
 
-With the request handlers generated and MSW configured, you can query the database using GraphQL API:
+```ts
+// Change the name for the user with a specific `id`.
+const updatedUser = await users.update((q) => q.where({ id: 123 }), {
+  data(user) {
+    user.name = 'Johnatan'
+  },
+})
+```
 
-```js
-import { gql, useQuery } from '@apollo/client'
+> Update methods return a promise in order to support potential asynchronous transformations defined in your schema.
 
-const CREATE_USER = gql`
-  query CreateUser($initialValues: UserInput!) {
-    createUser(data: $initialValues) {
-      firstName
-    }
-  }
-`
+The `data` function allows you to perform multiple updates upon a record by mutating that record directly. Think of it as a draft function from libraries like `immer` or `mutative` because that's precisely what it is!
 
-useQuery(CREATE_USER, {
-  variables: {
-    initialValues: {
-      firstName: 'John',
+You can also provide a record reference as the predicate to the `.update()` method to update that particular record:
+
+```ts
+const user = users.findFirst((q) => q.where({ id: 123 }))
+await users.update(user, {
+  //               👆👆
+  data(user) {
+    user.id = 456
+  },
+})
+```
+
+#### `.updateMany(query, options)`
+
+- `query` [`Query`](#new-querypredicate) A query matching the records.
+- `options` `<Object>`
+  - `data` Changes to apply to each record.
+
+Updates all records matching the query. Returns a promise that resolves with an array containing the updated records.
+
+```ts
+// Find all the users with the name "John"
+// and make their name truly stand out!
+const updatedUsers = await users.updateMany((q) => q.where({ name: 'John' }), {
+  data(user) {
+    user.name = user.name.toUpperCase()
+  },
+})
+```
+
+#### `.delete(query)`
+
+- `query` [`Query`](#new-querypredicate) A query matching the record.
+
+Deletes the first record matching the query. Returns the deleted record.
+
+```ts
+// Delete a user with a particular `id`.
+const deletedUser = users.delete((q) => q.where({ id: 123 }))
+```
+
+You can also provide a record reference as the predicate to the `.delete()` method to delete that particular record:
+
+```ts
+const user = users.findFirst((q) => q.where({ id: 123 }))
+users.delete(user)
+```
+
+#### `.deleteMany(query)`
+
+- `query` [`Query`](#new-querypredicate) A query matching the records.
+
+Deletes all records matching the query. Returns an array containing the deleted records.
+
+```ts
+// Delete all users whose trial period has expired.
+const deletedUsers = users.deleteMany((q) =>
+  q.where({ trial: { expiresAt: (expiresAt) => expiresAt <= Date.now() } }),
+)
+```
+
+#### `.defineRelations(definition)`
+
+- `definition` `<Function>` A function that accepts relation utilities and returns an object with relational properties.
+
+Defines relations on the current collection.
+
+```ts
+const users = new Collection({ schema: userSchema })
+const posts = new Collection({ schema: postSchema })
+
+users.defineRelations(({ many }) => ({
+  // `user.posts` is a many-of relation to `posts`.
+  posts: many(posts)
+}))
+```
+
+> You can define nested relational properties by nesting them in the object returned from `.defineRelations()`.
+
+##### Relational utilities
+
+The following relational utilies are exposed in the argument to this method:
+
+- `one(collection[, options])`, defines a one-of relation to the given collection;
+- `many(collection[, options])`, defines a many-of relation to the given collection.
+
+##### Relation options
+
+- `unique` `<boolean>`, marks this relation as unique. Foreign records referenced by this relation cannot be referenced by other models.
+
+```ts
+users.defineRelations(({ many }) => ({
+  posts: many(posts)
+}))
+posts.defineRelations(({ one }) => ({
+  author: one(users, { unique: true })
+}))
+
+const john = await users.create({
+  name: 'John',
+  // `john` is associated as the `author` of this post now.
+  posts: [await posts.create({ title: 'First post' })]
+})
+
+await users.create({
+  name: 'Katy',
+  // Creating this user will error because it tries to list
+  // a post which `author` already references to another user.
+  posts: [john.posts[0]]
+})
+```
+
+- `role` `<string>`, an identifier to differentiate ambiguous relations to the same foreign collection;
+
+```ts
+users.defineRelations(({ many }) => ({
+  // Both `users` and `posts` reference each other in multiple keys.
+  // Using `role` helps the library understand which keys are connected.
+  posts: many(posts, { role: 'author' }),
+  underReview: many(posts, { role: 'reviewer' })
+}))
+
+posts.defineRelations(({ one, many }) => ({
+  author: one(users, { role: 'author' }),
+  reviewers: many(users, { role: 'reviewer' })
+}))
+```
+
+- `onDelete` `"cascade" | undefined`, decides how to handle referenced foreign records when the owner is deleted.
+
+```ts
+users.defineRelations(({ many }) => ({
+  // If a user gets deleted, delete all of the `posts` associated with them.
+  posts: many(posts, { onDelete: 'cascade' })
+}))
+posts.defineRelations(({ one }) => ({
+  author: one(users)
+}))
+```
+
+### `new Query([predicate])`
+
+- `predicate` (optional) An object or a function that acts as a predicate for records.
+
+Creates a new query to match records in a collection. Normally, you query records through the querying methods of the collection (see [Querying](#querying)). You can, however, construct a type-safe `Query` class to abstract common queries or query builders.
+
+```ts
+const userSchema = z.object({
+  id: z.number(),
+  subscribed: z.boolean().default(false),
+  role: z.enum(['user', 'editor', 'admin']).default('user'),
+})
+
+// Creates a query builder for the users schema.
+const query = new Query<typeof userSchema>()
+```
+
+#### `.where(predicate)`
+
+- `predicate` A predicate for the records.
+- Returns: [`Query`](#new-querypredicate).
+
+```ts
+query.where({ id: 2 })
+```
+
+#### `.or(predicate)`
+
+- `predicate` A predicate or another [`Query`](#new-querypredicate).
+- Returns: [`Query`](#new-querypredicate).
+
+Creates a new query, merging the previous predicates with the new one under a `OR` relation. A record may match _any predicate_ to be considered matching.
+
+```ts
+const unsubscribedOrEditorsQuery = query.or(
+  query.where({ subscribed: false }),
+  query.where({ role: 'editor' }),
+)
+```
+
+#### `.and(predicate)`
+
+- `predicate` A predicate or another [`Query`](#new-querypredicate).
+- Returns: [`Query`](#new-querypredicate).
+
+Creates a new query, merging the previous predicates with the new one under a `AND` relation. A record must match _all predicates_ to be considered matching.
+
+```ts
+const exactAdminQuery = query.and(
+  query.where({ id: 1 }),
+  query.where({ role: 'admin' }),
+)
+```
+
+#### `.test(record)`
+
+- `record` `<Record>` A reference to a record to test.
+- Returns `<boolean>` Indicates whether the given record matches the query.
+
+```ts
+query.test({ id: 1 })
+```
+
+---
+
+## Extensions
+
+You can extend the behavior of collections via _extensions_. The library comes with the following default extensions, but you can always [create your own](#custom-extensions).
+
+### Default extensions
+
+#### `sync()`
+
+> [!WARNING]
+> The `sync()` extension is browser-only. It will be ignored in Node.js.
+
+Synchronizes collection changes, like creating/updating/deleting records, with the same collection in another browser tab via a `BroadcastChannel`.
+
+```ts
+import { Collection } from '@msw/data'
+import { sync } from '@msw/data/extensions'
+
+const users = new Collection({
+  schema,
+  extensions: [sync()],
+})
+```
+
+#### `persist()`
+
+> [!WARNING]
+> The `persist()` extension is browser-only. It will be ignored in Node.js.
+
+Persist the records in the collection between page reloads.
+
+```ts
+import { Collection } from '@msw/data'
+import { persist } from '@msw/data/extensions'
+
+const users = new Collection({
+  schema,
+  extensions: [persist()],
+})
+```
+
+### Custom extensions
+
+```ts
+// my-extension.ts
+import { defineExtension } from '@msw/data/extensions'
+
+export function myExtension() {
+  return defineExtension({
+    name: 'my-extension',
+    extend(collection) {
+      // Your logic here.
     },
-  },
-})
+  })
+}
 ```
 
-### Manual integration
+```ts
+import { Collection } from '@msw/data'
+import { myExtension } from './my-extension.js'
 
-To gain more control over the mocks and implement more complex mocking scenarios (like authentication), consider manual integration of this library with your API mocking solution.
-
-Take a look at how you can create an entity based on the user's authentication status in a test:
-
-```js
-import { http, HttpResponse } from 'msw'
-import { setupServer } from 'msw/node'
-import { factory, primaryKey } from '@mswjs/data'
-
-const db = factory({
-  post: {
-    id: primaryKey(String),
-    title: String,
-  },
-})
-
-const handlers = [
-  http.post('/post', (req, res, cxt) => {
-    // Only authenticated users can create new posts.
-    if (req.headers.get('authorization') === 'Bearer AUTH_TOKEN') {
-      return new HttpResponse(null, { status: 403 })
-    }
-
-    // Create a new entity for the "post" model.
-    const newPost = db.post.create(req.body)
-
-    // Respond with a mocked response.
-    return HttpResponse.json({ post: newPost }, { status: 201 })
-  }),
-]
-
-// Establish requests interception.
-const server = setupServer(...handlers)
-server.listen()
+new Collection({ schema, extensions: [myExtension()] })
 ```
-
-## Honorable mentions
-
-- [Prisma](https://www.prisma.io) for inspiring the querying client.
-- [Lenz Weber](https://twitter.com/phry) and [Matt Sutkowski](https://twitter.com/de_stroy) for great help with the TypeScript support.

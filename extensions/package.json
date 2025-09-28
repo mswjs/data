@@ -1,0 +1,5 @@
+{
+  "type": "module",
+  "main": "./../build/extensions/index.js",
+  "types": "./../build/extensions/index.d.ts"
+}

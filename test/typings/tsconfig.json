@@ -1,9 +1,0 @@
-{
-  "extends": "../../tsconfig.json",
-  "compilerOptions": {
-    "noEmit": true,
-    "esModuleInterop": true,
-    "downlevelIteration": true
-  },
-  "include": ["**/*.test-d.ts"]
-}

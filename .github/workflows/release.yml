@@ -3,32 +3,44 @@ name: release
 on:
   schedule:
     - cron: '0 23 * * *'
-
   workflow_dispatch:
 
 jobs:
-  release:
+  publish:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
           token: ${{ secrets.GH_ADMIN_TOKEN }}
 
-      - name: Setup Git
-        run: |
-          git config --local user.name "kettanaito"
-          git config --local user.email "kettanaito@gmail.com"
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.14.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
 
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        run: pnpm install
 
       - name: Install browsers
-        run: yarn playwright install
+        run: pnpm exec playwright install chromium --with-deps
 
-      - name: Release
-        run: yarn release
+      - name: Build
+        run: pnpm build
+
+      - name: Tests (Node.js)
+        run: pnpm test:node
+
+      - name: Tests (browser)
+        run: pnpm test:browser
+
+      - name: Publish
+        run: pnpm publish
         env:
           GITHUB_TOKEN: ${{ secrets.GH_ADMIN_TOKEN }}
           NPM_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
