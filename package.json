@@ -40,6 +40,11 @@
   ],
   "license": "MIT",
   "author": "Artem Zakharchenko <kettanaito@gmail.com>",
+  "homepage": "https://github.com/mswjs/data.git",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mswjs/data.git"
+  },
   "devDependencies": {
     "@ossjs/release": "^0.10.0",
     "@playwright/test": "^1.55.0",
