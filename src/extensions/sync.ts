@@ -1,139 +1,232 @@
-import { ENTITY_TYPE, PRIMARY_KEY, Entity } from '../glossary'
+import { set } from 'lodash-es'
+import { defineExtension } from '#/src/extensions/index.js'
 import {
-  Database,
-  DatabaseEventsMap,
-  SerializedEntity,
-  SERIALIZED_INTERNAL_PROPERTIES_KEY,
-} from '../db/Database'
-import { inheritInternalProperties } from '../utils/inheritInternalProperties'
-import { Listener } from 'strict-event-emitter'
+  kCollectionId,
+  kPrimaryKey,
+  kRelationMap,
+  type Collection,
+  type RecordType,
+} from '#/src/collection.js'
+import { Query } from '#/src/query.js'
+import { isObject, type PropertyPath } from '#/src/utils.js'
+import { Logger } from '#/src/logger.js'
+import {
+  serializeRecord,
+  createFromSerializedRecord,
+  type SerializedRecord,
+} from '#/src/extensions/persist.js'
 
-export type DatabaseMessageEventData =
+type BroadcastOperation =
   | {
-      operationType: 'create'
-      payload: DatabaseEventsMap['create']
+      type: 'create'
+      senderId: Collection<any>[typeof kCollectionId]
+      record: SerializedRecord
     }
   | {
-      operationType: 'update'
-      payload: DatabaseEventsMap['update']
+      type: 'update'
+      senderId: Collection<any>[typeof kCollectionId]
+      primaryKey: string
+      path: PropertyPath
+      nextValue: unknown
     }
   | {
-      operationType: 'delete'
-      payload: DatabaseEventsMap['delete']
+      type: 'delete'
+      senderId: Collection<any>[typeof kCollectionId]
+      primaryKey: string
     }
 
-function removeListeners<Event extends keyof DatabaseEventsMap>(
-  event: Event,
-  db: Database<any>,
-) {
-  const listeners = db.events.listeners(event) as Listener<
-    DatabaseEventsMap[Event]
-  >[]
-
-  listeners.forEach((listener) => {
-    db.events.removeListener(event, listener)
-  })
-
-  return () => {
-    listeners.forEach((listener) => {
-      db.events.addListener(event, listener)
-    })
-  }
-}
+const BROADCAST_CHANNEL_NAME = 'msw/data/sync'
 
 /**
- * Sets the serialized internal properties as symbols
- * on the given entity.
- * @note `Symbol` properties are stripped off when sending
- * an object over an event emitter.
+ * Synchronizes collection operations (create/update/delete)
+ * with the same collection in another browser tab(s).
  */
-function deserializeEntity(entity: SerializedEntity): Entity<any, any> {
-  const {
-    [SERIALIZED_INTERNAL_PROPERTIES_KEY]: internalProperties,
-    ...publicProperties
-  } = entity
+export function sync() {
+  const logger = new Logger('extension').extend('sync')
 
-  inheritInternalProperties(publicProperties, {
-    [ENTITY_TYPE]: internalProperties.entityType,
-    [PRIMARY_KEY]: internalProperties.primaryKey,
-  })
-
-  return publicProperties
-}
-
-/**
- * Synchronizes database operations across multiple clients.
- */
-export function sync(db: Database<any>) {
-  const IS_BROWSER = typeof window !== 'undefined'
-  const SUPPORTS_BROADCAST_CHANNEL = typeof BroadcastChannel !== 'undefined'
-
-  if (!IS_BROWSER || !SUPPORTS_BROADCAST_CHANNEL) {
-    return
-  }
-
-  const channel = new BroadcastChannel('mswjs/data/sync')
-
-  channel.addEventListener(
-    'message',
-    (event: MessageEvent<DatabaseMessageEventData>) => {
-      const [sourceId] = event.data.payload
-
-      // Ignore messages originating from unrelated databases.
-      // Useful in case of multiple databases on the same page.
-      if (db.id !== sourceId) {
+  return defineExtension({
+    name: 'sync',
+    extend(collection) {
+      if (
+        typeof window === 'undefined' ||
+        typeof BroadcastChannel === 'undefined'
+      ) {
         return
       }
 
-      // Remove database event listener for the signaled operation
-      // to prevent an infinite loop when applying this operation.
-      const restoreListeners = removeListeners(event.data.operationType, db)
+      const channel = new BroadcastChannel(BROADCAST_CHANNEL_NAME)
+      const hookContext = { skip: false }
 
-      // Apply the database operation signaled from another client
-      // to the current database instance.
-      switch (event.data.operationType) {
-        case 'create': {
-          const [_, modelName, entity, customPrimaryKey] = event.data.payload
-          db.create(modelName, deserializeEntity(entity), customPrimaryKey)
-          break
-        }
+      logger.log('applying extension...', { channel })
 
-        case 'update': {
-          const [_, modelName, prevEntity, nextEntity] = event.data.payload
-          db.update(
-            modelName,
-            deserializeEntity(prevEntity),
-            deserializeEntity(nextEntity),
-          )
-          break
-        }
-
-        case 'delete': {
-          const [_, modelName, primaryKey] = event.data.payload
-          db.delete(modelName, primaryKey)
-          break
+      const performWithoutBroadcasting = async (
+        callback: () => Promise<void>,
+      ): Promise<void> => {
+        try {
+          hookContext.skip = true
+          await callback()
+        } finally {
+          hookContext.skip = false
         }
       }
 
-      // Re-attach database event listeners.
-      restoreListeners()
+      channel.onmessage = async (event: MessageEvent<BroadcastOperation>) => {
+        const { data } = event
+
+        if (!isObject(data)) {
+          return
+        }
+
+        logger.log(
+          `sync event from another collection (${event.data.type})`,
+          event,
+        )
+
+        // Ignore sync events from irrelevant collections.
+        // This only works because collection ID is based on the call order
+        // and remains reproducible across runtimes.
+        if (data.senderId !== collection[kCollectionId]) {
+          logger.log(
+            `sender id (${data.senderId}) differs from this collection id (${collection[kCollectionId]}), skipping...`,
+          )
+          return
+        }
+
+        switch (data.type) {
+          case 'create': {
+            logger.warn('creating new record...', data)
+
+            /**
+             * @note Use the `.create()` method to correctly evolve the schema.
+             * This way, non-serializable schemas can survive sync as long as
+             * the initial values are serializable.
+             */
+            await performWithoutBroadcasting(async () => {
+              const record = await createFromSerializedRecord(
+                collection,
+                data.record,
+              )
+
+              /**
+               * @note Extraneous records might not have been associated with their owners
+               * at the time of sync. Manually ensure the owner is referenced in those relations.
+               */
+              record[kRelationMap].forEach((relation) => {
+                relation.foreignCollections.forEach((foreignCollection) => {
+                  const foreignRecords = foreignCollection.findMany((q) =>
+                    q.where((foreignRecord) => {
+                      return relation.foreignKeys.has(
+                        foreignRecord[kPrimaryKey],
+                      )
+                    }),
+                  )
+
+                  const foreignRelations = foreignRecords.flatMap(
+                    (foreignRecord) => {
+                      return relation.getRelationsToOwner(foreignRecord)
+                    },
+                  )
+                  foreignRelations.forEach((foreignRelation) => {
+                    foreignRelation.foreignKeys.add(record[kPrimaryKey])
+                  })
+                })
+              })
+            })
+            break
+          }
+
+          case 'update': {
+            logger.log('updating record...')
+
+            await performWithoutBroadcasting(async () => {
+              collection.update(
+                (q: Query<any>) =>
+                  q.where((record: RecordType) => {
+                    return record[kPrimaryKey] === data.primaryKey
+                  }),
+                {
+                  data(record) {
+                    set(record, data.path, data.nextValue)
+                  },
+                },
+              )
+            })
+            break
+          }
+
+          case 'delete': {
+            logger.log('deleting record...')
+
+            await performWithoutBroadcasting(async () => {
+              collection.delete((q: Query<any>) =>
+                q.where((record: RecordType) => {
+                  return record[kPrimaryKey] === data.primaryKey
+                }),
+              )
+            })
+            break
+          }
+
+          default: {
+            // @ts-expect-error Runtime validation.
+            throw new Error(`Unknown sync event type "${data.type}"`)
+          }
+        }
+      }
+
+      channel.onmessageerror = (event) => {
+        logger.log('sync channel error!', event)
+      }
+
+      const broadcastOperation = (operation: BroadcastOperation): void => {
+        logger.log('broadcasting...', operation)
+        channel.postMessage(operation)
+      }
+
+      collection.hooks.on('create', (event) => {
+        const { record, initialValues } = event.data
+
+        logger.warn(
+          'record created, should broadcast?',
+          { record, initialValues },
+          !hookContext.skip,
+        )
+
+        if (!hookContext.skip) {
+          broadcastOperation({
+            type: 'create',
+            senderId: collection[kCollectionId],
+            record: serializeRecord(record),
+          })
+        }
+      })
+
+      collection.hooks.on('update', (event) => {
+        const { prevRecord, path, nextValue } = event.data
+        logger.log('record updated, should broadcast?', !hookContext.skip)
+
+        if (!hookContext.skip) {
+          broadcastOperation({
+            type: 'update',
+            senderId: collection[kCollectionId],
+            primaryKey: prevRecord[kPrimaryKey],
+            path,
+            nextValue,
+          })
+        }
+      })
+
+      collection.hooks.on('delete', (event) => {
+        logger.log('record deleted, should broadcast?', !hookContext.skip)
+
+        if (!hookContext.skip) {
+          broadcastOperation({
+            type: 'delete',
+            senderId: collection[kCollectionId],
+            primaryKey: event.data.deletedRecord[kPrimaryKey],
+          })
+        }
+      })
     },
-  )
-
-  // Broadcast the emitted event from this client
-  // to all the other connected clients.
-  function broadcastDatabaseEvent<Event extends keyof DatabaseEventsMap>(
-    operationType: Event,
-  ) {
-    return (...payload: DatabaseEventsMap[Event]) => {
-      channel.postMessage({
-        operationType,
-        payload,
-      } as DatabaseMessageEventData)
-    }
-  }
-
-  db.events.on('create', broadcastDatabaseEvent('create'))
-  db.events.on('update', broadcastDatabaseEvent('update'))
-  db.events.on('delete', broadcastDatabaseEvent('delete'))
+  })
 }

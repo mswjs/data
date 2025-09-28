@@ -1,19 +1,10 @@
 {
-  "compilerOptions": {
-    "strict": true,
-    "strictNullChecks": true,
-    "skipLibCheck": true,
-    "outDir": "lib",
-    "declaration": true,
-    "moduleResolution": "node",
-    "downlevelIteration": true,
-    "esModuleInterop": true,
-    "noImplicitAny": true,
-    "baseUrl": ".",
-    "paths": {
-      "@mswjs/data": ["./src"]
+  "references": [
+    {
+      "path": "./tsconfig.src.json"
+    },
+    {
+      "path": "./tsconfig.test.json"
     }
-  },
-  "include": ["src/**/*.ts"],
-  "exclude": ["node_modules"]
+  ]
 }

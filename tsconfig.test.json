@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig.base.json",
+  "includes": ["./tests"],
+  "compilerOptions": {
+    "composite": true,
+    "target": "esnext",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "types": ["node", "vitest/globals"]
+  }
+}

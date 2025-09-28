@@ -1,0 +1,14 @@
+{
+  "exclude": ["node_modules", "build"],
+  "compilerOptions": {
+    "strict": true,
+    "skipLibCheck": true,
+    "moduleResolution": "nodenext",
+    "verbatimModuleSyntax": true,
+    "noUncheckedIndexedAccess": true,
+    "baseUrl": ".",
+    "paths": {
+      "#/src/*": ["src/*"]
+    }
+  }
+}

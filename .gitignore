@@ -1,3 +1,7 @@
+*.DS_Store
 node_modules
+build
 lib
-*.log
+dist
+test-results
+./tests/.tmp/**
