@@ -4,14 +4,14 @@ import z from 'zod'
 const userSchema = z.object({
   id: z.number(),
   get posts() {
-    return z.array(postSchema)
+    return z.lazy(() =>  z.array(postSchema))
   },
 })
 
 const postSchema = z.object({
   title: z.string(),
   get authors() {
-    return z.array(userSchema).optional()
+    return z.lazy(() =>  z.array(userSchema))
   },
 })
 
@@ -26,8 +26,8 @@ it('supports a many-to-many relation', async () => {
     authors: many(users),
   }))
 
-  const firstPost = await posts.create({ title: 'First' })
-  const secondPost = await posts.create({ title: 'Second' })
+  const firstPost = await posts.create({ title: 'First', authors: [] })
+  const secondPost = await posts.create({ title: 'Second', authors: [] })
 
   const firstUser = await users.create({
     id: 1,
@@ -59,8 +59,8 @@ it('respects updates of foreign records', async () => {
     authors: many(users),
   }))
 
-  const firstPost = await posts.create({ title: 'First' })
-  const secondPost = await posts.create({ title: 'Second' })
+  const firstPost = await posts.create({ title: 'First', authors: [] })
+  const secondPost = await posts.create({ title: 'Second', authors: [] })
 
   const firstUser = await users.create({
     id: 1,

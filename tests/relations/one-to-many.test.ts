@@ -4,18 +4,18 @@ import z from 'zod'
 const userSchema = z.object({
   id: z.number(),
   get posts() {
-    return z.array(postSchema)
+    return z.lazy(() => z.array(postSchema))
   },
 })
 
 const postSchema = z.object({
   title: z.string(),
   get author() {
-    return userSchema.optional()
+    return z.lazy(() => userSchema)
   },
 })
 
-it('supports a one-to-many relation', async () => {
+it.only('supports a one-to-many relation', async () => {
   const users = new Collection({ schema: userSchema })
   const posts = new Collection({ schema: postSchema })
 
@@ -25,11 +25,17 @@ it('supports a one-to-many relation', async () => {
 
   const firstUser = await users.create({
     id: 1,
-    posts: [await posts.create({ title: 'First' })],
+    posts: [],
   })
-  const secondUser = await users.create({
-    id: 2,
-    posts: [await posts.create({ title: 'Second' })],
+  await posts.create({
+    title: 'First',
+    author: firstUser,
+  })
+
+  const secondUser = await users.create({ id: 2, posts: [] })
+  await posts.create({
+    title: 'Second',
+    author: secondUser,
   })
 
   expect.soft(firstUser.posts[0]).toEqual({ title: 'First' })
@@ -61,10 +67,13 @@ it('supports a two-way one-to-many relation', async () => {
   }))
 
   {
-    const post = await posts.create({ title: 'First' })
     const user = await users.create({
       id: 1,
-      posts: [post],
+      posts: [],
+    })
+    const post = await posts.create({
+      title: 'First',
+      author: user,
     })
 
     expect(post.author).toEqual(user)
@@ -159,8 +168,9 @@ it('updates an inverse relation when the referenced record is created', async ()
 
   const user = await users.create({
     id: 1,
-    posts: [await posts.create({ title: 'First' })],
+    posts: [],
   })
+  await posts.create({ title: 'First', author: user })
   await posts.create({ title: 'Second', author: user })
 
   expect(users.findFirst((q) => q.where({ id: 1 }))).toEqual({
@@ -185,8 +195,9 @@ it('updates a one-to-many relation when the referenced record is updated', async
 
   const user = await users.create({
     id: 1,
-    posts: [await posts.create({ title: 'First' })],
+    posts: [],
   })
+  await posts.create({ title: 'First', author: user })
 
   await posts.update((q) => q.where({ title: 'First' }), {
     data(post) {
@@ -211,10 +222,8 @@ it('updates a one-to-many relation when the referenced record is dissociated', a
     author: one(users),
   }))
 
-  await users.create({
-    id: 1,
-    posts: [await posts.create({ title: 'First' })],
-  })
+  const user = await users.create({ id: 1, posts: [] })
+  await posts.create({ title: 'First', author: user })
 
   // Set a new author for the post.
   const updatedPost = await posts.update((q) => q.where({ title: 'First' }), {
@@ -280,11 +289,11 @@ it('updates the relation when the owner record is deleted', async () => {
 
   // Deleting the post, user updates.
   {
-    const post = await posts.create({ title: 'First' })
     const user = await users.create({
       id: 1,
-      posts: [post],
+      posts: [],
     })
+    const post = await posts.create({ title: 'First', author: user })
 
     posts.delete((q) => q.where({ title: 'First' }))
 
@@ -300,11 +309,11 @@ it('updates the relation when the owner record is deleted', async () => {
 
   // Deleting the user, post updates.
   {
-    const post = await posts.create({ title: 'First' })
     const user = await users.create({
       id: 1,
-      posts: [post],
+      posts: [],
     })
+    const post = await posts.create({ title: 'First', author: user })
 
     users.delete(user)
 
@@ -327,11 +336,11 @@ it('cascades foreign record deletion when the owner record is deleted', async ()
     author: one(users, { onDelete: 'cascade' }),
   }))
 
-  const post = await posts.create({ title: 'First' })
   const user = await users.create({
     id: 1,
-    posts: [post],
+    posts: [],
   })
+  const post = await posts.create({ title: 'First', author: user })
 
   users.delete(user)
 
@@ -350,8 +359,8 @@ it('supports unique one-to-many relations', async () => {
     author: one(users),
   }))
 
-  const post = await posts.create({ title: 'First' })
-  const user = await users.create({ id: 1, posts: [post] })
+  const user = await users.create({ id: 1, posts: [] })
+  const post = await posts.create({ title: 'First', author: user })
 
   expect.soft(user).toEqual({
     id: 1,
@@ -399,8 +408,8 @@ it('errors when creating a unique relation with already associated foreign recor
       author: one(users),
     }))
 
-    const post = await posts.create({ title: 'First' })
-    await users.create({ id: 1, posts: [post] })
+    const user = await users.create({ id: 1, posts: [] })
+    const post = await posts.create({ title: 'First', author: user })
 
     await expect(users.create({ id: 2, posts: [post] })).rejects.toThrow(
       'Failed to create a unique relation at "posts": foreign records already associated with another owner',
