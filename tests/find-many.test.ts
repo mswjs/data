@@ -86,3 +86,24 @@ it('returns all entries matching the query (OR)', async () => {
     { id: 3, name: 'John' },
   ])
 })
+
+it('queries by nullable properties', async () => {
+  const users = new Collection({
+    schema: z.object({
+      id: z.number(),
+      organizationId: z.number().nullable(),
+    }),
+  })
+
+  await users.create({ id: 1, organizationId: null })
+  await users.create({ id: 2, organizationId: 5 })
+  await users.create({ id: 3, organizationId: null })
+
+  expect(users.findMany((q) => q.where({ organizationId: null }))).toEqual([
+    { id: 1, organizationId: null },
+    { id: 3, organizationId: null },
+  ])
+  expect(
+    users.findMany((q) => q.where({ organizationId: (id) => id !== null })),
+  ).toEqual([{ id: 2, organizationId: 5 }])
+})
