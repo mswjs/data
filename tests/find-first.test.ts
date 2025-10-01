@@ -138,3 +138,24 @@ it('queries through array models', async () => {
     numberList.findFirst((q) => q.where((arr) => arr.includes(2))),
   ).toEqual([1, 2, 3])
 })
+
+it('queries by nullable properties', async () => {
+  const users = new Collection({
+    schema: z.object({
+      id: z.number(),
+      organizationId: z.number().nullable(),
+    }),
+  })
+
+  await users.create({ id: 1, organizationId: null })
+  await users.create({ id: 2, organizationId: 5 })
+  await users.create({ id: 3, organizationId: null })
+
+  expect(users.findFirst((q) => q.where({ organizationId: null }))).toEqual({
+    id: 1,
+    organizationId: null,
+  })
+  expect(
+    users.findFirst((q) => q.where({ organizationId: (id) => id !== null })),
+  ).toEqual({ id: 2, organizationId: 5 })
+})
