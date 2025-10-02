@@ -426,6 +426,21 @@ videos.defineRelations(({ one }) => ({
 
 > In this example, `post.attachments` is an array of either `images` or `videos`, where records from both collections are allowed.
 
+## Error handling
+
+Data provides multiple different error classes to help you differentiate and handle different errors.
+
+### `OperationError`
+
+- `operationName` `<string>`, the name of the errored operation (e.g. "create", "updateMany", etc.);
+- `info` `<object>`, additional operation information (often the operation arguments);
+- `cause` `<Error>`, a reference to the original thrown error.
+
+Thrown whenever performing an operation fails. For example:
+
+- When creating a new record whose initial values do not match the collection's schema;
+- When there are no records found for a strict query.
+
 ---
 
 ## API
