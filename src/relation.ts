@@ -117,11 +117,7 @@ export abstract class Relation {
   }
 
   get path(): PropertyPath {
-    invariant.as(
-      RelationError.for(
-        RelationErrorCodes.RELATION_NOT_READY,
-        this.#createErrorDetails(),
-      ),
+    invariant(
       this.#path != null,
       'Failed to retrieve path for relation: relation is not initialized',
     )

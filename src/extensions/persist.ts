@@ -8,7 +8,8 @@ import {
   kRelationMap,
   type RecordType,
 } from '#/src/collection.js'
-import { Logger } from '../logger.js'
+import { Logger } from '#/src/logger.js'
+import type { PropertyPath } from '#/src/utils.js'
 
 const STORAGE_KEY = 'msw/data/storage'
 const METADATA_KEY = '__metadata__'
@@ -27,7 +28,7 @@ export interface SerializedRecord {
 interface RecordMetadata {
   primaryKey: string
   relations: Array<{
-    path: Array<string>
+    path: PropertyPath
     foreignKeys: Array<string>
   }>
 }

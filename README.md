@@ -432,9 +432,8 @@ Data provides multiple different error classes to help you differentiate and han
 
 ### `OperationError`
 
-- `operationName` `<string>`, the name of the errored operation (e.g. "create", "updateMany", etc.);
-- `info` `<object>`, additional operation information (often the operation arguments);
-- `cause` `<Error>`, a reference to the original thrown error.
+- `code` `<OperationErrorCode>`, the error code describing the failed operation;
+- `cause` `<Error>` (_optional_), a reference to the original thrown error.
 
 Thrown whenever performing a record operation fails. For example:
 

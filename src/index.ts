@@ -4,7 +4,6 @@ export { Relation, type RelationDeclarationOptions } from './relation.js'
 export type { HookEventMap, HookEventListener } from './hooks.js'
 export {
   OperationError,
-  StrictOperationError,
   RelationError,
   RelationErrorCodes,
   type RelationErrorDetails,
