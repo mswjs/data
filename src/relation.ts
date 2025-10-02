@@ -1,5 +1,5 @@
 import type { StandardSchemaV1 } from '@standard-schema/spec'
-import { invariant, InvariantError } from 'outvariant'
+import { invariant, format } from 'outvariant'
 import { get, isEqual, set, unset } from 'lodash-es'
 import {
   kPrimaryKey,
@@ -9,9 +9,18 @@ import {
   type RecordType,
 } from '#/src/collection.js'
 import { Logger } from '#/src/logger.js'
-import { definePropertyAtPath, isRecord } from '#/src/utils.js'
+import {
+  definePropertyAtPath,
+  isRecord,
+  type PropertyPath,
+} from '#/src/utils.js'
+import {
+  RelationError,
+  RelationErrorCodes,
+  type RelationErrorDetails,
+} from '#/src/errors.js'
 
-interface RelationDeclarationOptions {
+export interface RelationDeclarationOptions {
   /**
    * Unique relation role to disambiguate between multiple relations
    * to the same target collection.
@@ -87,7 +96,7 @@ export const createRelationBuilder = <Owner extends Collection<any>>(
 
 export abstract class Relation {
   #logger: Logger
-  #path?: Array<string>
+  #path?: PropertyPath
 
   public foreignKeys: Set<string>
 
@@ -107,11 +116,16 @@ export abstract class Relation {
     this.foreignKeys = new Set()
   }
 
-  get path(): Array<string> {
-    invariant(
+  get path(): PropertyPath {
+    invariant.as(
+      RelationError.for(
+        RelationErrorCodes.RELATION_NOT_READY,
+        this.#createErrorDetails(),
+      ),
       this.#path != null,
       'Failed to retrieve path for relation: relation is not initialized',
     )
+
     return this.#path
   }
 
@@ -237,7 +251,11 @@ export abstract class Relation {
 
           // Throw if attempting to disassociate unique relations.
           if (this.options.unique) {
-            invariant(
+            invariant.as(
+              RelationError.for(
+                RelationErrorCodes.FORBIDDEN_UNIQUE_UPDATE,
+                this.#createErrorDetails(),
+              ),
               oldForeignRecords.length === 0,
               'Failed to update a unique relation at "%s": record already associated with another foreign record',
               update.path.join('.'),
@@ -331,7 +349,11 @@ export abstract class Relation {
 
         const recordLabel = this instanceof Many ? 'records' : 'record'
 
-        invariant(
+        invariant.as(
+          RelationError.for(
+            RelationErrorCodes.FORBIDDEN_UNIQUE_CREATE,
+            this.#createErrorDetails(),
+          ),
           isUnique,
           `Failed to create a unique relation at "%s": foreign ${recordLabel} already associated with another owner`,
           this.path.join('.'),
@@ -341,7 +363,11 @@ export abstract class Relation {
       for (const foreignRecord of initialForeignEntries) {
         const foreignKey = foreignRecord[kPrimaryKey]
 
-        invariant(
+        invariant.as(
+          RelationError.for(
+            RelationErrorCodes.INVALID_FOREIGN_RECORD,
+            this.#createErrorDetails(),
+          ),
           foreignKey != null,
           'Failed to store foreign record reference for "%s" relation: the referenced record (%j) is missing the primary key',
           serializedPath,
@@ -387,10 +413,14 @@ export abstract class Relation {
         return this.getDefaultValue()
       },
       set: () => {
-        throw new InvariantError(
-          'Failed to set property "%s" on collection (%s): relational properties are read-only and can only be updated via collection updates',
-          serializedPath,
-          this.ownerCollection[kCollectionId],
+        throw new RelationError(
+          format(
+            'Failed to set property "%s" on collection (%s): relational properties are read-only and can only be updated via collection updates',
+            serializedPath,
+            this.ownerCollection[kCollectionId],
+          ),
+          RelationErrorCodes.UNEXPECTED_SET_EXPRESSION,
+          this.#createErrorDetails(),
         )
       },
     })
@@ -420,6 +450,15 @@ export abstract class Relation {
     }
 
     return result
+  }
+
+  #createErrorDetails(): RelationErrorDetails {
+    return {
+      path: this.path,
+      ownerCollection: this.ownerCollection,
+      foreignCollections: this.foreignCollections,
+      options: this.options,
+    }
   }
 }
 

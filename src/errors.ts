@@ -1,5 +1,7 @@
 import { InvariantError } from 'outvariant'
-import type { Collection } from './collection.js'
+import type { Collection } from '#/src/collection.js'
+import type { PropertyPath } from '#/src/utils.js'
+import type { RelationDeclarationOptions } from '#/src/relation.js'
 
 export interface OperationErrorMap {
   create: {
@@ -44,7 +46,9 @@ export class OperationError<
     operationName: OperationName,
     info: OperationErrorMap[OperationName],
   ) {
-    return (message: string) => new OperationError(message, operationName, info)
+    return (message: string) => {
+      return new OperationError(message, operationName, info)
+    }
   }
 
   constructor(
@@ -61,4 +65,35 @@ export class StrictOperationError<
   OperationName extends keyof OperationErrorMap,
 > extends OperationError<OperationName> {
   static for = OperationError.for
+}
+
+export enum RelationErrorCodes {
+  RELATION_NOT_READY = 'RELATION_NOT_READY',
+  UNEXPECTED_SET_EXPRESSION = 'UNEXPECTED_SET_EXPRESSION',
+  INVALID_FOREIGN_RECORD = 'INVALID_FOREIGN_RECORD',
+  FORBIDDEN_UNIQUE_CREATE = 'FORBIDDEN_UNIQUE_CREATE',
+  FORBIDDEN_UNIQUE_UPDATE = 'FORBIDDEN_UNIQUE_UPDATE',
+}
+
+export interface RelationErrorDetails {
+  path: PropertyPath
+  ownerCollection: Collection<any>
+  foreignCollections: Array<Collection<any>>
+  options: RelationDeclarationOptions
+}
+
+export class RelationError extends Error {
+  static for(code: RelationErrorCodes, details: RelationErrorDetails) {
+    return (message: string) => {
+      return new RelationError(message, code, details)
+    }
+  }
+
+  constructor(
+    message: string,
+    public readonly code: RelationErrorCodes,
+    public readonly details: RelationErrorDetails,
+  ) {
+    super(message)
+  }
 }
