@@ -1,5 +1,5 @@
 import { kRelationMap } from '#/src/collection.js'
-import { Collection } from '#/src/index.js'
+import { Collection, RelationError, RelationErrorCodes } from '#/src/index.js'
 import { isRecord } from '#/src/utils.js'
 import z from 'zod'
 
@@ -273,9 +273,24 @@ it('supports unique one-to-one relations', async () => {
   expect
     .soft(posts.findFirst((q) => q.where({ author: { id: updatedUser!.id } })))
     .toEqual(post)
+
+  const anotherUser = await users.create({ id: 2 })
+  await expect(
+    posts.update(post, {
+      data(post) {
+        // This must not error since the provided foreign record (user)
+        // is not associated with any owners (posts).
+        post.author = anotherUser
+      },
+    }),
+    'Updates the unique relational property',
+  ).resolves.toEqual({
+    title: 'First',
+    author: anotherUser,
+  })
 })
 
-it('errors when updating a unique relation that has already been associated', async () => {
+it('errors when creating a unique relation with a foreign record that has already been associated', async () => {
   const userSchema = z.object({ id: z.number() })
   const postSchema = z.object({
     title: z.string(),
@@ -290,17 +305,57 @@ it('errors when updating a unique relation that has already been associated', as
   }))
 
   const user = await users.create({ id: 1 })
-  const firstPost = await posts.create({ title: 'First', author: user })
+  await posts.create({ title: 'First', author: user })
 
-  expect(firstPost.author).toEqual(user)
+  await expect(posts.create({ title: 'Second', author: user })).rejects.toThrow(
+    new RelationError(
+      `Failed to create a unique relation at "author": the foreign record is already associated with another owner`,
+      RelationErrorCodes.FORBIDDEN_UNIQUE_CREATE,
+      {
+        path: ['author'],
+        ownerCollection: posts,
+        foreignCollections: [users],
+        options: { unique: true },
+      },
+    ),
+  )
+})
+
+it('errors when updating a unique relation with a foreign record that has already been associated', async () => {
+  const userSchema = z.object({ id: z.number() })
+  const postSchema = z.object({
+    title: z.string(),
+    author: userSchema,
+  })
+
+  const users = new Collection({ schema: userSchema })
+  const posts = new Collection({ schema: postSchema })
+
+  posts.defineRelations(({ one }) => ({
+    author: one(users, { unique: true }),
+  }))
+
+  const firstUser = await users.create({ id: 1 })
+  const secondUser = await users.create({ id: 2 })
+  await posts.create({ title: 'First', author: firstUser })
+  await posts.create({ title: 'Second', author: secondUser })
 
   await expect(
-    posts.update((q) => q.where({ title: 'First' }), {
+    posts.update((q) => q.where({ title: 'Second' }), {
       async data(post) {
-        post.author = await users.create({ id: 2 })
+        post.author = firstUser
       },
     }),
   ).rejects.toThrow(
-    `Failed to update a unique relation at "author": record already associated with another foreign record`,
+    new RelationError(
+      `Failed to update a unique relation at "author": the foreign record is already associated with another owner`,
+      RelationErrorCodes.FORBIDDEN_UNIQUE_UPDATE,
+      {
+        path: ['author'],
+        ownerCollection: posts,
+        foreignCollections: [users],
+        options: { unique: true },
+      },
+    ),
   )
 })

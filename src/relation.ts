@@ -253,7 +253,7 @@ export abstract class Relation {
                 this.#createErrorDetails(),
               ),
               oldForeignRecords.length === 0,
-              'Failed to update a unique relation at "%s": record already associated with another foreign record',
+              'Failed to update a unique relation at "%s": the foreign record is already associated with another owner',
               update.path.join('.'),
             )
           }
