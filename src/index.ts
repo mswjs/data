@@ -1,5 +1,10 @@
 export { Collection, type CollectionOptions } from './collection.js'
 export { Query, type Condition, type PredicateFunction } from './query.js'
-export { Relation } from './relation.js'
+export { Relation, type RelationDeclarationOptions } from './relation.js'
 export type { HookEventMap, HookEventListener } from './hooks.js'
-export { OperationError, StrictOperationError } from './errors.js'
+export {
+  OperationError,
+  RelationError,
+  RelationErrorCodes,
+  type RelationErrorDetails,
+} from './errors.js'

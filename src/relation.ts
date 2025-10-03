@@ -1,5 +1,5 @@
 import type { StandardSchemaV1 } from '@standard-schema/spec'
-import { invariant, InvariantError } from 'outvariant'
+import { invariant, format } from 'outvariant'
 import { get, isEqual, set, unset } from 'lodash-es'
 import {
   kPrimaryKey,
@@ -9,9 +9,18 @@ import {
   type RecordType,
 } from '#/src/collection.js'
 import { Logger } from '#/src/logger.js'
-import { definePropertyAtPath, isRecord } from '#/src/utils.js'
+import {
+  definePropertyAtPath,
+  isRecord,
+  type PropertyPath,
+} from '#/src/utils.js'
+import {
+  RelationError,
+  RelationErrorCodes,
+  type RelationErrorDetails,
+} from '#/src/errors.js'
 
-interface RelationDeclarationOptions {
+export interface RelationDeclarationOptions {
   /**
    * Unique relation role to disambiguate between multiple relations
    * to the same target collection.
@@ -87,7 +96,7 @@ export const createRelationBuilder = <Owner extends Collection<any>>(
 
 export abstract class Relation {
   #logger: Logger
-  #path?: Array<string>
+  #path?: PropertyPath
 
   public foreignKeys: Set<string>
 
@@ -107,11 +116,12 @@ export abstract class Relation {
     this.foreignKeys = new Set()
   }
 
-  get path(): Array<string> {
+  get path(): PropertyPath {
     invariant(
       this.#path != null,
       'Failed to retrieve path for relation: relation is not initialized',
     )
+
     return this.#path
   }
 
@@ -235,22 +245,41 @@ export abstract class Relation {
             },
           )
 
-          // Throw if attempting to disassociate unique relations.
-          if (this.options.unique) {
-            invariant(
-              oldForeignRecords.length === 0,
-              'Failed to update a unique relation at "%s": record already associated with another foreign record',
-              update.path.join('.'),
-            )
-          }
-
           const foreignRelationsToDisassociate = oldForeignRecords.flatMap(
             (record) => this.getRelationsToOwner(record),
           )
 
+          // Throw if attempting to disassociate unique relations.
+          if (this.options.unique) {
+            invariant.as(
+              RelationError.for(
+                RelationErrorCodes.FORBIDDEN_UNIQUE_UPDATE,
+                this.#createErrorDetails(),
+              ),
+              foreignRelationsToDisassociate.length === 0,
+              'Failed to update a unique relation at "%s": the foreign record is already associated with another owner',
+              update.path.join('.'),
+            )
+          }
+
           for (const foreignRelation of foreignRelationsToDisassociate) {
             foreignRelation.foreignKeys.delete(update.prevRecord[kPrimaryKey])
           }
+
+          // Check any other owners associated with the same foreign record.
+          // This is important since unique relations are not always two-way.
+          const otherOwnersAssociatedWithForeignRecord =
+            this.#getOtherOwnerForRecords([update.nextValue])
+
+          invariant.as(
+            RelationError.for(
+              RelationErrorCodes.FORBIDDEN_UNIQUE_UPDATE,
+              this.#createErrorDetails(),
+            ),
+            otherOwnersAssociatedWithForeignRecord == null,
+            'Failed to update a unique relation at "%s": the foreign record is already associated with another owner',
+            update.path.join('.'),
+          )
 
           this.foreignKeys.clear()
         }
@@ -302,7 +331,7 @@ export abstract class Relation {
         initialValue,
       )
 
-      const initialForeignEntries: Array<RecordType> = Array.prototype
+      const initialForeignRecords: Array<RecordType> = Array.prototype
         .concat([], get(initialValues, path))
         /**
          * @note If the initial value as an empty array, concatenating it above
@@ -310,16 +339,11 @@ export abstract class Relation {
          */
         .filter(Boolean)
 
-      logger.log('all foreign entries:', initialForeignEntries)
+      logger.log('all foreign entries:', initialForeignRecords)
 
-      /**
-       * @todo Check if:
-       * 1. Relation is unique;
-       * 2. Foreign entries already reference something!
-       * Then, throw.
-       */
       if (this.options.unique) {
-        const foreignRelations = initialForeignEntries.flatMap(
+        // Check if the foreign record isn't associated with another owner.
+        const foreignRelations = initialForeignRecords.flatMap(
           (foreignRecord) => {
             return this.getRelationsToOwner(foreignRecord)
           },
@@ -329,19 +353,39 @@ export abstract class Relation {
           (relation) => relation.foreignKeys.size === 0,
         )
 
-        const recordLabel = this instanceof Many ? 'records' : 'record'
-
-        invariant(
+        invariant.as(
+          RelationError.for(
+            RelationErrorCodes.FORBIDDEN_UNIQUE_CREATE,
+            this.#createErrorDetails(),
+          ),
           isUnique,
-          `Failed to create a unique relation at "%s": foreign ${recordLabel} already associated with another owner`,
-          this.path.join('.'),
+          `Failed to create a unique relation at "%s": the foreign record is already associated with another owner`,
+          serializedPath,
+        )
+
+        // Check if another owner isn't associated with the foreign record.
+        const otherOwnersAssociatedWithForeignRecord =
+          this.#getOtherOwnerForRecords(initialForeignRecords)
+
+        invariant.as(
+          RelationError.for(
+            RelationErrorCodes.FORBIDDEN_UNIQUE_CREATE,
+            this.#createErrorDetails(),
+          ),
+          otherOwnersAssociatedWithForeignRecord == null,
+          'Failed to create a unique relation at "%s": the foreign record is already associated with another owner',
+          serializedPath,
         )
       }
 
-      for (const foreignRecord of initialForeignEntries) {
+      for (const foreignRecord of initialForeignRecords) {
         const foreignKey = foreignRecord[kPrimaryKey]
 
-        invariant(
+        invariant.as(
+          RelationError.for(
+            RelationErrorCodes.INVALID_FOREIGN_RECORD,
+            this.#createErrorDetails(),
+          ),
           foreignKey != null,
           'Failed to store foreign record reference for "%s" relation: the referenced record (%j) is missing the primary key',
           serializedPath,
@@ -387,10 +431,14 @@ export abstract class Relation {
         return this.getDefaultValue()
       },
       set: () => {
-        throw new InvariantError(
-          'Failed to set property "%s" on collection (%s): relational properties are read-only and can only be updated via collection updates',
-          serializedPath,
-          this.ownerCollection[kCollectionId],
+        throw new RelationError(
+          format(
+            'Failed to set property "%s" on collection (%s): relational properties are read-only and can only be updated via collection updates',
+            serializedPath,
+            this.ownerCollection[kCollectionId],
+          ),
+          RelationErrorCodes.UNEXPECTED_SET_EXPRESSION,
+          this.#createErrorDetails(),
         )
       },
     })
@@ -420,6 +468,34 @@ export abstract class Relation {
     }
 
     return result
+  }
+
+  #getOtherOwnerForRecords(
+    foreignRecords: Array<RecordType>,
+  ): RecordType | undefined {
+    const serializedPath = this.path.join('.')
+
+    return this.ownerCollection.findFirst((q) => {
+      return q.where((otherOwner) => {
+        const otherOwnerRelations = otherOwner[kRelationMap]
+        const otherOwnerRelation = otherOwnerRelations.get(serializedPath)
+
+        // Forego any other relation comparisons since the same collection
+        // shares the relation definition at the same property path.
+        return foreignRecords.some((foreignRecord) => {
+          return otherOwnerRelation.foreignKeys.has(foreignRecord[kPrimaryKey])
+        })
+      })
+    })
+  }
+
+  #createErrorDetails(): RelationErrorDetails {
+    return {
+      path: this.path,
+      ownerCollection: this.ownerCollection,
+      foreignCollections: this.foreignCollections,
+      options: this.options,
+    }
   }
 }
 

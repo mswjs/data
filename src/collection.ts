@@ -19,7 +19,7 @@ import {
 } from '#/src/utils.js'
 import { type SortOptions, sortResults } from '#/src/sort.js'
 import type { Extension } from '#/src/extensions/index.js'
-import { OperationError, StrictOperationError } from '#/src/errors.js'
+import { OperationError, OperationErrorCodes } from '#/src/errors.js'
 import { TypedEvent, type Emitter } from 'rettime'
 
 let collectionsCreated = 0
@@ -131,16 +131,17 @@ export class Collection<Schema extends StandardSchemaV1> {
 
     if (validationResult.issues) {
       console.error(validationResult.issues)
-      throw new InvariantError(
-        'Failed to create a new record with initial values (%j): does not match the schema',
-        initialValues,
+
+      throw new OperationError(
+        'Failed to create a new record with initial values: does not match the schema. Please see the schema validation errors above.',
+        OperationErrorCodes.INVALID_INITIAL_VALUES,
       )
     }
 
     let record = validationResult.value as RecordType
 
     invariant.as(
-      OperationError.for('create', { initialValues }),
+      OperationError.for(OperationErrorCodes.INVALID_INITIAL_VALUES),
       typeof record === 'object',
       'Failed to create a record with initial values (%j): expected the record to be an object or an array',
       initialValues,
@@ -207,8 +208,7 @@ export class Collection<Schema extends StandardSchemaV1> {
     return await Promise.all(pendingPromises).catch((error) => {
       throw new OperationError(
         'Failed to execute "createMany" on collection: unexpected error',
-        'createMany',
-        { count, initialValuesFactory },
+        OperationErrorCodes.UNEXPECTED_ERROR,
         error,
       )
     })
@@ -232,7 +232,7 @@ export class Collection<Schema extends StandardSchemaV1> {
       const firstRecord = this.#records[0]
 
       invariant.as(
-        StrictOperationError.for('findFirst', { predicate, options }),
+        OperationError.for(OperationErrorCodes.STRICT_QUERY_WITHOUT_RESULTS),
         options?.strict ? firstRecord != null : true,
         'Failed to execute "findFirst" on collection without a query: the collection is empty',
       )
@@ -245,7 +245,7 @@ export class Collection<Schema extends StandardSchemaV1> {
     ).next().value
 
     invariant.as(
-      StrictOperationError.for('findFirst', { predicate, options }),
+      OperationError.for(OperationErrorCodes.STRICT_QUERY_WITHOUT_RESULTS),
       options?.strict ? result != null : true,
       'Failed to execute "findFirst" on collection: no record found matching the query',
     )
@@ -277,7 +277,7 @@ export class Collection<Schema extends StandardSchemaV1> {
     )
 
     invariant.as(
-      StrictOperationError.for('findMany', { predicate, options }),
+      OperationError.for(OperationErrorCodes.STRICT_QUERY_WITHOUT_RESULTS),
       options?.strict ? results.length > 0 : true,
       'Failed to execute "findMany" on collection: no records found matching the query',
     )
@@ -324,7 +324,7 @@ export class Collection<Schema extends StandardSchemaV1> {
 
     if (prevRecord == null) {
       invariant.as(
-        StrictOperationError.for('update', { predicate, options }),
+        OperationError.for(OperationErrorCodes.STRICT_QUERY_WITHOUT_RESULTS),
         !options.strict,
         'Failed to execute "update" on collection: no record found matching the query',
       )
@@ -363,7 +363,7 @@ export class Collection<Schema extends StandardSchemaV1> {
 
     if (prevRecords.length === 0) {
       invariant.as(
-        StrictOperationError.for('updateMany', { predicate, options }),
+        OperationError.for(OperationErrorCodes.STRICT_QUERY_WITHOUT_RESULTS),
         !options.strict,
         'Failed to execute "updateMany" on collection: no records found matching the query',
       )
@@ -409,7 +409,7 @@ export class Collection<Schema extends StandardSchemaV1> {
 
     if (record == null) {
       invariant.as(
-        StrictOperationError.for('delete', { predicate, options }),
+        OperationError.for(OperationErrorCodes.STRICT_QUERY_WITHOUT_RESULTS),
         !options?.strict,
         'Failed to execute "delete" on collection: no record found matching the query',
       )
@@ -445,7 +445,7 @@ export class Collection<Schema extends StandardSchemaV1> {
 
     if (records.length === 0) {
       invariant.as(
-        StrictOperationError.for('deleteMany', { predicate, options }),
+        OperationError.for(OperationErrorCodes.STRICT_QUERY_WITHOUT_RESULTS),
         !options?.strict,
         'Failed to execute "deleteMany" on collection: no records found matching the query',
       )
