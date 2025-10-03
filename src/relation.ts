@@ -359,7 +359,7 @@ export abstract class Relation {
             this.#createErrorDetails(),
           ),
           isUnique,
-          `Failed to create a unique relation at "%s": foreign ${this instanceof Many ? 'records' : 'record'} already associated with another owner`,
+          `Failed to create a unique relation at "%s": the foreign record is already associated with another owner`,
           serializedPath,
         )
 

@@ -131,8 +131,9 @@ export class Collection<Schema extends StandardSchemaV1> {
 
     if (validationResult.issues) {
       console.error(validationResult.issues)
+
       throw new OperationError(
-        'Failed to create a new record with initial values (%j): does not match the schema. Please see the schema validation errors above.',
+        'Failed to create a new record with initial values: does not match the schema. Please see the schema validation errors above.',
         OperationErrorCodes.INVALID_INITIAL_VALUES,
       )
     }

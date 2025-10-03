@@ -403,7 +403,7 @@ it('errors when creating a unique relation with already associated foreign recor
     await users.create({ id: 1, posts: [post] })
 
     await expect(users.create({ id: 2, posts: [post] })).rejects.toThrow(
-      'Failed to create a unique relation at "posts": foreign records already associated with another owner',
+      'Failed to create a unique relation at "posts": the foreign record is already associated with another owner',
     )
   }
 
@@ -425,7 +425,7 @@ it('errors when creating a unique relation with already associated foreign recor
     await expect(
       posts.create({ title: 'Second', author: user }),
     ).rejects.toThrow(
-      'Failed to create a unique relation at "author": foreign record already associated with another owner',
+      'Failed to create a unique relation at "author": the foreign record is already associated with another owner',
     )
   }
 })
