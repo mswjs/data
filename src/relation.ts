@@ -245,6 +245,10 @@ export abstract class Relation {
             },
           )
 
+          const foreignRelationsToDisassociate = oldForeignRecords.flatMap(
+            (record) => this.getRelationsToOwner(record),
+          )
+
           // Throw if attempting to disassociate unique relations.
           if (this.options.unique) {
             invariant.as(
@@ -252,19 +256,30 @@ export abstract class Relation {
                 RelationErrorCodes.FORBIDDEN_UNIQUE_UPDATE,
                 this.#createErrorDetails(),
               ),
-              oldForeignRecords.length === 0,
+              foreignRelationsToDisassociate.length === 0,
               'Failed to update a unique relation at "%s": the foreign record is already associated with another owner',
               update.path.join('.'),
             )
           }
 
-          const foreignRelationsToDisassociate = oldForeignRecords.flatMap(
-            (record) => this.getRelationsToOwner(record),
-          )
-
           for (const foreignRelation of foreignRelationsToDisassociate) {
             foreignRelation.foreignKeys.delete(update.prevRecord[kPrimaryKey])
           }
+
+          // Check any other owners associated with the same foreign record.
+          // This is important since unique relations are not always two-way.
+          const otherOwnersAssociatedWithForeignRecord =
+            this.#getOtherOwnerForRecords([update.nextValue])
+
+          invariant.as(
+            RelationError.for(
+              RelationErrorCodes.FORBIDDEN_UNIQUE_UPDATE,
+              this.#createErrorDetails(),
+            ),
+            otherOwnersAssociatedWithForeignRecord == null,
+            'Failed to update a unique relation at "%s": the foreign record is already associated with another owner',
+            update.path.join('.'),
+          )
 
           this.foreignKeys.clear()
         }
@@ -316,7 +331,7 @@ export abstract class Relation {
         initialValue,
       )
 
-      const initialForeignEntries: Array<RecordType> = Array.prototype
+      const initialForeignRecords: Array<RecordType> = Array.prototype
         .concat([], get(initialValues, path))
         /**
          * @note If the initial value as an empty array, concatenating it above
@@ -324,16 +339,11 @@ export abstract class Relation {
          */
         .filter(Boolean)
 
-      logger.log('all foreign entries:', initialForeignEntries)
+      logger.log('all foreign entries:', initialForeignRecords)
 
-      /**
-       * @todo Check if:
-       * 1. Relation is unique;
-       * 2. Foreign entries already reference something!
-       * Then, throw.
-       */
       if (this.options.unique) {
-        const foreignRelations = initialForeignEntries.flatMap(
+        // Check if the foreign record isn't associated with another owner.
+        const foreignRelations = initialForeignRecords.flatMap(
           (foreignRecord) => {
             return this.getRelationsToOwner(foreignRecord)
           },
@@ -343,20 +353,32 @@ export abstract class Relation {
           (relation) => relation.foreignKeys.size === 0,
         )
 
-        const recordLabel = this instanceof Many ? 'records' : 'record'
-
         invariant.as(
           RelationError.for(
             RelationErrorCodes.FORBIDDEN_UNIQUE_CREATE,
             this.#createErrorDetails(),
           ),
           isUnique,
-          `Failed to create a unique relation at "%s": foreign ${recordLabel} already associated with another owner`,
-          this.path.join('.'),
+          `Failed to create a unique relation at "%s": foreign ${this instanceof Many ? 'records' : 'record'} already associated with another owner`,
+          serializedPath,
+        )
+
+        // Check if another owner isn't associated with the foreign record.
+        const otherOwnersAssociatedWithForeignRecord =
+          this.#getOtherOwnerForRecords(initialForeignRecords)
+
+        invariant.as(
+          RelationError.for(
+            RelationErrorCodes.FORBIDDEN_UNIQUE_CREATE,
+            this.#createErrorDetails(),
+          ),
+          otherOwnersAssociatedWithForeignRecord == null,
+          'Failed to create a unique relation at "%s": the foreign record is already associated with another owner',
+          serializedPath,
         )
       }
 
-      for (const foreignRecord of initialForeignEntries) {
+      for (const foreignRecord of initialForeignRecords) {
         const foreignKey = foreignRecord[kPrimaryKey]
 
         invariant.as(
@@ -446,6 +468,25 @@ export abstract class Relation {
     }
 
     return result
+  }
+
+  #getOtherOwnerForRecords(
+    foreignRecords: Array<RecordType>,
+  ): RecordType | undefined {
+    const serializedPath = this.path.join('.')
+
+    return this.ownerCollection.findFirst((q) => {
+      return q.where((otherOwner) => {
+        const otherOwnerRelations = otherOwner[kRelationMap]
+        const otherOwnerRelation = otherOwnerRelations.get(serializedPath)
+
+        // Forego any other relation comparisons since the same collection
+        // shares the relation definition at the same property path.
+        return foreignRecords.some((foreignRecord) => {
+          return otherOwnerRelation.foreignKeys.has(foreignRecord[kPrimaryKey])
+        })
+      })
+    })
   }
 
   #createErrorDetails(): RelationErrorDetails {

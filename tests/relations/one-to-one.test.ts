@@ -241,7 +241,7 @@ it('applies relation to records created before the relation is defined', async (
   })
 })
 
-it('supports unique one-to-one relations', async () => {
+it('supports creating unique one-to-one relations', async () => {
   const userSchema = z.object({ id: z.number() })
   const postSchema = z.object({
     title: z.string(),
@@ -274,7 +274,45 @@ it('supports unique one-to-one relations', async () => {
     .soft(posts.findFirst((q) => q.where({ author: { id: updatedUser!.id } })))
     .toEqual(post)
 
-  const anotherUser = await users.create({ id: 2 })
+  const anotherUser = await users.create({ id: 5 })
+  await expect(
+    posts.update(post, {
+      data(post) {
+        // This must not error since the provided foreign record (user)
+        // is not associated with any owners (posts).
+        post.author = anotherUser
+      },
+    }),
+    'Updates the unique relational property',
+  ).resolves.toEqual({
+    title: 'First',
+    author: anotherUser,
+  })
+})
+
+it('supports updating unique one-to-one relations', async () => {
+  const userSchema = z.object({ id: z.number() })
+  const postSchema = z.object({
+    title: z.string(),
+    author: userSchema,
+  })
+
+  const users = new Collection({ schema: userSchema })
+  const posts = new Collection({ schema: postSchema })
+
+  posts.defineRelations(({ one }) => ({
+    author: one(users, { unique: true }),
+  }))
+
+  const user = await users.create({ id: 1 })
+  const post = await posts.create({ title: 'First', author: user })
+
+  expect.soft(post.author).toEqual(user)
+  expect
+    .soft(posts.findFirst((q) => q.where({ author: { id: user.id } })))
+    .toEqual(post)
+
+  const anotherUser = await users.create({ id: 5 })
   await expect(
     posts.update(post, {
       data(post) {
@@ -307,6 +345,7 @@ it('errors when creating a unique relation with a foreign record that has alread
   const user = await users.create({ id: 1 })
   await posts.create({ title: 'First', author: user })
 
+  // Cannot create another post referencing the same `user` as the author.
   await expect(posts.create({ title: 'Second', author: user })).rejects.toThrow(
     new RelationError(
       `Failed to create a unique relation at "author": the foreign record is already associated with another owner`,
