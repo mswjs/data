@@ -35,32 +35,19 @@ export type CollectionOptions<Schema extends StandardSchemaV1> = {
   extensions?: Array<Extension>
 }
 
-export type PaginationOptions<Schema extends StandardSchemaV1> =
-  | OffsetPaginationOptions
-  | CursorPaginationOptions<Schema>
-
-export interface OffsetPaginationOptions {
-  cursor?: never
+export interface PaginationOptions<Schema extends StandardSchemaV1> {
   /**
-   * A number of matching records to take (after the skip).
+   * A reference to a record to use as a cursor to start the querying from.
+   */
+  cursor?: RecordType<StandardSchemaV1.InferOutput<Schema>>
+  /**
+   * A number of matching records to take (after `skip`, if any).
    */
   take?: number
   /**
    * A number of matching records to skip.
    */
   skip?: number
-}
-
-export interface CursorPaginationOptions<Schema extends StandardSchemaV1> {
-  skip?: never
-  /**
-   * A reference to a record to use as a cursor to start the querying from.
-   */
-  cursor: RecordType<StandardSchemaV1.InferOutput<Schema>>
-  /**
-   * A number of matching records to take (after the skip).
-   */
-  take?: number
 }
 
 export interface UpdateOptions<T> {
@@ -619,12 +606,34 @@ export class Collection<Schema extends StandardSchemaV1> {
   > {
     const { take, cursor, skip } = options
 
+    invariant(
+      typeof skip !== 'undefined' ? Number.isInteger(skip) && skip >= 0 : true,
+      'Failed to query the collection: expected the "skip" pagination option to be a number larger or equal to 0 but got %j',
+      skip,
+    )
+
     let taken = 0
     let skipped = 0
-    let store = this.#records
+
+    // if (cursor != null) {
+    //   const cursorIndex = store.findIndex((record) => {
+    //     return record[kPrimaryKey] === cursor[kPrimaryKey]
+    //   })
+
+    //   if (cursorIndex === -1) {
+    //     return
+    //   }
+
+    //   store = store.slice(cursorIndex + 1)
+    // }
+
+    const shouldTake = Math.abs(take ?? Infinity)
+    const delta = take && take < 0 ? -1 : 1
+    let start = delta === 1 ? 0 : this.#records.length - 1
+    const end = delta === 1 ? this.#records.length : -1
 
     if (cursor != null) {
-      const cursorIndex = store.findIndex((record) => {
+      const cursorIndex = this.#records.findIndex((record) => {
         return record[kPrimaryKey] === cursor[kPrimaryKey]
       })
 
@@ -632,10 +641,12 @@ export class Collection<Schema extends StandardSchemaV1> {
         return
       }
 
-      store = store.slice(cursorIndex + 1)
+      start = cursorIndex
     }
 
-    for (const record of store) {
+    for (let i = start; i !== end; i += delta) {
+      const record = this.#records[i]
+
       if (query.test(record)) {
         if (skip != null) {
           if (skipped < skip) {
@@ -648,7 +659,7 @@ export class Collection<Schema extends StandardSchemaV1> {
         taken++
       }
 
-      if (taken >= (take ?? Infinity)) {
+      if (taken >= shouldTake) {
         break
       }
     }
