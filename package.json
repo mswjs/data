@@ -22,6 +22,14 @@
     "./extensions": {
       "types": "./build/extensions/index.d.ts",
       "default": "./build/extensions/index.js"
+    },
+    "./extensions/sync": {
+      "types": "./build/extensions/sync.d.ts",
+      "default": "./build/extensions/sync.js"
+    },
+    "./extensions/persist": {
+      "types": "./build/extensions/persist.d.ts",
+      "default": "./build/extensions/persist.js"
     }
   },
   "files": [

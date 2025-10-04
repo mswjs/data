@@ -777,7 +777,7 @@ Synchronizes collection changes, like creating/updating/deleting records, with t
 
 ```ts
 import { Collection } from '@msw/data'
-import { sync } from '@msw/data/extensions'
+import { sync } from '@msw/data/extensions/sync'
 
 const users = new Collection({
   schema,
@@ -794,7 +794,7 @@ Persist the records in the collection between page reloads.
 
 ```ts
 import { Collection } from '@msw/data'
-import { persist } from '@msw/data/extensions'
+import { persist } from '@msw/data/extensions/persist'
 
 const users = new Collection({
   schema,
