@@ -162,6 +162,17 @@ users.findMany(
 )
 ```
 
+The negative value for `take` is also supported to have backward pagination:
+
+```ts
+users.findMany(
+  (q) => q.where({ email: (email) => email.includes('@google.com') }),
+  {
+    take: -5,
+  },
+)
+````
+
 ### Cursor-based pagination
 
 Provide a reference to the record of the same collection as the `cursor` property for cursor-based pagination.

@@ -161,20 +161,21 @@ it('supports negative values for `take`', async () => {
     'Returns the last n results if `skip` is not provided',
   ).toEqual([{ id: 10 }, { id: 9 }, { id: 8 }])
 
-  expect(
-    users.findMany(undefined, { skip: 3, take: -3 }),
-    'Respects `skip`',
-  ).toEqual([{ id: 7 }, { id: 6 }, { id: 5 }])
+  expect(users.findMany(undefined, { skip: 3, take: -3 })).toEqual([
+    { id: 7 },
+    { id: 6 },
+    { id: 5 },
+  ])
 
   expect(
     users.findMany((q) => q.where({ id: (id) => id > 2 }), { take: -3 }),
-    'Supports looping the results',
-  ).toEqual([{ id: 2 }, { id: 1 }, { id: 10 }])
+    'Does not loop the results',
+  ).toEqual([{ id: 10 }, { id: 9 }, { id: 8 }])
 
   expect(
     users.findMany((q) => q.where({ id: (id) => id > 2 }), {
       skip: 3,
       take: -3,
     }),
-  ).toEqual([{ id: 9 }, { id: 8 }, { id: 7 }])
+  ).toEqual([{ id: 7 }, { id: 6 }, { id: 5 }])
 })
