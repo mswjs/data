@@ -112,26 +112,63 @@ it('returns an empty array if all the results were skipped', async () => {
   ).toEqual([])
 })
 
+it('throws if providing an invalid value for `skip`', async () => {
+  const users = new Collection({ schema: userSchema })
+  await users.createMany(10, (index) => ({
+    id: index + 1,
+  }))
+
+  expect(() => users.findMany(undefined, { skip: -1 })).toThrow(
+    'Failed to query the collection: expected the "skip" pagination option to be a number larger or equal to 0 but got -1',
+  )
+
+  expect(() =>
+    users.findMany(undefined, {
+      // @ts-expect-error Intentionally invalid value.
+      skip: false,
+    }),
+  ).toThrow(
+    'Failed to query the collection: expected the "skip" pagination option to be a number larger or equal to 0 but got false',
+  )
+
+  expect(() =>
+    users.findMany(undefined, {
+      // @ts-expect-error Intentionally invalid value.
+      skip: null,
+    }),
+  ).toThrow(
+    'Failed to query the collection: expected the "skip" pagination option to be a number larger or equal to 0 but got null',
+  )
+
+  expect(() =>
+    users.findMany(undefined, {
+      // @ts-expect-error Intentionally invalid value.
+      skip: 'invalid',
+    }),
+  ).toThrow(
+    'Failed to query the collection: expected the "skip" pagination option to be a number larger or equal to 0 but got "invalid"',
+  )
+})
+
 it('supports negative values for `take`', async () => {
   const users = new Collection({ schema: userSchema })
   await users.createMany(10, (index) => ({
     id: index + 1,
   }))
 
-  expect(users.findMany(undefined, { take: -3 })).toEqual([
-    { id: 10 },
-    { id: 9 },
-    { id: 8 },
-  ])
+  expect(
+    users.findMany(undefined, { take: -3 }),
+    'Returns the last n results if `skip` is not provided',
+  ).toEqual([{ id: 10 }, { id: 9 }, { id: 8 }])
 
-  expect(users.findMany(undefined, { skip: 3, take: -3 })).toEqual([
-    { id: 7 },
-    { id: 6 },
-    { id: 5 },
-  ])
+  expect(
+    users.findMany(undefined, { skip: 3, take: -3 }),
+    'Respects `skip`',
+  ).toEqual([{ id: 7 }, { id: 6 }, { id: 5 }])
 
   expect(
     users.findMany((q) => q.where({ id: (id) => id > 2 }), { take: -3 }),
+    'Supports looping the results',
   ).toEqual([{ id: 2 }, { id: 1 }, { id: 10 }])
 
   expect(
