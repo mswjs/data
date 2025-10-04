@@ -1,5 +1,15 @@
 {
   "type": "module",
   "main": "./../build/extensions/index.js",
-  "types": "./../build/extensions/index.d.ts"
+  "types": "./../build/extensions/index.d.ts",
+  "exports": {
+    "./sync": {
+      "types": "./../build/extensions/sync.d.ts",
+      "default": "./../build/extensions/sync.js"
+    },
+    "./persist": {
+      "types": "./../build/extensions/persist.d.ts",
+      "default": "./../build/extensions/persist.js"
+    }
+  }
 }
