@@ -111,3 +111,33 @@ it('returns an empty array if all the results were skipped', async () => {
     'Supports regular queries',
   ).toEqual([])
 })
+
+it('supports negative values for `take`', async () => {
+  const users = new Collection({ schema: userSchema })
+  await users.createMany(10, (index) => ({
+    id: index + 1,
+  }))
+
+  expect(users.findMany(undefined, { take: -3 })).toEqual([
+    { id: 10 },
+    { id: 9 },
+    { id: 8 },
+  ])
+
+  expect(users.findMany(undefined, { skip: 3, take: -3 })).toEqual([
+    { id: 7 },
+    { id: 6 },
+    { id: 5 },
+  ])
+
+  expect(
+    users.findMany((q) => q.where({ id: (id) => id > 2 }), { take: -3 }),
+  ).toEqual([{ id: 2 }, { id: 1 }, { id: 10 }])
+
+  expect(
+    users.findMany((q) => q.where({ id: (id) => id > 2 }), {
+      skip: 3,
+      take: -3,
+    }),
+  ).toEqual([{ id: 9 }, { id: 8 }, { id: 7 }])
+})
