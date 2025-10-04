@@ -35,12 +35,11 @@ export type CollectionOptions<Schema extends StandardSchemaV1> = {
   extensions?: Array<Extension>
 }
 
-export type PaginationOptions<Schema extends StandardSchemaV1> =
-  | OffsetPaginationOptions
-  | CursorPaginationOptions<Schema>
-
-export interface OffsetPaginationOptions {
-  cursor?: never
+export interface PaginationOptions<Schema extends StandardSchemaV1> {
+  /**
+   * A reference to a record to use as a cursor to start the querying from.
+   */
+  cursor?: RecordType<StandardSchemaV1.InferOutput<Schema>>
   /**
    * A number of matching records to take (after `skip`, if any).
    */
@@ -49,18 +48,6 @@ export interface OffsetPaginationOptions {
    * A number of matching records to skip.
    */
   skip?: number
-}
-
-export interface CursorPaginationOptions<Schema extends StandardSchemaV1> {
-  skip?: never
-  /**
-   * A reference to a record to use as a cursor to start the querying from.
-   */
-  cursor: RecordType<StandardSchemaV1.InferOutput<Schema>>
-  /**
-   * A number of matching records to take (after the skip).
-   */
-  take?: number
 }
 
 export interface UpdateOptions<T> {

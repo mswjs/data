@@ -48,6 +48,20 @@ it('returns the `take` number of results after the cursor', async () => {
   ).toEqual([{ id: 7 }, { id: 8 }, { id: 9 }])
 })
 
+it('supports skipping the cursor', async () => {
+  const users = new Collection({ schema: userSchema })
+  await users.createMany(10, (index) => ({
+    id: index + 1,
+  }))
+
+  const cursor = users.findFirst((q) => q.where({ id: 7 }))!
+
+  expect(
+    users.findMany(undefined, { cursor, skip: 1, take: 3 }),
+    'Supports match-all queries',
+  ).toEqual([{ id: 8 }, { id: 9 }, { id: 10 }])
+})
+
 it('supports negative values for `take`', async () => {
   const users = new Collection({ schema: userSchema })
   await users.createMany(10, (index) => ({
@@ -64,11 +78,28 @@ it('supports negative values for `take`', async () => {
   ).toEqual([{ id: 10 }, { id: 9 }, { id: 8 }])
 
   expect(
+    users.findMany(undefined, {
+      cursor,
+      skip: 1,
+      take: -3,
+    }),
+    'Supports skipping the cursor',
+  ).toEqual([{ id: 9 }, { id: 8 }, { id: 7 }])
+
+  expect(
     users.findMany((q) => q.where({ id: (id) => id > 2 }), {
       cursor: users.findFirst((q) => q.where({ id: 8 })),
       take: -3,
     }),
   ).toEqual([{ id: 8 }, { id: 7 }, { id: 6 }])
+
+  expect(
+    users.findMany((q) => q.where({ id: (id) => id > 2 }), {
+      cursor: users.findFirst((q) => q.where({ id: 8 })),
+      skip: 1,
+      take: -3,
+    }),
+  ).toEqual([{ id: 7 }, { id: 6 }, { id: 5 }])
 
   expect(
     users.findMany((q) => q.where({ id: (id) => id > 2 }), {

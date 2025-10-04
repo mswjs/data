@@ -79,7 +79,6 @@ it('supports offset-based pagination', () => {
 
   users.findMany(undefined, {
     skip: 5,
-    // @ts-expect-error
     cursor: users.findFirst(),
   })
 })
@@ -94,7 +93,6 @@ it('supports cursor-based pagination', () => {
   users.findMany(undefined, { take: 5, cursor })
 
   users.findMany(undefined, {
-    // @ts-expect-error
     cursor: users.findFirst(),
     skip: 5,
   })
