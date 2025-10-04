@@ -1,5 +1,8 @@
 [standard-schema]: https://standardschema.dev/
 
+<p align="center">
+  <img src="logo.svg" alt="Data logo" width="124" />
+</p>
 <h1 align="center"><code>@msw/data</code></h1>
 <p align="center">Data querying library for testing JavaScript applications.</p>
 
