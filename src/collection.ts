@@ -473,6 +473,10 @@ export class Collection<Schema extends StandardSchemaV1> {
    * Deletes all the records in this collection.
    */
   public clear(): void {
+    for (const record of this.#records) {
+      this.#deleteRecord(record)
+    }
+
     this.#records.length = 0
   }
 

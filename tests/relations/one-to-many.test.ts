@@ -339,6 +339,30 @@ it('cascades foreign record deletion when the owner record is deleted', async ()
   expect(users.all()).toEqual([])
 })
 
+it('cascades foreign record deletion when clearing the entire collection', async () => {
+  const users = new Collection({ schema: userSchema })
+  const posts = new Collection({ schema: postSchema })
+
+  users.defineRelations(({ many }) => ({
+    posts: many(posts),
+  }))
+  posts.defineRelations(({ one }) => ({
+    // When the referenced author is deleted, delete all their posts.
+    author: one(users, { onDelete: 'cascade' }),
+  }))
+
+  const post = await posts.create({ title: 'First' })
+  const user = await users.create({
+    id: 1,
+    posts: [post],
+  })
+
+  users.clear()
+
+  expect(posts.all()).toEqual([])
+  expect(users.all()).toEqual([])
+})
+
 it('supports unique one-to-many relations', async () => {
   const users = new Collection({ schema: userSchema })
   const posts = new Collection({ schema: postSchema })
