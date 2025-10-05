@@ -1,7 +1,7 @@
 {
   "type": "module",
   "name": "@msw/data",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Data querying library for testing JavaScript applications.",
   "scripts": {
     "dev": "tsdown -w",
