@@ -1,5 +1,5 @@
 import type { StandardSchemaV1 } from '@standard-schema/spec'
-import { get } from 'lodash-es'
+import { get } from 'es-toolkit/compat';
 import { apply, create as createDraft, type Draft, type Patch } from 'mutative'
 import { invariant, InvariantError } from 'outvariant'
 import { Logger } from '#/src/logger.js'

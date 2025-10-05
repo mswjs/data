@@ -1,5 +1,5 @@
 import type { StandardSchemaV1 } from '@standard-schema/spec'
-import { get } from 'lodash-es'
+import { get } from 'es-toolkit/compat';
 import { toDeepEntries } from '#/src/utils.js'
 
 export type SortDirection = 'asc' | 'desc'

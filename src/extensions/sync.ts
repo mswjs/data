@@ -1,4 +1,4 @@
-import { set } from 'lodash-es'
+import { set } from 'es-toolkit/compat';
 import { defineExtension } from '#/src/extensions/index.js'
 import {
   kCollectionId,

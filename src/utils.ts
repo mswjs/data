@@ -1,5 +1,5 @@
 import { invariant } from 'outvariant'
-import { isPlainObject } from 'lodash-es'
+import { isPlainObject } from 'es-toolkit';
 import { kPrimaryKey, type RecordType } from '#/src/collection.js'
 
 /**

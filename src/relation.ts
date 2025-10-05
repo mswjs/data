@@ -1,6 +1,7 @@
 import type { StandardSchemaV1 } from '@standard-schema/spec'
 import { invariant, format } from 'outvariant'
-import { get, isEqual, set, unset } from 'lodash-es'
+import { isEqual } from 'es-toolkit'
+import { get, set, unset } from 'es-toolkit/compat'
 import {
   kPrimaryKey,
   kRelationMap,
