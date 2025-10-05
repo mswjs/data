@@ -1,4 +1,4 @@
-import { set } from 'es-toolkit/compat';
+import { set } from 'es-toolkit/compat'
 import { defineExtension } from '#/src/extensions/index.js'
 import {
   kCollectionId,

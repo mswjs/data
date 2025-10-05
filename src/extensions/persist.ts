@@ -1,5 +1,5 @@
 import { invariant } from 'outvariant'
-import { unset } from 'es-toolkit/compat';
+import { unset } from 'es-toolkit/compat'
 import { defineExtension } from '#/src/extensions/index.js'
 import {
   Collection,
