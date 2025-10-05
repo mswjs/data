@@ -1,5 +1,5 @@
 import { invariant } from 'outvariant'
-import { unset } from 'lodash-es'
+import { unset } from 'es-toolkit/compat'
 import { defineExtension } from '#/src/extensions/index.js'
 import {
   Collection,
