@@ -48,7 +48,7 @@
   ],
   "license": "MIT",
   "author": "Artem Zakharchenko <kettanaito@gmail.com>",
-  "homepage": "https://github.com/mswjs/data.git",
+  "homepage": "https://github.com/mswjs/data",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/mswjs/data.git"
