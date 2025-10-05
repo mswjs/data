@@ -16,7 +16,7 @@ users.findFirst({
 })
 ```
 
-Mixing record properties and logical properties results in queries that are hard to read. Compare this to the builder syntax that wraps predicates in logical experesions instead:
+Mixing record properties and logical properties results in queries that are hard to read. Compare this to the builder syntax that wraps predicates in logical expressions instead:
 
 ```ts
 users.findFirst((q) =>

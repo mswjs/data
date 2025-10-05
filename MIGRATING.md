@@ -57,7 +57,7 @@ The concept of a primary key has been deprecated entirely. You do not have to pr
 
 ### Default values
 
-You can provide default values to the properies of your collection using the respective syntax of your schema library of choice. For example, here's how you list default values in Zod:
+You can provide default values to the properties of your collection using the respective syntax of your schema library of choice. For example, here's how you list default values in Zod:
 
 ```ts
 const users = new Collection({

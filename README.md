@@ -248,7 +248,7 @@ const userSchema = z.object({
 const countrySchema = z.object({ code: z.string() })
 
 const users = new Collection({ schema: userSchema })
-const contries = new Collection({ schema: countrySchema })
+const countries = new Collection({ schema: countrySchema })
 
 // Declare the relations on the `users` collection.
 users.defineRelations(({ one }) => ({
@@ -379,7 +379,7 @@ const mechanic = await mechanics.create({ name: 'Kyle', car })
 mechanic.car.owner.name // "John"
 ```
 
-> Note that although `mechanics` does not define an explcit relation to `owners`, you can get the owner of the car associated with a mechanic through the `car` relation.
+> Note that although `mechanics` does not define an explicit relation to `owners`, you can get the owner of the car associated with a mechanic through the `car` relation.
 
 ### Unique relations
 
@@ -652,7 +652,7 @@ users.defineRelations(({ many }) => ({
 
 ##### Relational utilities
 
-The following relational utilies are exposed in the argument to this method:
+The following relational utilities are exposed in the argument to this method:
 
 - `one(collection[, options])`, defines a one-of relation to the given collection;
 - `many(collection[, options])`, defines a many-of relation to the given collection.
