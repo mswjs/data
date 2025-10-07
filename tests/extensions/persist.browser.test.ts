@@ -1,4 +1,3 @@
-import { waitForDebugger } from 'inspector'
 import { test, expect } from 'playwright.extend.js'
 
 test('persists records across page reloads', async ({ serve, page }) => {

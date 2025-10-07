@@ -1,5 +1,4 @@
 import { Collection, Query } from '#/src/index.js'
-import type { isInt16Array } from 'node:util/types'
 import z from 'zod'
 
 const userSchema = z.object({
