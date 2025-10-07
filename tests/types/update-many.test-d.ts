@@ -2,7 +2,6 @@ import {
   Collection,
   type RecordType,
   type UpdateFunction,
-  type UpdateOptions,
 } from '#/src/collection.js'
 import type { SortDirection } from '#/src/sort.js'
 import z from 'zod'

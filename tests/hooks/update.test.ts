@@ -1,5 +1,5 @@
 import { Collection } from '#/src/collection.js'
-import type { HookEventListener, HookEventMap } from '#/src/hooks.js'
+import type { HookEventListener } from '#/src/hooks.js'
 import { isRecord } from '#/src/utils.js'
 import z from 'zod'
 
