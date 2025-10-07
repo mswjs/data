@@ -15,7 +15,7 @@ it('infers initial values from primitives in the schema', async () => {
   expectTypeOf(new Collection({ schema: z.object({ id: z.string() }) }).create)
     .parameter(0)
     .toEqualTypeOf<{ id: string }>()
-  z
+
   expectTypeOf(
     new Collection({ schema: z.object({ id: z.string().optional() }) }).create,
   )
