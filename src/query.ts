@@ -74,7 +74,7 @@ export class Query<T> {
           return Object.entries(condition).every(([key, selector]) => {
             const actualValue = record[key]
 
-            if (typeof actualValue === 'undefined') {
+            if (actualValue === undefined) {
               return false
             }
 

@@ -417,7 +417,7 @@ export abstract class Relation {
           returnValue,
         )
 
-        if (typeof returnValue !== 'undefined') {
+        if (returnValue !== undefined) {
           return returnValue
         }
 
@@ -516,7 +516,7 @@ class One extends Relation {
       /**
        * @note `null` is a valid value for nullable relations.
        */
-      if (typeof record !== 'undefined') {
+      if (record !== undefined) {
         return record
       }
     }
