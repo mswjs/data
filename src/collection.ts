@@ -611,7 +611,7 @@ export class Collection<Schema extends StandardSchemaV1> {
     const { take, cursor, skip } = options
 
     invariant(
-      typeof skip !== 'undefined' ? Number.isInteger(skip) && skip >= 0 : true,
+      skip !== undefined ? Number.isInteger(skip) && skip >= 0 : true,
       'Failed to query the collection: expected the "skip" pagination option to be a number larger or equal to 0 but got %j',
       skip,
     )
