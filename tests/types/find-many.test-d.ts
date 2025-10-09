@@ -113,9 +113,9 @@ it('supports sorting the results', () => {
     .toHaveProperty('orderBy')
     .toEqualTypeOf<
       | {
-          id?: SortDirection | undefined
-          name?: SortDirection | undefined
-          nested?: { key?: SortDirection | undefined }
+          id?: SortDirection
+          name?: SortDirection
+          nested?: { key?: SortDirection }
         }
       | undefined
     >()

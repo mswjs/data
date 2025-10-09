@@ -10,7 +10,7 @@ it('infers initial values from primitives in the schema', async () => {
     new Collection({ schema: z.object({ id: z.number().optional() }) }).create,
   )
     .parameter(0)
-    .toEqualTypeOf<{ id?: number | undefined }>()
+    .toEqualTypeOf<{ id?: number }>()
 
   expectTypeOf(new Collection({ schema: z.object({ id: z.string() }) }).create)
     .parameter(0)
@@ -20,7 +20,7 @@ it('infers initial values from primitives in the schema', async () => {
     new Collection({ schema: z.object({ id: z.string().optional() }) }).create,
   )
     .parameter(0)
-    .toEqualTypeOf<{ id?: string | undefined }>()
+    .toEqualTypeOf<{ id?: string }>()
 })
 
 it('infers initial values from a nested schema', async () => {
@@ -40,7 +40,7 @@ it('infers initial values from a nested schema', async () => {
     }).create,
   )
     .parameter(0)
-    .toEqualTypeOf<{ address: { street?: string | undefined } }>()
+    .toEqualTypeOf<{ address: { street?: string } }>()
 
   expectTypeOf(
     new Collection({
@@ -50,7 +50,7 @@ it('infers initial values from a nested schema', async () => {
     }).create,
   )
     .parameter(0)
-    .toEqualTypeOf<{ address?: { street: string } | undefined }>()
+    .toEqualTypeOf<{ address?: { street: string } }>()
 })
 
 it('infers the record type (return type) from the schema', async () => {
@@ -60,7 +60,7 @@ it('infers the record type (return type) from the schema', async () => {
 
   expectTypeOf(
     new Collection({ schema: z.object({ id: z.number().optional() }) }).create,
-  ).returns.resolves.toEqualTypeOf<RecordType<{ id?: number | undefined }>>()
+  ).returns.resolves.toEqualTypeOf<RecordType<{ id?: number }>>()
 
   expectTypeOf(
     new Collection({ schema: z.object({ id: z.string() }) }).create,
@@ -68,7 +68,7 @@ it('infers the record type (return type) from the schema', async () => {
 
   expectTypeOf(
     new Collection({ schema: z.object({ id: z.string().optional() }) }).create,
-  ).returns.resolves.toEqualTypeOf<RecordType<{ id?: string | undefined }>>()
+  ).returns.resolves.toEqualTypeOf<RecordType<{ id?: string }>>()
 
   expectTypeOf(
     new Collection({
@@ -85,7 +85,7 @@ it('infers the record type (return type) from the schema', async () => {
       }),
     }).create,
   ).returns.resolves.toEqualTypeOf<
-    RecordType<{ address: { street?: string | undefined } }>
+    RecordType<{ address: { street?: string } }>
   >()
 
   expectTypeOf(
@@ -95,6 +95,6 @@ it('infers the record type (return type) from the schema', async () => {
       }),
     }).create,
   ).returns.resolves.toEqualTypeOf<
-    RecordType<{ address?: { street: string } | undefined }>
+    RecordType<{ address?: { street: string } }>
   >()
 })
