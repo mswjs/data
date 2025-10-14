@@ -199,7 +199,11 @@ export abstract class Relation {
     this.ownerCollection.hooks.earlyOn('update', async (event) => {
       const update = event.data
 
-      if (path.every((key, index) => key === update.path[index])) {
+      if (
+        // Skip direct relational property updates (handled later).
+        update.path.length > this.path.length &&
+        path.every((key, index) => key === update.path[index])
+      ) {
         event.preventDefault()
         event.stopImmediatePropagation()
 
@@ -208,7 +212,9 @@ export abstract class Relation {
         // Handle foreign record updates through a many-of relation.
         // In those cases, the update comes for a specific index so we must update the appropriate foreign record.
         if (this instanceof Many) {
-          const foreignRecordIndex = foreignUpdatePath.shift()
+          const [foreignRecordIndex, ...nestedForeignUpdatePath] =
+            foreignUpdatePath
+
           invariant(
             typeof foreignRecordIndex === 'number',
             'Failed to update a foreign record: the first position in the update path must be a number',
@@ -229,7 +235,7 @@ export abstract class Relation {
 
           await foreignCollection.update(foreignRecord, {
             data(foreignRecord) {
-              set(foreignRecord, foreignUpdatePath, update.nextValue)
+              set(foreignRecord, nestedForeignUpdatePath, update.nextValue)
             },
           })
 
@@ -265,7 +271,12 @@ export abstract class Relation {
       const update = event.data
 
       if (isEqual(update.path, path) && isRecord(update.nextValue)) {
-        event.preventDefault()
+        /**
+         * @note Do not prevent default here as it will cause "RangeError: Maximum call stack size exceeded".
+         * Preventing the default in the update hook rolls back the current update. There's no reason to
+         * roll back the relational property update because the getter will be defined on top of the
+         * literal value, overriding it anyway.
+         */
 
         // If the owner relation is "one-of", multiple foreign records cannot own this record.
         // Disassociate the old foreign records from pointing to the owner record.

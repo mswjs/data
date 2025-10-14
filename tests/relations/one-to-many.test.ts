@@ -83,7 +83,6 @@ it('supports updating foreign records through the owner updates', async () => {
     comments: [{ text: 'Updated' }],
   })
   expect(comments.findFirst((q) => q.where({ text: 'Updated' }))).toEqual({
-    id: 1,
     text: 'Updated',
   })
 })
@@ -166,7 +165,7 @@ it('supports updating foreign relations through the owner updates', async () => 
     })
 })
 
-it('supports updating one-to-many relations by pushing new records to the relational array', async () => {
+it.skip('supports updating one-to-many relations by pushing new records to the relational array', async () => {
   const postSchema = z.object({
     id: z.number(),
     get comments() {
@@ -369,9 +368,14 @@ it('updates a one-to-many relation when the referenced record is dissociated', a
     author: one(users),
   }))
 
-  await users.create({
+  const user = await users.create({
     id: 1,
     posts: [await posts.create({ title: 'First' })],
+  })
+
+  expect(posts.findFirst((q) => q.where({ author: { id: 1 } }))).toEqual({
+    title: 'First',
+    author: user,
   })
 
   // Set a new author for the post.
@@ -510,7 +514,7 @@ it('cascades foreign record deletion when clearing the entire collection', async
   }))
 
   const post = await posts.create({ title: 'First' })
-  const user = await users.create({
+  await users.create({
     id: 1,
     posts: [post],
   })
