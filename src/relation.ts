@@ -190,34 +190,74 @@ export abstract class Relation {
      * (the owner had no updates, it just updated a foreign record through itself).
      *
      * @example
-     * await users.update(q, { data: { country: { code: 'uk' } } })
+     * await users.update(q, {
+     *   data(user) {
+     *     user.country.code = 'uk'
+     *   }
+     * })
      */
-    this.ownerCollection.hooks.earlyOn('update', (event) => {
+    this.ownerCollection.hooks.earlyOn('update', async (event) => {
       const update = event.data
 
       if (
-        path.every((key, index) => key === update.path[index]) &&
-        !isRecord(update.nextValue)
+        // Skip direct relational property updates (handled later).
+        update.path.length > this.path.length &&
+        path.every((key, index) => key === update.path[index])
       ) {
         event.preventDefault()
         event.stopImmediatePropagation()
 
         const foreignUpdatePath = update.path.slice(path.length)
 
-        for (const foreignCollection of this.foreignCollections) {
-          foreignCollection.updateMany(
-            (q) => {
-              return q.where((record) => {
-                return this.foreignKeys.has(record[kPrimaryKey])
-              })
-            },
-            {
-              data(foreignRecord) {
-                set(foreignRecord, foreignUpdatePath, update.nextValue)
-              },
-            },
+        // Handle foreign record updates through a many-of relation.
+        // In those cases, the update comes for a specific index so we must update the appropriate foreign record.
+        if (this instanceof Many) {
+          const [foreignRecordIndex, ...nestedForeignUpdatePath] =
+            foreignUpdatePath
+
+          invariant(
+            typeof foreignRecordIndex === 'number',
+            'Failed to update a foreign record: the first position in the update path must be a number',
           )
+
+          const foreignRecordPrimaryKey = Array.from(this.foreignKeys)[
+            foreignRecordIndex
+          ]
+          invariant(
+            foreignRecordPrimaryKey != null,
+            'Failed to update a foreign record: cannot find a foreign record primary key by index %d',
+            foreignRecordIndex,
+          )
+
+          const [foreignRecord, foreignCollection] = this.#getForeignRecord(
+            foreignRecordPrimaryKey,
+          )
+
+          await foreignCollection.update(foreignRecord, {
+            data(foreignRecord) {
+              set(foreignRecord, nestedForeignUpdatePath, update.nextValue)
+            },
+          })
+
+          return
         }
+
+        await Promise.all(
+          this.foreignCollections.map((foreignCollection) => {
+            return foreignCollection.updateMany(
+              (q) => {
+                return q.where((record) => {
+                  return this.foreignKeys.has(record[kPrimaryKey])
+                })
+              },
+              {
+                data(foreignRecord) {
+                  set(foreignRecord, foreignUpdatePath, update.nextValue)
+                },
+              },
+            )
+          }),
+        )
       }
     })
 
@@ -231,7 +271,12 @@ export abstract class Relation {
       const update = event.data
 
       if (isEqual(update.path, path) && isRecord(update.nextValue)) {
-        event.preventDefault()
+        /**
+         * @note Do not prevent default here as it will cause "RangeError: Maximum call stack size exceeded".
+         * Preventing the default in the update hook rolls back the current update. There's no reason to
+         * roll back the relational property update because the getter will be defined on top of the
+         * literal value, overriding it anyway.
+         */
 
         // If the owner relation is "one-of", multiple foreign records cannot own this record.
         // Disassociate the old foreign records from pointing to the owner record.
@@ -488,6 +533,32 @@ export abstract class Relation {
         })
       })
     })
+  }
+
+  #getForeignRecord(primaryKey: string): [RecordType, Collection<any>] {
+    let record: RecordType | undefined
+    let collection: Collection<any> | undefined
+
+    for (const foreignCollection of this.foreignCollections) {
+      record = foreignCollection.findFirst((q) =>
+        q.where((record) => {
+          return record[kPrimaryKey] === primaryKey
+        }),
+      )
+
+      if (record != null) {
+        collection = foreignCollection
+        break
+      }
+    }
+
+    invariant(
+      record != null && collection != null,
+      'Failed to find a foreign record by primary key "%s"',
+      primaryKey,
+    )
+
+    return [record, collection] as const
   }
 
   #createErrorDetails(): RelationErrorDetails {
