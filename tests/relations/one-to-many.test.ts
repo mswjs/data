@@ -165,7 +165,7 @@ it('supports updating foreign relations through the owner updates', async () => 
     })
 })
 
-it.skip('supports updating one-to-many relations by pushing new records to the relational array', async () => {
+it('supports updating one-to-many relations by pushing new records to the relational array', async () => {
   const postSchema = z.object({
     id: z.number(),
     get comments() {
