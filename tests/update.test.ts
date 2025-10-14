@@ -136,48 +136,6 @@ it('supports deleting an item from an array as an update', async () => {
   })
 })
 
-it('supports adding an item to a one-to-many relation as an update', async () => {
-  const postSchema = z.object({
-    id: z.number(),
-    get comments() {
-      return z.array(commentSchema)
-    },
-  })
-  const commentSchema = z.object({
-    text: z.string(),
-  })
-
-  const posts = new Collection({ schema: postSchema })
-  const comments = new Collection({ schema: commentSchema })
-
-  posts.defineRelations(({ many }) => ({
-    comments: many(comments),
-  }))
-
-  await posts.create({
-    id: 1,
-    comments: [
-      await comments.create({ text: 'First!' }),
-      await comments.create({ text: 'Thanks for watching.' }),
-    ],
-  })
-
-  let newComment = await comments.create({ text: 'New and shiny!' });
-
-  await expect(
-    posts.update((q) => q.where({ id: 1 }), {
-      data(post) {
-        post.comments.push(newComment)
-      },
-    }),
-  ).resolves.toEqual({ id: 1, comments: [{ text: 'First!' }, { text: 'Thanks for watching.' }, { text: 'New and shiny!' }] })
-
-  expect(posts.findFirst((q) => q.where({ id: 1 }))).toEqual({
-    id: 1,
-    numbers: [{ text: 'First!' }, { text: 'Thanks for watching.' }, { text: 'New and shiny!' }],
-  })
-})
-
 it('re-applies the schema on updates', async () => {
   const users = new Collection({
     schema: schema

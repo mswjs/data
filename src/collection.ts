@@ -540,7 +540,7 @@ export class Collection<Schema extends StandardSchemaV1> {
       path: Array<string | number | symbol> = [],
     ): unknown => {
       if (Array.isArray(value)) {
-        return value.map((value, index) => sanitize(value, path.concat(index)))
+        return value.map((child, index) => sanitize(child, path.concat(index)))
       }
 
       if (isObject(value)) {
@@ -734,7 +734,7 @@ export class Collection<Schema extends StandardSchemaV1> {
     const frozenPrevRecord = cloneWithInternals(
       prevRecord,
       ({ key, descriptor }) => {
-        return typeof key === 'symbol' && descriptor.get == null
+        return typeof key === 'symbol' && descriptor.get === undefined
       },
     )
 
@@ -745,7 +745,7 @@ export class Collection<Schema extends StandardSchemaV1> {
     )
 
     const [maybeNextRecord, patches, inversePatches] = await createDraft(
-      prevRecord,
+      frozenPrevRecord,
       updateData,
       {
         strict: false,
@@ -793,7 +793,7 @@ export class Collection<Schema extends StandardSchemaV1> {
         },
       })
 
-      this.hooks.emit(updateEvent)
+      await this.hooks.emitAsPromise(updateEvent)
 
       if (updateEvent.defaultPrevented) {
         const inversePatch = inversePatches[i]
@@ -832,12 +832,21 @@ export class Collection<Schema extends StandardSchemaV1> {
     logger.log('schema re-applied!')
 
     const descriptors = Object.getOwnPropertyDescriptors(prevRecord)
-    for (const key of Reflect.ownKeys(descriptors)) {
-      const descriptor = descriptors[key as keyof typeof descriptors]
-      if (typeof key === 'symbol' || typeof descriptor.get === 'function') {
-        Object.defineProperty(finalRecord, key, descriptor)
-      }
-    }
+
+    Object.defineProperties(
+      finalRecord,
+      Object.fromEntries(
+        Reflect.ownKeys(descriptors)
+          .map<[any, TypedPropertyDescriptor<any>]>((key) => {
+            return [key, descriptors[key as keyof typeof descriptors]]
+          })
+          .filter(([key, descriptor]) => {
+            return (
+              typeof key === 'symbol' || typeof descriptor.get === 'function'
+            )
+          }),
+      ),
+    )
 
     return finalRecord
   }

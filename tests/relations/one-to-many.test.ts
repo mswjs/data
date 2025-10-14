@@ -49,6 +49,164 @@ it('supports a one-to-many relation', async () => {
     })
 })
 
+it('supports updating foreign records through the owner updates', async () => {
+  const postSchema = z.object({
+    id: z.number(),
+    get comments() {
+      return z.array(commentSchema)
+    },
+  })
+  const commentSchema = z.object({
+    text: z.string(),
+  })
+
+  const posts = new Collection({ schema: postSchema })
+  const comments = new Collection({ schema: commentSchema })
+
+  posts.defineRelations(({ many }) => ({
+    comments: many(comments),
+  }))
+
+  await posts.create({
+    id: 1,
+    comments: [await comments.create({ text: 'First' })],
+  })
+
+  await expect(
+    posts.update((q) => q.where({ id: 1 }), {
+      data(post) {
+        post.comments[0]!.text = 'Updated'
+      },
+    }),
+  ).resolves.toEqual({
+    id: 1,
+    comments: [{ text: 'Updated' }],
+  })
+  expect(comments.findFirst((q) => q.where({ text: 'Updated' }))).toEqual({
+    id: 1,
+    text: 'Updated',
+  })
+})
+
+it('supports updating foreign relations through the owner updates', async () => {
+  const postSchema = z.object({
+    id: z.number(),
+    get comments() {
+      return z.array(commentSchema)
+    },
+  })
+  const locationSchema = z.object({
+    lat: z.string(),
+  })
+  const commentSchema = z.object({
+    text: z.string(),
+    location: locationSchema.optional(),
+  })
+
+  const posts = new Collection({ schema: postSchema })
+  const comments = new Collection({ schema: commentSchema })
+  const locations = new Collection({ schema: locationSchema })
+
+  posts.defineRelations(({ many }) => ({
+    comments: many(comments),
+  }))
+  comments.defineRelations(({ one }) => ({
+    location: one(locations),
+  }))
+
+  await posts.create({
+    id: 1,
+    comments: [
+      await comments.create({
+        text: 'First',
+        location: await locations.create({
+          lat: '40.7128° N',
+        }),
+      }),
+    ],
+  })
+
+  await expect(
+    posts.update((q) => q.where({ id: 1 }), {
+      async data(post) {
+        post.comments[0]!.location = await locations.create({
+          lat: '40.7128° N',
+        })
+      },
+    }),
+    'Replaces the foreign relation',
+  ).resolves.toEqual({
+    id: 1,
+    comments: [{ text: 'First', location: { lat: '40.7128° N' } }],
+  })
+  expect(
+    comments.findFirst((q) => q.where({ location: { lat: '40.7128° N' } })),
+  ).toEqual({
+    text: 'First',
+    location: { lat: '40.7128° N' },
+  })
+
+  await expect
+    .soft(
+      posts.update((q) => q.where({ id: 1 }), {
+        data(post) {
+          post.comments[0]!.location!.lat = '10.0001° N'
+        },
+      }),
+      'Updates the nested foreign record',
+    )
+    .resolves.toEqual({
+      id: 1,
+      comments: [{ text: 'First', location: { lat: '10.0001° N' } }],
+    })
+  expect
+    .soft(locations.findFirst((q) => q.where({ lat: '10.0001° N' })))
+    .toEqual({
+      lat: '10.0001° N',
+    })
+})
+
+it('supports updating one-to-many relations by pushing new records to the relational array', async () => {
+  const postSchema = z.object({
+    id: z.number(),
+    get comments() {
+      return z.array(commentSchema)
+    },
+  })
+  const commentSchema = z.object({
+    text: z.string(),
+  })
+
+  const posts = new Collection({ schema: postSchema })
+  const comments = new Collection({ schema: commentSchema })
+
+  posts.defineRelations(({ many }) => ({
+    comments: many(comments),
+  }))
+
+  await posts.create({
+    id: 1,
+    comments: [await comments.create({ text: 'First' })],
+  })
+
+  const newComment = await comments.create({ text: 'Third' })
+
+  await expect(
+    posts.update((q) => q.where({ id: 1 }), {
+      data(post) {
+        post.comments.push(newComment)
+      },
+    }),
+  ).resolves.toEqual({
+    id: 1,
+    comments: [{ text: 'First' }, { text: 'Second' }],
+  })
+  expect(posts.findFirst((q) => q.where({ id: 1 }))).toEqual({
+    id: 1,
+    numbers: [{ text: 'First!' }, { text: 'Second!' }],
+  })
+})
+
 it('supports a two-way one-to-many relation', async () => {
   const users = new Collection({ schema: userSchema })
   const posts = new Collection({ schema: postSchema })
