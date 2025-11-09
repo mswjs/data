@@ -7,7 +7,7 @@ import {
   type Collection,
   type RecordType,
 } from '#/src/collection.js'
-import { Query } from '#/src/query.js'
+import type { Query } from '#/src/query.js'
 import { isObject, type PropertyPath } from '#/src/utils.js'
 import { Logger } from '#/src/logger.js'
 import {
