@@ -2,10 +2,10 @@ import { invariant } from 'outvariant'
 import { unset } from 'es-toolkit/compat'
 import { defineExtension } from '#/src/extensions/index.js'
 import {
-  Collection,
   kCollectionId,
   kPrimaryKey,
   kRelationMap,
+  type Collection,
   type RecordType,
 } from '#/src/collection.js'
 import { Logger } from '#/src/logger.js'
@@ -81,7 +81,7 @@ export function persist() {
         persistedData.collectionId,
       )
 
-      logger.log(`found (${persistedData.records.length}) records to hydate!`)
+      logger.log(`found (${persistedData.records.length}) records to hydrate!`)
 
       await Promise.all(
         persistedData.records.map(async (serializedRecord) => {

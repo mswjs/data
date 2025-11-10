@@ -1,5 +1,5 @@
 import type { StandardSchemaV1 } from '@standard-schema/spec'
-import { invariant, format } from 'outvariant'
+import { invariant } from 'outvariant'
 import { isEqual } from 'es-toolkit'
 import { get, set, unset } from 'es-toolkit/compat'
 import {
@@ -433,11 +433,7 @@ export abstract class Relation {
       },
       set: () => {
         throw new RelationError(
-          format(
-            'Failed to set property "%s" on collection (%s): relational properties are read-only and can only be updated via collection updates',
-            serializedPath,
-            this.ownerCollection[kCollectionId],
-          ),
+          `Failed to set property "${serializedPath}" on collection (${this.ownerCollection[kCollectionId]}): relational properties are read-only and can only be updated via collection updates`,
           RelationErrorCodes.UNEXPECTED_SET_EXPRESSION,
           this.#createErrorDetails(),
         )
