@@ -109,12 +109,8 @@ export class Collection<Schema extends StandardSchemaV1> {
     let logger = this.#logger.extend('create')
     logger.log('initial values:', initialValues)
 
-    const { sanitizedInitialValues, restoreProperties } =
-      this.#sanitizeInitialValues(initialValues)
-
-    const validationResult = await this.options.schema['~standard'].validate(
-      sanitizedInitialValues,
-    )
+    const validationResult =
+      await this.options.schema['~standard'].validate(initialValues)
 
     if (validationResult.issues) {
       console.error(validationResult.issues)
@@ -133,8 +129,6 @@ export class Collection<Schema extends StandardSchemaV1> {
       'Failed to create a record with initial values (%j): expected the record to be an object or an array',
       initialValues,
     )
-
-    restoreProperties(record)
 
     // Generate random primary key for every record.
     const primaryKey =
@@ -524,82 +518,6 @@ export class Collection<Schema extends StandardSchemaV1> {
     })
   }
 
-  /**
-   * Sanitizes the given object so it can be accepted as the input to Standard Schema validation.
-   * This removes getters to prevent potentially infinite object references in self-referencing
-   * relations. This also drops the internal symbols but gives a function to restore them back.
-   */
-  #sanitizeInitialValues(initialValues: unknown) {
-    const propertiesToRestore: Array<{
-      path: Array<string | number | symbol>
-      descriptor: PropertyDescriptor
-    }> = []
-
-    const sanitize = (
-      value: unknown,
-      path: Array<string | number | symbol> = [],
-    ): unknown => {
-      if (Array.isArray(value)) {
-        return value.map((value, index) => sanitize(value, path.concat(index)))
-      }
-
-      if (isObject(value)) {
-        const relations = isRecord(value) ? value[kRelationMap] : undefined
-
-        return Object.fromEntries(
-          Reflect.ownKeys(value).map((key) => {
-            const childValue = value[key as keyof typeof value]
-            const childPath = path.concat(key)
-
-            if (typeof key === 'symbol') {
-              /**
-               * @note Preserve primary keys on sanitized initial values.
-               * Otherwise, internal symbols are stripped off and record references are lost.
-               * This is curcial when handling relations for records that were created
-               * before the relation was defined.
-               */
-              if (key === kPrimaryKey) {
-                propertiesToRestore.push({
-                  path: childPath,
-                  descriptor: Object.getOwnPropertyDescriptor(value, key)!,
-                })
-              }
-              return [key, childValue]
-            }
-
-            const relation = relations?.get(key)
-
-            if (relation && childValue != null) {
-              propertiesToRestore.push({
-                path: childPath,
-                descriptor: Object.getOwnPropertyDescriptor(value, key)!,
-              })
-              return [key, relation.getDefaultValue()]
-            }
-
-            return [key, sanitize(childValue, childPath)]
-          }),
-        )
-      }
-
-      return value
-    }
-
-    const sanitizedInitialValues = sanitize(initialValues)
-    return {
-      sanitizedInitialValues,
-      /**
-       * Restores record properties that were stripped off during the sanitization
-       * (e.g. relational properties, internal symbols of records given as initial value, etc).
-       */
-      restoreProperties(record: RecordType): void {
-        for (const { path, descriptor } of propertiesToRestore) {
-          definePropertyAtPath(record, path, descriptor)
-        }
-      },
-    }
-  }
-
   *#query(
     query: Query<StandardSchemaV1.InferOutput<Schema>>,
     options: PaginationOptions<Schema> = { take: Infinity },
@@ -815,10 +733,8 @@ export class Collection<Schema extends StandardSchemaV1> {
         : maybeNextRecord
 
     logger.log('re-applying the schema...')
-    const { sanitizedInitialValues } = this.#sanitizeInitialValues(nextRecord)
-    const validationResult = await this.options.schema['~standard'].validate(
-      sanitizedInitialValues,
-    )
+    const validationResult =
+      await this.options.schema['~standard'].validate(nextRecord)
 
     if (validationResult.issues) {
       console.error(validationResult.issues)
