@@ -586,6 +586,9 @@ export class Collection<Schema extends StandardSchemaV1> {
     }
 
     const sanitizedInitialValues = sanitize(initialValues)
+
+    console.log({ sanitizedInitialValues })
+
     return {
       sanitizedInitialValues,
       /**
