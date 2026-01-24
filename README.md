@@ -25,7 +25,7 @@ This library exists to help developers model and query data when testing and dev
 ### Install
 
 ```
-npm i @msw/data
+npm i @msw/data --save-dev
 ```
 
 ### Create collection
