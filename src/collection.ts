@@ -535,6 +535,12 @@ export class Collection<Schema extends StandardSchemaV1> {
       descriptor: PropertyDescriptor
     }> = []
 
+    // Track visited records by primary key to detect cycles
+    // in self-referencing relations. Only strip relation values
+    // when revisiting a record (i.e. an actual cycle), not for
+    // all nested records indiscriminately.
+    const visited = new Set<string>()
+
     const sanitize = (
       value: unknown,
       path: Array<string | number | symbol> = [],
@@ -544,7 +550,14 @@ export class Collection<Schema extends StandardSchemaV1> {
       }
 
       if (isObject(value)) {
-        const relations = isRecord(value) ? value[kRelationMap] : undefined
+        const record = isRecord(value) ? value : undefined
+        const isRevisit = record != null && visited.has(record[kPrimaryKey])
+
+        if (record && !isRevisit) {
+          visited.add(record[kPrimaryKey])
+        }
+
+        const relations = record ? record[kRelationMap] : undefined
 
         return Object.fromEntries(
           Reflect.ownKeys(value).map((key) => {
@@ -569,7 +582,10 @@ export class Collection<Schema extends StandardSchemaV1> {
 
             const relation = relations?.get(key)
 
-            if (relation && childValue != null) {
+            // Only strip relation values when revisiting a record
+            // to break self-referencing cycles. Non-circular nested
+            // relations are left intact for proper schema validation.
+            if (isRevisit && relation && childValue != null) {
               propertiesToRestore.push({
                 path: childPath,
                 descriptor: Object.getOwnPropertyDescriptor(value, key)!,
@@ -586,6 +602,7 @@ export class Collection<Schema extends StandardSchemaV1> {
     }
 
     const sanitizedInitialValues = sanitize(initialValues)
+
     return {
       sanitizedInitialValues,
       /**

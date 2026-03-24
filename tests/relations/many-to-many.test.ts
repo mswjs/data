@@ -1,5 +1,5 @@
 import { Collection } from '#/src/collection.js'
-import z from 'zod'
+import { z } from 'zod'
 
 const userSchema = z.object({
   id: z.number(),

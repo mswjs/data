@@ -1,5 +1,5 @@
 import { Collection } from '#/src/collection.js'
-import z from 'zod'
+import { z } from 'zod'
 
 const imageSchema = z.object({
   src: z.string(),

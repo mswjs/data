@@ -1,5 +1,5 @@
 import { Collection, type RecordType } from '#/src/collection.js'
-import z from 'zod'
+import { z } from 'zod'
 
 it('infers the initial value factory and return types from the schema', () => {
   const users = new Collection({ schema: z.object({ id: z.number() }) })

@@ -1,6 +1,6 @@
 import { Collection, type RecordType } from '#/src/collection.js'
 import type { SortDirection } from '#/src/sort.js'
-import z from 'zod'
+import { z } from 'zod'
 
 it('does not require a query argument', () => {
   const users = new Collection({

@@ -1,7 +1,7 @@
 import { Collection } from '#/src/collection.js'
 import type { HookEventListener } from '#/src/hooks.js'
 import { isRecord } from '#/src/utils.js'
-import z from 'zod'
+import { z } from 'zod'
 
 it('invokes the update hook for a root property update', async () => {
   const users = new Collection({

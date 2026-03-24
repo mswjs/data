@@ -1,6 +1,6 @@
 import { Collection } from '#/src/collection.js'
 import type { HookEventListener } from '#/src/hooks.js'
-import z from 'zod'
+import { z } from 'zod'
 
 it('invokes the create hook when a new record is created', async () => {
   const users = new Collection({

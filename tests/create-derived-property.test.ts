@@ -1,5 +1,5 @@
 import { Collection } from '#/src/index.js'
-import z from 'zod'
+import { z } from 'zod'
 
 it('derives a value from other values', async () => {
   const users = new Collection({
