@@ -4,7 +4,7 @@ I chose to adopt [Standard Schema](https://standardschema.dev/) as the way to de
 
 ```ts
 import { Collection } from '@msw/data'
-import z from 'zod'
+import { z } from 'zod'
 
 const users = new Collection({
   schema: z.object({

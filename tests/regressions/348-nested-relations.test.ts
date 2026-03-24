@@ -1,4 +1,4 @@
-import z from 'zod'
+import { z } from 'zod'
 import { Collection } from '#/src/collection.js'
 
 it('creates a record with a nested relation through another model', async () => {

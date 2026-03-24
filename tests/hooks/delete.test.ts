@@ -1,6 +1,6 @@
 import { Collection } from '#/src/collection.js'
 import type { HookEventListener } from '#/src/hooks.js'
-import z from 'zod'
+import { z } from 'zod'
 
 it('invokes the delete hook when a record is deleted', async () => {
   const users = new Collection({

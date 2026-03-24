@@ -1,5 +1,5 @@
 import { Collection } from '#/src/collection.js'
-import z from 'zod'
+import { z } from 'zod'
 
 it('supports null as initial value for nullable properties', async () => {
   const users = new Collection({

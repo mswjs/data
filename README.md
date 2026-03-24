@@ -34,7 +34,7 @@ You start by defining a data _collection_.
 
 ```ts
 import { Collection } from '@msw/data'
-import z from 'zod'
+import { z } from 'zod'
 
 const users = new Collection({
   schema: z.object({

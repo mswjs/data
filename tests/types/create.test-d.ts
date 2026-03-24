@@ -1,5 +1,5 @@
 import { Collection, type RecordType } from '#/src/collection.js'
-import z from 'zod'
+import { z } from 'zod'
 
 it('infers initial values from primitives in the schema', async () => {
   expectTypeOf(new Collection({ schema: z.object({ id: z.number() }) }).create)

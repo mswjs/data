@@ -3,7 +3,7 @@ import {
   type RecordType,
   type UpdateFunction,
 } from '#/src/collection.js'
-import z from 'zod'
+import { z } from 'zod'
 
 it('infers return type from the schema', () => {
   const users = new Collection({

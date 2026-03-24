@@ -1,6 +1,6 @@
+import { z } from 'zod'
 import { Collection, RelationError, RelationErrorCodes } from '#/src/index.js'
 import { isRecord } from '#/src/utils.js'
-import z from 'zod'
 
 const countrySchema = z.object({
   code: z.string(),

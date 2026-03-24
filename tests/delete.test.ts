@@ -1,6 +1,6 @@
 import { Collection } from '#/src/collection.js'
 import { Query } from '#/src/query.js'
-import z from 'zod'
+import { z } from 'zod'
 
 const schema = z.object({
   id: z.number(),

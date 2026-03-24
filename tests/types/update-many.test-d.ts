@@ -4,7 +4,7 @@ import {
   type UpdateFunction,
 } from '#/src/collection.js'
 import type { SortDirection } from '#/src/sort.js'
-import z from 'zod'
+import { z } from 'zod'
 
 it('infers return type from the schema', () => {
   const users = new Collection({
