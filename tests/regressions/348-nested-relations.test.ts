@@ -1,9 +1,12 @@
-import { Collection } from '#/src/collection.js'
 import z from 'zod'
+import { Collection } from '#/src/collection.js'
 
 it('creates a record with a nested relation through another model', async () => {
   const contactSchema = z.object({ email: z.email() })
-  const userSchema = z.object({ id: z.number(), contact: contactSchema })
+  const userSchema = z.object({
+    id: z.number(),
+    contact: contactSchema,
+  })
   const postSchema = z.object({
     title: z.string(),
     author: userSchema,
@@ -26,13 +29,6 @@ it('creates a record with a nested relation through another model', async () => 
   const user = await users.create({ id: 1, contact })
   expect(user).toEqual({ id: 1, contact: { email: 'john@example.com' } })
 
-  /**
-   * Creating a post introduces this relation chain:
-   * post.author -> user.contact -> contact
-   *
-   * Due to our sanitization logic, `author.contact` will be reset to
-   * the default value based on its relation (`undefined` here).
-   */
   const post = await posts.create({ title: 'First', author: user })
   expect(post).toEqual({
     title: 'First',
