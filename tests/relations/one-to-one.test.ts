@@ -8,7 +8,7 @@ const countrySchema = z.object({
 
 const userSchema = z.object({
   id: z.number(),
-  country: countrySchema.optional(),
+  country: countrySchema,
 })
 
 it('supports a one-to-one relation', async () => {
