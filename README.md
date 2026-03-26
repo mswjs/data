@@ -14,7 +14,7 @@ This library exists to help developers model and query data when testing and dev
 
 - Relies on [Standard Schema][standard-schema] instead of inventing a proprietary modeling syntax you have to learn. You can use any Standard Schema-compliant object modeling library to describe your data, like Zod, ArkType, Valibot, yup, and many others.
 - Full runtime and type-safety.
-- Provides a powerful [querying syntax](#querying) inspired by Prizma;
+- Provides a powerful [querying syntax](#querying) (inspired by Prisma);
 - Supports [relations](#relations) for database-like behaviors (inspired by Drizzle);
 - Supports extensions (including custom extensions) for things like cross-tab collection synchronization or record persistence.
 
