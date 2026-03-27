@@ -196,8 +196,10 @@ export abstract class Relation {
       const update = event.data
 
       if (
+        update.path.length > path.length &&
         path.every((key, index) => key === update.path[index]) &&
-        !isRecord(update.nextValue)
+        !isRecord(update.nextValue) &&
+        typeof update.path[path.length] !== 'number'
       ) {
         event.preventDefault()
         event.stopImmediatePropagation()
@@ -229,6 +231,156 @@ export abstract class Relation {
      */
     this.ownerCollection.hooks.on('update', (event) => {
       const update = event.data
+
+      if (this instanceof Many && isEqual(update.path, path)) {
+        if (Array.isArray(update.nextValue)) {
+          event.preventDefault()
+
+          const nextForeignRecords = update.nextValue
+
+          const otherOwnersAssociatedWithForeignRecord =
+            this.#getOtherOwnerForRecords(nextForeignRecords)
+
+          invariant.as(
+            RelationError.for(
+              RelationErrorCodes.FORBIDDEN_UNIQUE_UPDATE,
+              this.#createErrorDetails(),
+            ),
+            this.options.unique ? otherOwnersAssociatedWithForeignRecord == null : true,
+            'Failed to update a unique relation at "%s": the foreign record is already associated with another owner',
+            update.path.join('.'),
+          )
+
+          const nextForeignKeys = new Set<string>()
+          for (const foreignRecord of nextForeignRecords) {
+            invariant.as(
+              RelationError.for(
+                RelationErrorCodes.INVALID_FOREIGN_RECORD,
+                this.#createErrorDetails(),
+              ),
+              isRecord(foreignRecord),
+              'Failed to update a relation at "%s": expected relational value to be a record but got "%j"',
+              update.path.join('.'),
+              foreignRecord,
+            )
+
+            const foreignKey = foreignRecord[kPrimaryKey]
+            invariant.as(
+              RelationError.for(
+                RelationErrorCodes.INVALID_FOREIGN_RECORD,
+                this.#createErrorDetails(),
+              ),
+              foreignKey != null,
+              'Failed to update a relation at "%s": foreign record is missing primary key',
+              update.path.join('.'),
+            )
+
+            nextForeignKeys.add(foreignKey)
+          }
+
+          // Remove associations that are no longer present.
+          for (const foreignKey of this.foreignKeys) {
+            if (nextForeignKeys.has(foreignKey)) {
+              continue
+            }
+
+            this.foreignKeys.delete(foreignKey)
+
+            for (const foreignCollection of this.foreignCollections) {
+              const foreignRecord = foreignCollection.findFirst((q) =>
+                q.where((record) => record[kPrimaryKey] === foreignKey),
+              )
+
+              if (foreignRecord) {
+                for (const foreignRelation of this.getRelationsToOwner(
+                  foreignRecord,
+                )) {
+                  foreignRelation.foreignKeys.delete(
+                    update.prevRecord[kPrimaryKey],
+                  )
+                }
+              }
+            }
+          }
+
+          // Add new associations.
+          for (const foreignRecord of nextForeignRecords) {
+            const foreignKey = foreignRecord[kPrimaryKey]
+            invariant.as(
+              RelationError.for(
+                RelationErrorCodes.INVALID_FOREIGN_RECORD,
+                this.#createErrorDetails(),
+              ),
+              foreignKey != null,
+              'Failed to update a relation at "%s": foreign record is missing primary key',
+              update.path.join('.'),
+            )
+
+            if (foreignKey == null) {
+              continue
+            }
+
+            const isNewForeignKey = !this.foreignKeys.has(foreignKey)
+
+            if (isNewForeignKey) {
+              this.foreignKeys.add(foreignKey)
+            }
+
+            for (const foreignRelation of this.getRelationsToOwner(
+              foreignRecord,
+            )) {
+              foreignRelation.foreignKeys.add(update.prevRecord[kPrimaryKey])
+            }
+          }
+        }
+      }
+
+      if (
+        this instanceof Many &&
+        path.length + 1 === update.path.length &&
+        path.every((key, index) => key === update.path[index])
+      ) {
+        const prevValue = update.prevValue
+        const nextValue = update.nextValue
+
+        const prevForeignRecord = isRecord(prevValue) ? prevValue : undefined
+        const nextForeignRecord = isRecord(nextValue) ? nextValue : undefined
+
+        if (prevForeignRecord) {
+          this.foreignKeys.delete(prevForeignRecord[kPrimaryKey])
+
+          for (const foreignRelation of this.getRelationsToOwner(
+            prevForeignRecord,
+          )) {
+            foreignRelation.foreignKeys.delete(update.prevRecord[kPrimaryKey])
+          }
+        }
+
+        if (nextForeignRecord) {
+          const otherOwnersAssociatedWithForeignRecord =
+            this.options.unique
+              ? this.#getOtherOwnerForRecords([nextForeignRecord])
+              : undefined
+
+          invariant.as(
+            RelationError.for(
+              RelationErrorCodes.FORBIDDEN_UNIQUE_UPDATE,
+              this.#createErrorDetails(),
+            ),
+            this.options.unique ? otherOwnersAssociatedWithForeignRecord == null : true,
+            'Failed to update a unique relation at "%s": the foreign record is already associated with another owner',
+            update.path.join('.'),
+          )
+
+          this.foreignKeys.add(nextForeignRecord[kPrimaryKey])
+
+          for (const foreignRelation of this.getRelationsToOwner(
+            nextForeignRecord,
+          )) {
+            foreignRelation.foreignKeys.add(update.prevRecord[kPrimaryKey])
+          }
+        }
+      }
 
       if (isEqual(update.path, path) && isRecord(update.nextValue)) {
         event.preventDefault()
@@ -524,21 +676,33 @@ class One extends Relation {
 }
 
 export class Many extends Relation {
+  private resolvedCache?: Array<RecordType>
+
   public resolve(foreignKeys: Set<string>): unknown {
     if (foreignKeys.size === 0) {
+      this.resolvedCache ??= []
+      this.resolvedCache.length = 0
       return
     }
 
-    return this.foreignCollections.flatMap<RecordType>((foreignCollection) => {
+    const resolved = this.foreignCollections.flatMap<RecordType>((foreignCollection) => {
       return foreignCollection.findMany((q) =>
         q.where((record) => {
           return foreignKeys.has(record[kPrimaryKey])
         }),
       )
     })
+
+    this.resolvedCache ??= []
+    this.resolvedCache.length = 0
+    this.resolvedCache.push(...resolved)
+
+    return this.resolvedCache
   }
 
   public getDefaultValue(): unknown {
-    return []
+    this.resolvedCache ??= []
+    this.resolvedCache.length = 0
+    return this.resolvedCache
   }
 }
