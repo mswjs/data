@@ -8,7 +8,7 @@ const userSchema = z.object({
 const postSchema = z.object({
   title: z.string(),
   get author() {
-    return userSchema.optional()
+    return z.lazy(() => userSchema)
   },
 })
 
