@@ -199,6 +199,14 @@ export abstract class Relation {
         path.every((key, index) => key === update.path[index]) &&
         !isRecord(update.nextValue)
       ) {
+        /**
+         * @note Listeners are attached per-record but fire for every owner update.
+         * Skip events whose target record's relation isn't this instance.
+         */
+        if (update.prevRecord[kRelationMap].get(serializedPath) !== this) {
+          return
+        }
+
         event.preventDefault()
         event.stopImmediatePropagation()
 
@@ -231,6 +239,14 @@ export abstract class Relation {
       const update = event.data
 
       if (isEqual(update.path, path) && isRecord(update.nextValue)) {
+        /**
+         * @note Listeners are attached per-record but fire for every owner update.
+         * Skip events whose target record's relation isn't this instance.
+         */
+        if (update.prevRecord[kRelationMap].get(serializedPath) !== this) {
+          return
+        }
+
         event.preventDefault()
 
         // If the owner relation is "one-of", multiple foreign records cannot own this record.
