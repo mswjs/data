@@ -15,22 +15,10 @@
     "#/src/*": "./src/*"
   },
   "exports": {
-    ".": {
-      "types": "./build/index.d.ts",
-      "default": "./build/index.js"
-    },
-    "./extensions": {
-      "types": "./build/extensions/index.d.ts",
-      "default": "./build/extensions/index.js"
-    },
-    "./extensions/sync": {
-      "types": "./build/extensions/sync.d.ts",
-      "default": "./build/extensions/sync.js"
-    },
-    "./extensions/persist": {
-      "types": "./build/extensions/persist.d.ts",
-      "default": "./build/extensions/persist.js"
-    }
+    ".": "./build/index.mjs",
+    "./extensions": "./build/extensions/index.mjs",
+    "./extensions/sync": "./build/extensions/sync.mjs",
+    "./extensions/persist": "./build/extensions/persist.mjs"
   },
   "files": [
     "./build",
