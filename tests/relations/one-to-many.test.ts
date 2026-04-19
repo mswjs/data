@@ -200,6 +200,36 @@ it('updates a one-to-many relation when the referenced record is updated', async
   })
 })
 
+it('updates a one-to-many relation when the relational property is reassigned to a new array', async () => {
+  const users = new Collection({ schema: userSchema })
+  const posts = new Collection({ schema: postSchema })
+
+  users.defineRelations(({ many }) => ({
+    posts: many(posts),
+  }))
+
+  const firstPost = await posts.create({ title: 'First' })
+  const user = await users.create({ id: 1, posts: [firstPost] })
+
+  const secondPost = await posts.create({ title: 'Second' })
+
+  const updatedUser = await users.update(user, {
+    data(draft) {
+      draft.posts = [...draft.posts, secondPost]
+    },
+  })
+
+  expect(updatedUser).toEqual({
+    id: 1,
+    posts: [{ title: 'First' }, { title: 'Second' }],
+  })
+
+  expect(users.findFirst((q) => q.where({ id: 1 }))).toEqual({
+    id: 1,
+    posts: [{ title: 'First' }, { title: 'Second' }],
+  })
+})
+
 it('updates a one-to-many relation when the referenced record is dissociated', async () => {
   const users = new Collection({ schema: userSchema })
   const posts = new Collection({ schema: postSchema })
