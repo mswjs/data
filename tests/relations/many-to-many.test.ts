@@ -96,3 +96,29 @@ it('respects updates of foreign records', async () => {
   expect(firstPost.authors).toEqual([firstUser, updatedSecondUser])
   expect(secondPost.authors).toEqual([firstUser, updatedSecondUser])
 })
+
+it('scopes a nested many-to-many relation update to the targeted record', async () => {
+  const users = new Collection({ schema: userSchema })
+  const posts = new Collection({ schema: postSchema })
+
+  users.defineRelations(({ many }) => ({
+    posts: many(posts),
+  }))
+  posts.defineRelations(({ many }) => ({
+    authors: many(users),
+  }))
+
+  const firstPost = await posts.create({ title: 'First' })
+  const secondPost = await posts.create({ title: 'Second' })
+
+  const firstUser = await users.create({ id: 1, posts: [firstPost] })
+  await users.create({ id: 2, posts: [secondPost] })
+
+  await users.update(firstUser, {
+    data(user) {
+      user.posts[0]!.title = 'Updated'
+    },
+  })
+
+  expect(posts.all().map((post) => post.title)).toEqual(['Updated', 'Second'])
+})

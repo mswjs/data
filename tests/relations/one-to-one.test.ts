@@ -562,3 +562,58 @@ it('errors when updating a unique two-way relation referencing a taken foreign r
     ),
   )
 })
+
+it('scopes a one-to-one relation update to the targeted record', async () => {
+  const users = new Collection({ schema: userSchema })
+  const countries = new Collection({ schema: countrySchema })
+
+  users.defineRelations(({ one }) => ({
+    country: one(countries),
+  }))
+
+  await users.create({
+    id: 1,
+    country: await countries.create({ code: 'us' }),
+  })
+  await users.create({
+    id: 2,
+    country: await countries.create({ code: 'ca' }),
+  })
+
+  await users.update((q) => q.where({ id: 1 }), {
+    async data(user) {
+      user.country = await countries.create({ code: 'uk' })
+    },
+  })
+
+  expect(users.all()).toEqual([
+    { id: 1, country: { code: 'uk' } },
+    { id: 2, country: { code: 'ca' } },
+  ])
+})
+
+it('scopes a nested one-to-one relation update to the targeted record', async () => {
+  const users = new Collection({ schema: userSchema })
+  const countries = new Collection({ schema: countrySchema })
+
+  users.defineRelations(({ one }) => ({
+    country: one(countries),
+  }))
+
+  await users.create({
+    id: 1,
+    country: await countries.create({ code: 'us' }),
+  })
+  await users.create({
+    id: 2,
+    country: await countries.create({ code: 'ca' }),
+  })
+
+  await users.update((q) => q.where({ id: 1 }), {
+    data(user) {
+      user.country.code = 'uk'
+    },
+  })
+
+  expect(countries.all()).toEqual([{ code: 'uk' }, { code: 'ca' }])
+})
