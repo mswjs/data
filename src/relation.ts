@@ -269,18 +269,20 @@ export abstract class Relation {
 
           // Check any other owners associated with the same foreign record.
           // This is important since unique relations are not always two-way.
-          const otherOwnersAssociatedWithForeignRecord =
-            this.#getOtherOwnerForRecords([update.nextValue])
+          if (this.options.unique) {
+            const otherOwnersAssociatedWithForeignRecord =
+              this.#getOtherOwnerForRecords([update.nextValue])
 
-          invariant.as(
-            RelationError.for(
-              RelationErrorCodes.FORBIDDEN_UNIQUE_UPDATE,
-              this.#createErrorDetails(),
-            ),
-            otherOwnersAssociatedWithForeignRecord == null,
-            'Failed to update a unique relation at "%s": the foreign record is already associated with another owner',
-            update.path.join('.'),
-          )
+            invariant.as(
+              RelationError.for(
+                RelationErrorCodes.FORBIDDEN_UNIQUE_UPDATE,
+                this.#createErrorDetails(),
+              ),
+              otherOwnersAssociatedWithForeignRecord == null,
+              'Failed to update a unique relation at "%s": the foreign record is already associated with another owner',
+              update.path.join('.'),
+            )
+          }
 
           this.foreignKeys.clear()
         }
