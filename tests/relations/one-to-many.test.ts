@@ -453,3 +453,29 @@ it('errors when creating a unique relation with already associated foreign recor
     )
   }
 })
+
+it('scopes a nested one-to-many relation update to the targeted record', async () => {
+  const users = new Collection({ schema: userSchema })
+  const posts = new Collection({ schema: postSchema })
+
+  users.defineRelations(({ many }) => ({
+    posts: many(posts),
+  }))
+
+  const firstUser = await users.create({
+    id: 1,
+    posts: [await posts.create({ title: 'First' })],
+  })
+  await users.create({
+    id: 2,
+    posts: [await posts.create({ title: 'Second' })],
+  })
+
+  await users.update(firstUser, {
+    data(user) {
+      user.posts[0]!.title = 'Updated'
+    },
+  })
+
+  expect(posts.all().map((post) => post.title)).toEqual(['Updated', 'Second'])
+})
