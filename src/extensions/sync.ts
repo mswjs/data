@@ -139,7 +139,7 @@ export function sync() {
             logger.log('updating record...')
 
             await performWithoutBroadcasting(async () => {
-              collection.update(
+              await collection.update(
                 (q: Query<any>) =>
                   q.where((record: RecordType) => {
                     return record[kPrimaryKey] === data.primaryKey

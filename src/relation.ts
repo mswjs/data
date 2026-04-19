@@ -141,47 +141,75 @@ export abstract class Relation {
     // This way, each record has its own instance of a stateful relation.
     this.#initializeRelation(path, record, initialValues)
 
+    /**
+     * @note Tear down all hook listeners registered below once the owner
+     * record is deleted. Aborting the signal removes the listeners from
+     * the underlying emitter — including the `delete` listener itself.
+     */
+    const abortController = new AbortController()
+
+    this.ownerCollection.hooks.on(
+      'delete',
+      (event) => {
+        if (
+          event.data.deletedRecord[kRelationMap].get(serializedPath) === this
+        ) {
+          abortController.abort()
+        }
+      },
+      { signal: abortController.signal },
+    )
+
     for (const foreignCollection of this.foreignCollections) {
       // Update the owner relations when a foreign record is created
       // referencing the owner record.
-      foreignCollection.hooks.on('create', (event) => {
-        const { record: foreignRecord } = event.data
-        const foreignRelations = this.getRelationsToOwner(foreignRecord)
+      foreignCollection.hooks.on(
+        'create',
+        (event) => {
+          const { record: foreignRecord } = event.data
+          const foreignRelations = this.getRelationsToOwner(foreignRecord)
 
-        for (const foreignRelation of foreignRelations) {
-          const ownerRecords = this.ownerCollection.findMany((q) =>
-            q.where((record) => {
-              return foreignRelation.foreignKeys.has(record[kPrimaryKey])
-            }),
-          )
+          for (const foreignRelation of foreignRelations) {
+            const ownerRecords = this.ownerCollection.findMany((q) =>
+              q.where((record) => {
+                return foreignRelation.foreignKeys.has(record[kPrimaryKey])
+              }),
+            )
 
-          for (const ownerRecord of ownerRecords) {
-            const ownerRelation = ownerRecord[kRelationMap].get(serializedPath)
-            ownerRelation.foreignKeys.add(foreignRecord[kPrimaryKey])
+            for (const ownerRecord of ownerRecords) {
+              const ownerRelation =
+                ownerRecord[kRelationMap].get(serializedPath)
+              ownerRelation.foreignKeys.add(foreignRecord[kPrimaryKey])
+            }
           }
-        }
-      })
+        },
+        { signal: abortController.signal },
+      )
 
       // Clear the references to deleted foreign records.
-      foreignCollection.hooks.on('delete', (event) => {
-        const { deletedRecord: deletedForeignRecord } = event.data
-        this.foreignKeys.delete(deletedForeignRecord[kPrimaryKey])
+      foreignCollection.hooks.on(
+        'delete',
+        (event) => {
+          const { deletedRecord: deletedForeignRecord } = event.data
+          this.foreignKeys.delete(deletedForeignRecord[kPrimaryKey])
 
-        // Delete all the owners referencing the deleted foreign record
-        // if the relation is set to cascade on delete.
-        if (this.options.onDelete === 'cascade') {
-          const foreignRelations =
-            this.getRelationsToOwner(deletedForeignRecord)
+          // Delete all the owners referencing the deleted foreign record
+          // if the relation is set to cascade on delete.
+          if (this.options.onDelete === 'cascade') {
+            const foreignRelations =
+              this.getRelationsToOwner(deletedForeignRecord)
 
-          this.ownerCollection.deleteMany((q) => {
-            return q.where((record) => {
-              return foreignRelations.some((foreignRelation) => {
-                return foreignRelation.foreignKeys.has(record[kPrimaryKey])
+            this.ownerCollection.deleteMany((q) => {
+              return q.where((record) => {
+                return foreignRelations.some((foreignRelation) => {
+                  return foreignRelation.foreignKeys.has(record[kPrimaryKey])
+                })
               })
             })
-          })
-        }
-      })
+          }
+        },
+        { signal: abortController.signal },
+      )
     }
 
     /**
@@ -192,42 +220,46 @@ export abstract class Relation {
      * @example
      * await users.update(q, { data: { country: { code: 'uk' } } })
      */
-    this.ownerCollection.hooks.earlyOn('update', (event) => {
-      const update = event.data
+    this.ownerCollection.hooks.earlyOn(
+      'update',
+      (event) => {
+        const update = event.data
 
-      if (
-        path.every((key, index) => key === update.path[index]) &&
-        !isRecord(update.nextValue)
-      ) {
-        /**
-         * @note Listeners are attached per-record but fire for every owner update.
-         * Skip events whose target record's relation isn't this instance.
-         */
-        if (update.prevRecord[kRelationMap].get(serializedPath) !== this) {
-          return
-        }
+        if (
+          path.every((key, index) => key === update.path[index]) &&
+          !isRecord(update.nextValue)
+        ) {
+          /**
+           * @note Listeners are attached per-record but fire for every owner update.
+           * Skip events whose target record's relation isn't this instance.
+           */
+          if (update.prevRecord[kRelationMap].get(serializedPath) !== this) {
+            return
+          }
 
-        event.preventDefault()
-        event.stopImmediatePropagation()
+          event.preventDefault()
+          event.stopImmediatePropagation()
 
-        const foreignUpdatePath = update.path.slice(path.length)
+          const foreignUpdatePath = update.path.slice(path.length)
 
-        for (const foreignCollection of this.foreignCollections) {
-          foreignCollection.updateMany(
-            (q) => {
-              return q.where((record) => {
-                return this.foreignKeys.has(record[kPrimaryKey])
-              })
-            },
-            {
-              data(foreignRecord) {
-                set(foreignRecord, foreignUpdatePath, update.nextValue)
+          for (const foreignCollection of this.foreignCollections) {
+            foreignCollection.updateMany(
+              (q) => {
+                return q.where((record) => {
+                  return this.foreignKeys.has(record[kPrimaryKey])
+                })
               },
-            },
-          )
+              {
+                data(foreignRecord) {
+                  set(foreignRecord, foreignUpdatePath, update.nextValue)
+                },
+              },
+            )
+          }
         }
-      }
-    })
+      },
+      { signal: abortController.signal },
+    )
 
     /**
      * Handle owner updates where the relational property changes to another foreign record.
@@ -235,83 +267,90 @@ export abstract class Relation {
      * @example
      * await users.update(q, { data: { country: await countries.create({}) } })
      */
-    this.ownerCollection.hooks.on('update', (event) => {
-      const update = event.data
+    this.ownerCollection.hooks.on(
+      'update',
+      (event) => {
+        const update = event.data
 
-      if (isEqual(update.path, path) && isRecord(update.nextValue)) {
-        /**
-         * @note Listeners are attached per-record but fire for every owner update.
-         * Skip events whose target record's relation isn't this instance.
-         */
-        if (update.prevRecord[kRelationMap].get(serializedPath) !== this) {
-          return
-        }
+        if (isEqual(update.path, path) && isRecord(update.nextValue)) {
+          /**
+           * @note Listeners are attached per-record but fire for every owner update.
+           * Skip events whose target record's relation isn't this instance.
+           */
+          if (update.prevRecord[kRelationMap].get(serializedPath) !== this) {
+            return
+          }
 
-        event.preventDefault()
+          event.preventDefault()
 
-        // If the owner relation is "one-of", multiple foreign records cannot own this record.
-        // Disassociate the old foreign records from pointing to the owner record.
-        if (this instanceof One) {
-          const oldForeignRecords = this.foreignCollections.flatMap<RecordType>(
-            (foreignCollection) => {
-              return foreignCollection.findMany((q) => {
-                return q.where((record) => {
-                  return this.foreignKeys.has(record[kPrimaryKey])
-                })
-              })
-            },
-          )
+          // If the owner relation is "one-of", multiple foreign records cannot own this record.
+          // Disassociate the old foreign records from pointing to the owner record.
+          if (this instanceof One) {
+            const oldForeignRecords =
+              this.foreignCollections.flatMap<RecordType>(
+                (foreignCollection) => {
+                  return foreignCollection.findMany((q) => {
+                    return q.where((record) => {
+                      return this.foreignKeys.has(record[kPrimaryKey])
+                    })
+                  })
+                },
+              )
 
-          const foreignRelationsToDisassociate = oldForeignRecords.flatMap(
-            (record) => this.getRelationsToOwner(record),
-          )
-
-          // Throw if attempting to disassociate unique relations.
-          if (this.options.unique) {
-            invariant.as(
-              RelationError.for(
-                RelationErrorCodes.FORBIDDEN_UNIQUE_UPDATE,
-                this.#createErrorDetails(),
-              ),
-              foreignRelationsToDisassociate.length === 0,
-              'Failed to update a unique relation at "%s": the foreign record is already associated with another owner',
-              update.path.join('.'),
+            const foreignRelationsToDisassociate = oldForeignRecords.flatMap(
+              (record) => this.getRelationsToOwner(record),
             )
+
+            // Throw if attempting to disassociate unique relations.
+            if (this.options.unique) {
+              invariant.as(
+                RelationError.for(
+                  RelationErrorCodes.FORBIDDEN_UNIQUE_UPDATE,
+                  this.#createErrorDetails(),
+                ),
+                foreignRelationsToDisassociate.length === 0,
+                'Failed to update a unique relation at "%s": the foreign record is already associated with another owner',
+                update.path.join('.'),
+              )
+            }
+
+            for (const foreignRelation of foreignRelationsToDisassociate) {
+              foreignRelation.foreignKeys.delete(update.prevRecord[kPrimaryKey])
+            }
+
+            // Check any other owners associated with the same foreign record.
+            // This is important since unique relations are not always two-way.
+            if (this.options.unique) {
+              const otherOwnersAssociatedWithForeignRecord =
+                this.#getOtherOwnerForRecords([update.nextValue])
+
+              invariant.as(
+                RelationError.for(
+                  RelationErrorCodes.FORBIDDEN_UNIQUE_UPDATE,
+                  this.#createErrorDetails(),
+                ),
+                otherOwnersAssociatedWithForeignRecord == null,
+                'Failed to update a unique relation at "%s": the foreign record is already associated with another owner',
+                update.path.join('.'),
+              )
+            }
+
+            this.foreignKeys.clear()
           }
 
-          for (const foreignRelation of foreignRelationsToDisassociate) {
-            foreignRelation.foreignKeys.delete(update.prevRecord[kPrimaryKey])
+          // Associate the owner with a foreign record from the update data.
+          const foreignRecord = update.nextValue
+          this.foreignKeys.add(foreignRecord[kPrimaryKey])
+
+          for (const foreignRelation of this.getRelationsToOwner(
+            foreignRecord,
+          )) {
+            foreignRelation.foreignKeys.add(update.prevRecord[kPrimaryKey])
           }
-
-          // Check any other owners associated with the same foreign record.
-          // This is important since unique relations are not always two-way.
-          if (this.options.unique) {
-            const otherOwnersAssociatedWithForeignRecord =
-              this.#getOtherOwnerForRecords([update.nextValue])
-
-            invariant.as(
-              RelationError.for(
-                RelationErrorCodes.FORBIDDEN_UNIQUE_UPDATE,
-                this.#createErrorDetails(),
-              ),
-              otherOwnersAssociatedWithForeignRecord == null,
-              'Failed to update a unique relation at "%s": the foreign record is already associated with another owner',
-              update.path.join('.'),
-            )
-          }
-
-          this.foreignKeys.clear()
         }
-
-        // Associate the owner with a foreign record from the update data.
-        const foreignRecord = update.nextValue
-        this.foreignKeys.add(foreignRecord[kPrimaryKey])
-
-        for (const foreignRelation of this.getRelationsToOwner(foreignRecord)) {
-          foreignRelation.foreignKeys.add(update.prevRecord[kPrimaryKey])
-        }
-      }
-    })
+      },
+      { signal: abortController.signal },
+    )
   }
 
   public abstract resolve(foreignKeys: Set<string>): unknown
