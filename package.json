@@ -46,7 +46,7 @@
     "@playwright/test": "^1.59.1",
     "@types/node": "^24.6.2",
     "prettier": "^3.8.3",
-    "publint": "^0.3.13",
+    "publint": "^0.3.18",
     "tsdown": "^0.21.9",
     "typescript": "^5.9.3",
     "vite": "^8.0.8",
