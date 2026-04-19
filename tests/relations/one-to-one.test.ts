@@ -617,3 +617,37 @@ it('scopes a nested one-to-one relation update to the targeted record', async ()
 
   expect(countries.all()).toEqual([{ code: 'uk' }, { code: 'ca' }])
 })
+
+it('removes relation listeners when the owner record is deleted', async () => {
+  const users = new Collection({ schema: userSchema })
+  const countries = new Collection({ schema: countrySchema })
+
+  users.defineRelations(({ one }) => ({
+    country: one(countries),
+  }))
+
+  const totalListeners = () =>
+    countries.hooks.listenerCount('create') +
+    countries.hooks.listenerCount('delete') +
+    users.hooks.listenerCount('update') +
+    users.hooks.listenerCount('delete')
+
+  const baseline = totalListeners()
+
+  const user = await users.create({
+    id: 1,
+    country: await countries.create({ code: 'us' }),
+  })
+
+  expect(
+    totalListeners(),
+    'Attaches relation listeners when the owner record is created',
+  ).toBeGreaterThan(baseline)
+
+  users.delete(user)
+
+  expect(
+    totalListeners(),
+    'Detaches relation listeners when the owner record is deleted',
+  ).toBe(baseline)
+})
