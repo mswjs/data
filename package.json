@@ -58,6 +58,6 @@
     "es-toolkit": "^1.45.1",
     "mutative": "^1.3.0",
     "outvariant": "^1.4.3",
-    "rettime": "^0.7.0"
+    "rettime": "^0.11.8"
   }
 }

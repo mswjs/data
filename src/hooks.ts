@@ -25,7 +25,7 @@ export type HookEventListener<
   Schema extends StandardSchemaV1 = T extends Collection<infer Schema>
     ? Schema
     : any,
-> = Emitter.ListenerType<T['hooks'], Hook>
+> = Emitter.Listener<T['hooks'], Hook>
 
 export function createHooksEmitter<Schema extends StandardSchemaV1>() {
   const emitter = new Emitter<HookEventMap<Schema>>()
