@@ -238,15 +238,48 @@ export abstract class Relation {
             return
           }
 
+          /**
+           * @note For `Many` relations the first trailing segment is the array index
+           * selecting a specific foreign record. Identify that record and apply the
+           * remaining path to it. For `One` relations the whole trailing path applies
+           * to the single associated foreign record.
+           */
+          let targetForeignKey: string | undefined
+          let foreignUpdatePath: Array<string | number | symbol>
+
+          if (this instanceof Many) {
+            const indexSegment = update.path[path.length]
+            if (typeof indexSegment !== 'number') {
+              return
+            }
+            const resolved = this.resolve(this.foreignKeys)
+            if (!Array.isArray(resolved)) {
+              return
+            }
+            const targetRecord = resolved[indexSegment]
+            if (!isRecord(targetRecord)) {
+              return
+            }
+            targetForeignKey = targetRecord[kPrimaryKey]
+            foreignUpdatePath = update.path.slice(path.length + 1)
+          } else {
+            foreignUpdatePath = update.path.slice(path.length)
+          }
+
+          if (foreignUpdatePath.length === 0) {
+            return
+          }
+
           event.preventDefault()
           event.stopImmediatePropagation()
-
-          const foreignUpdatePath = update.path.slice(path.length)
 
           for (const foreignCollection of this.foreignCollections) {
             foreignCollection.updateMany(
               (q) => {
                 return q.where((record) => {
+                  if (targetForeignKey != null) {
+                    return record[kPrimaryKey] === targetForeignKey
+                  }
                   return this.foreignKeys.has(record[kPrimaryKey])
                 })
               },

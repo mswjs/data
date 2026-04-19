@@ -761,8 +761,17 @@ export class Collection<Schema extends StandardSchemaV1> {
       prevRecord,
     )
 
+    /**
+     * @note Build a draft input where relational getters are replaced with
+     * plain data descriptors holding their resolved values. `mutative` cannot
+     * observe mutations through getters (https://github.com/unadlib/mutative/issues/157),
+     * so a `push` on `draft.posts` is lost unless `posts` is a plain property.
+     * Live foreign record references (with their internal symbols) are preserved.
+     */
+    const draftInput = this.#buildDraftInput(prevRecord)
+
     const [maybeNextRecord, patches, inversePatches] = await createDraft(
-      prevRecord,
+      draftInput,
       updateData,
       {
         strict: false,
@@ -793,12 +802,55 @@ export class Collection<Schema extends StandardSchemaV1> {
     // so the hooks could reverse some of them.
     const patchesToUndo: Array<Patch> = []
 
+    /**
+     * @note Collapse per-index patches under a relation path into a single
+     * relation-level event. `draft.posts.push(x)` emits `{path: ['posts', N]}`,
+     * but relation handlers expect `{path: ['posts'], nextValue: <final array>}`.
+     */
+    const relationPaths: Array<Array<string>> = []
+    for (const serializedPath of prevRecord[kRelationMap].keys()) {
+      relationPaths.push(serializedPath.split('.'))
+    }
+
+    type RelationPatchGroup = {
+      relationPath: Array<string>
+      patchIndices: Array<number>
+    }
+    const relationGroups = new Map<string, RelationPatchGroup>()
+    const passthroughIndices: Array<number> = []
+
     for (let i = 0; i < patches.length; i++) {
       const patch = patches[i]
-
       if (!patch) {
         continue
       }
+
+      const matchingRelationPath = relationPaths.find((relationPath) => {
+        if (patch.path.length !== relationPath.length + 1) {
+          return false
+        }
+        if (!relationPath.every((key, index) => key === patch.path[index])) {
+          return false
+        }
+        const nextSegment = patch.path[relationPath.length]
+        return typeof nextSegment === 'number' || nextSegment === 'length'
+      })
+
+      if (matchingRelationPath) {
+        const groupKey = matchingRelationPath.join('.')
+        const group = relationGroups.get(groupKey) ?? {
+          relationPath: matchingRelationPath,
+          patchIndices: [],
+        }
+        group.patchIndices.push(i)
+        relationGroups.set(groupKey, group)
+      } else {
+        passthroughIndices.push(i)
+      }
+    }
+
+    for (const i of passthroughIndices) {
+      const patch = patches[i]!
 
       const updateEvent = new TypedEvent('update', {
         data: {
@@ -823,6 +875,35 @@ export class Collection<Schema extends StandardSchemaV1> {
         )
 
         patchesToUndo.push(inversePatch)
+      }
+    }
+
+    for (const group of relationGroups.values()) {
+      const updateEvent = new TypedEvent('update', {
+        data: {
+          prevRecord: frozenPrevRecord,
+          nextRecord: maybeNextRecord,
+          path: group.relationPath,
+          prevValue: get(prevRecord, group.relationPath),
+          nextValue: get(maybeNextRecord, group.relationPath),
+        },
+      })
+
+      this.hooks.emit(updateEvent)
+
+      if (updateEvent.defaultPrevented) {
+        for (const i of group.patchIndices) {
+          const inversePatch = inversePatches[i]
+
+          invariant(
+            inversePatch != null,
+            'Failed to update a record (%j): missing inverse patch at index %d',
+            prevRecord,
+            i,
+          )
+
+          patchesToUndo.push(inversePatch)
+        }
       }
     }
 
@@ -857,6 +938,34 @@ export class Collection<Schema extends StandardSchemaV1> {
     }
 
     return finalRecord
+  }
+
+  /**
+   * Build a draftable copy of the record where relational getters are replaced
+   * with data descriptors holding their resolved values. `mutative` cannot
+   * observe mutations through getters (https://github.com/unadlib/mutative/issues/157),
+   * so a `push` on `draft.posts` is lost unless `posts` is a plain property.
+   * Live foreign record references (with their internal symbols) are preserved
+   * so downstream hooks can resolve primary keys on the drafted elements.
+   */
+  #buildDraftInput<T extends RecordType>(record: T): T {
+    const clone = cloneWithInternals(
+      record,
+      ({ key, descriptor }) =>
+        typeof key === 'symbol' && descriptor.get == null,
+    )
+
+    for (const serializedPath of record[kRelationMap].keys()) {
+      const path = serializedPath.split('.')
+      definePropertyAtPath(clone, path, {
+        value: get(record, path),
+        writable: true,
+        enumerable: true,
+        configurable: true,
+      })
+    }
+
+    return clone
   }
 
   /**
