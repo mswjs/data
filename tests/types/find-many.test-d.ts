@@ -117,6 +117,11 @@ it('supports sorting the results', () => {
           name?: SortDirection | undefined
           nested?: { key?: SortDirection | undefined }
         }
+      | Array<{
+          id?: SortDirection | undefined
+          name?: SortDirection | undefined
+          nested?: { key?: SortDirection | undefined }
+        }>
       | undefined
     >()
 })
