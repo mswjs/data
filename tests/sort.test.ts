@@ -6,7 +6,7 @@ const schema = z.object({
   name: z.string(),
 })
 
-it('sorts the find results by a single key (asc)', async () => {
+it('sorts the results by a single key (asc)', async () => {
   const users = new Collection({ schema })
 
   await users.create({ id: 1, name: 'John' })
@@ -33,7 +33,7 @@ it('sorts the find results by a single key (asc)', async () => {
   ])
 })
 
-it('sorts the find results by a single key (desc)', async () => {
+it('sorts the results by a single key (desc)', async () => {
   const users = new Collection({ schema })
 
   await users.create({ id: 1, name: 'John' })
@@ -60,7 +60,7 @@ it('sorts the find results by a single key (desc)', async () => {
   ])
 })
 
-it('sorts the find results by multiple keys (mixed)', async () => {
+it('sorts the results by multiple keys (mixed)', async () => {
   const users = new Collection({ schema })
   await users.create({ id: 1, name: 'John' })
   await users.create({ id: 2, name: 'Alice' })
@@ -89,7 +89,7 @@ it('sorts the find results by multiple keys (mixed)', async () => {
   ])
 })
 
-it('sorts the find results by a nested key', async () => {
+it('sorts the results by a nested key', async () => {
   const users = new Collection({
     schema: schema.extend({
       address: z.object({
@@ -119,5 +119,91 @@ it('sorts the find results by a nested key', async () => {
   ).toEqual([
     { id: 3, name: 'Bob', address: { street: 'B' } },
     { id: 1, name: 'John', address: { street: 'C' } },
+  ])
+})
+
+it('sorts the results by a list of sort criteria', async () => {
+  const schema = z.object({
+    id: z.number(),
+    name: z.string(),
+    age: z.number(),
+  })
+
+  const users = new Collection({ schema })
+
+  await users.create({ id: 1, name: 'John', age: 32 })
+  await users.create({ id: 2, name: 'Alice', age: 24 })
+  await users.create({ id: 3, name: 'Bob', age: 41 })
+  await users.create({ id: 4, name: 'Alice', age: 41 })
+
+  expect(
+    users.findMany(undefined, {
+      orderBy: [{ age: 'asc' }, { name: 'desc' }],
+    }),
+  ).toEqual([
+    { id: 2, name: 'Alice', age: 24 },
+    { id: 1, name: 'John', age: 32 },
+    { id: 3, name: 'Bob', age: 41 },
+    { id: 4, name: 'Alice', age: 41 },
+  ])
+})
+
+it('sorts by a relational property', async () => {
+  const userSchema = z.object({
+    id: z.number(),
+    name: z.string(),
+    get posts() {
+      return z.array(postSchema)
+    },
+  })
+  const postSchema = z.object({
+    id: z.number(),
+    title: z.string(),
+    get author() {
+      return userSchema.optional()
+    },
+  })
+
+  const users = new Collection({ schema: userSchema })
+  const posts = new Collection({ schema: postSchema })
+
+  users.defineRelations(({ many }) => ({
+    posts: many(posts),
+  }))
+  posts.defineRelations(({ one }) => ({
+    author: one(users, { unique: true }),
+  }))
+
+  const john = await users.create({
+    id: 1,
+    name: 'John',
+    posts: await posts.createMany(2, (index) => ({
+      id: index + 1,
+      title: `Post ${index + 1}`,
+    })),
+  })
+
+  const alice = await users.create({
+    id: 2,
+    name: 'Alice',
+    posts: await posts.createMany(2, (index) => ({
+      id: index + 3,
+      title: `Post ${index + 3}`,
+    })),
+  })
+
+  expect(
+    posts.findMany(undefined, {
+      orderBy: {
+        author: {
+          name: 'asc',
+        },
+      },
+    }),
+  ).toEqual([
+    { id: 3, title: 'Post 3', author: alice },
+    { id: 4, title: 'Post 4', author: alice },
+    { id: 1, title: 'Post 1', author: john },
+    { id: 2, title: 'Post 2', author: john },
   ])
 })

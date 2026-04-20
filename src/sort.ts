@@ -1,6 +1,6 @@
 import type { StandardSchemaV1 } from '@standard-schema/spec'
 import { get } from 'es-toolkit/compat'
-import { toDeepEntries } from '#/src/utils.js'
+import { toDeepEntries, type PropertyPath } from '#/src/utils.js'
 
 export type SortDirection = 'asc' | 'desc'
 
@@ -8,15 +8,19 @@ export interface SortOptions<Schema extends StandardSchemaV1> {
   orderBy?: OrderBy<Schema>
 }
 
-type OrderBy<
+type OrderBy<Schema extends StandardSchemaV1> =
+  | OrderByCriteria<Schema>
+  | Array<OrderByCriteria<Schema>>
+
+type OrderByCriteria<
   Schema extends StandardSchemaV1,
   T = StandardSchemaV1.InferOutput<Schema>,
 > =
   NonNullable<T> extends Array<infer V>
-    ? OrderBy<Schema, V>
+    ? OrderByCriteria<Schema, V>
     : NonNullable<T> extends Record<any, any>
       ? {
-          [K in keyof T]?: OrderBy<Schema, T[K]>
+          [K in keyof T]?: OrderByCriteria<Schema, T[K]>
         }
       : SortDirection
 
@@ -28,7 +32,13 @@ export function sortResults<Schema extends StandardSchemaV1>(
     return
   }
 
-  const criteria = toDeepEntries<SortDirection>(sortOptions.orderBy as any)
+  const criteria: Array<[PropertyPath, SortDirection]> = Array.isArray(
+    sortOptions.orderBy,
+  )
+    ? sortOptions.orderBy.flatMap((entry) => {
+        return toDeepEntries<SortDirection>(entry as any)
+      })
+    : toDeepEntries<SortDirection>(sortOptions.orderBy as any)
 
   data.sort((left, right) => {
     for (const [path, sortDirection] of criteria) {

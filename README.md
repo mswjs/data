@@ -200,17 +200,25 @@ users.findMany((q) => q.where({ name: (name) => name.startsWith('J') }), {
 })
 ```
 
-You can sort by multiple criteria by providing them in the `orderBy` object:
+You can sort by multiple keys by listing them in the `orderBy` object:
 
 ```ts
 users.updateMany((q) => q.where({ name: (name) => name.startsWith('J') }), {
   data(user) {
-    user.name = user.name.toUpperCase(),
+    user.name = user.name.toUpperCase()
   },
   orderBy: {
     name: 'asc',
     id: 'desc',
   },
+})
+```
+
+You can sort by an ordered list of criteria by passing an array to `orderBy`. Each entry is applied in sequence: the first entry determines the primary sort, and each subsequent entry breaks ties among records that compare equal under the preceding criteria.
+
+```ts
+users.findMany(undefined, {
+  orderBy: [{ age: 'asc' }, { name: 'desc' }]
 })
 ```
 
