@@ -205,7 +205,7 @@ You can sort by multiple keys by listing them in the `orderBy` object:
 ```ts
 users.updateMany((q) => q.where({ name: (name) => name.startsWith('J') }), {
   data(user) {
-    user.name = user.name.toUpperCase(),
+    user.name = user.name.toUpperCase()
   },
   orderBy: {
     name: 'asc',
