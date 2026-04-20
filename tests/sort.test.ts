@@ -147,3 +147,63 @@ it('sorts the results by a list of sort criteria', async () => {
     { id: 4, name: 'Alice', age: 41 },
   ])
 })
+
+it('sorts by a relational property', async () => {
+  const userSchema = z.object({
+    id: z.number(),
+    name: z.string(),
+    get posts() {
+      return z.array(postSchema)
+    },
+  })
+  const postSchema = z.object({
+    id: z.number(),
+    title: z.string(),
+    get author() {
+      return userSchema.optional()
+    },
+  })
+
+  const users = new Collection({ schema: userSchema })
+  const posts = new Collection({ schema: postSchema })
+
+  users.defineRelations(({ many }) => ({
+    posts: many(posts),
+  }))
+  posts.defineRelations(({ one }) => ({
+    author: one(users, { unique: true }),
+  }))
+
+  const john = await users.create({
+    id: 1,
+    name: 'John',
+    posts: await posts.createMany(2, (index) => ({
+      id: index + 1,
+      title: `Post ${index + 1}`,
+    })),
+  })
+
+  const alice = await users.create({
+    id: 2,
+    name: 'Alice',
+    posts: await posts.createMany(2, (index) => ({
+      id: index + 3,
+      title: `Post ${index + 3}`,
+    })),
+  })
+
+  expect(
+    posts.findMany(undefined, {
+      orderBy: {
+        author: {
+          name: 'asc',
+        },
+      },
+    }),
+  ).toEqual([
+    { id: 3, title: 'Post 3', author: alice },
+    { id: 4, title: 'Post 4', author: alice },
+    { id: 1, title: 'Post 1', author: john },
+    { id: 2, title: 'Post 2', author: john },
+  ])
+})
