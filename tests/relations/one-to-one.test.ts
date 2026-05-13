@@ -651,3 +651,37 @@ it('removes relation listeners when the owner record is deleted', async () => {
     'Detaches relation listeners when the owner record is deleted',
   ).toBe(baseline)
 })
+
+it('updates a self referencing one to one relation', async () => {
+  const userSchema = z.object({
+    id: z.number(),
+    get child() {
+      return userSchema.optional()
+    },
+    get parent() {
+      return userSchema.optional()
+    },
+  })
+
+  const users = new Collection({ schema: userSchema })
+
+  users.defineRelations(({ one }) => ({
+    child: one(users, { role: 'children' }),
+    parent: one(users, { role: 'children' }),
+  }))
+
+  const parent = await users.create({
+    id: 2,
+  })
+
+  const child = await users.create({
+    id: 1,
+    parent,
+  })
+
+  expect.soft(parent.child).toEqual(expect.objectContaining({ id: 1 }))
+  expect.soft(child.child).toBeUndefined()
+
+  expect.soft(child.parent).toEqual(expect.objectContaining({ id: 2 }))
+  expect.soft(parent.parent).toBeUndefined()
+})
