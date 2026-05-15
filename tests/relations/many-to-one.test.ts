@@ -127,3 +127,70 @@ it("scopes nested updates to the updated owner's foreign record", async () => {
 
   expect(countries.all()).toEqual([{ code: 'uk' }, { code: 'ca' }])
 })
+
+it('creates a self referencing many-to-one relation', async () => {
+  const userSchema = z.object({
+    id: z.number(),
+    get children() {
+      return z.array(userSchema).optional()
+    },
+    get parent() {
+      return userSchema.optional()
+    },
+  })
+
+  const users = new Collection({ schema: userSchema })
+
+  users.defineRelations(({ one, many }) => ({
+    children: many(users, { role: 'hierarchy' }),
+    parent: one(users, { role: 'hierarchy' }),
+  }))
+
+  const parent = await users.create({
+    id: 2,
+  })
+
+  const child = await users.create({
+    id: 1,
+    parent,
+  })
+
+  expect.soft(parent.children).toEqual([expect.objectContaining({ id: 1 })])
+  expect.soft(parent.parent).toBeUndefined()
+
+  expect.soft(child.children).toEqual([])
+  expect.soft(child.parent).toEqual(expect.objectContaining({ id: 2 }))
+})
+
+it('updates a self referencing many-to-one relation', async () => {
+  const userSchema = z.object({
+    id: z.number(),
+    get children() {
+      return z.array(userSchema).optional()
+    },
+    get parent() {
+      return userSchema.optional()
+    },
+  })
+
+  const users = new Collection({ schema: userSchema })
+
+  users.defineRelations(({ one, many }) => ({
+    children: many(users, { role: 'hierarchy' }),
+    parent: one(users, { role: 'hierarchy' }),
+  }))
+
+  const parentOne = await users.create({ id: 1 })
+  const parentTwo = await users.create({ id: 2 })
+  const child = await users.create({ id: 3, parent: parentOne })
+
+  await users.update(child, {
+    data(draft) {
+      draft.parent = parentTwo
+    },
+  })
+
+  expect.soft(child.parent).toEqual(expect.objectContaining({ id: 2 }))
+  expect.soft(parentOne.children).toEqual([])
+  expect.soft(parentTwo.children).toEqual([expect.objectContaining({ id: 3 })])
+})

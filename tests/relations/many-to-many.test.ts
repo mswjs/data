@@ -122,3 +122,121 @@ it('scopes a nested many-to-many relation update to the targeted record', async 
 
   expect(posts.all().map((post) => post.title)).toEqual(['Updated', 'Second'])
 })
+
+it('creates a self referencing many-to-many relation', async () => {
+  const userSchema = z.object({
+    id: z.number(),
+    get children() {
+      return z.array(userSchema).optional()
+    },
+    get parents() {
+      return z.array(userSchema).optional()
+    },
+  })
+
+  const users = new Collection({ schema: userSchema })
+
+  users.defineRelations(({ many }) => ({
+    children: many(users, { role: 'hierarchy' }),
+    parents: many(users, { role: 'hierarchy' }),
+  }))
+
+  {
+    const childOne = await users.create({
+      id: 1,
+    })
+
+    const parentOne = await users.create({
+      id: 2,
+      children: [childOne],
+    })
+
+    expect
+      .soft(parentOne.children)
+      .toEqual([expect.objectContaining({ id: 1 })])
+    expect.soft(parentOne.parents).toEqual([])
+
+    expect.soft(childOne.children).toEqual([])
+    expect.soft(childOne.parents).toEqual([expect.objectContaining({ id: 2 })])
+  }
+
+  {
+    const parentTwo = await users.create({ id: 3 })
+    const childTwo = await users.create({ id: 4, parents: [parentTwo] })
+
+    expect
+      .soft(parentTwo.children)
+      .toEqual([expect.objectContaining({ id: 4 })])
+    expect.soft(parentTwo.parents).toEqual([])
+
+    expect.soft(childTwo.children).toEqual([])
+    expect.soft(childTwo.parents).toEqual([expect.objectContaining({ id: 3 })])
+  }
+})
+
+it('updates a self referencing many-to-many relation', async () => {
+  const userSchema = z.object({
+    id: z.number(),
+    get children() {
+      return z.array(userSchema).optional()
+    },
+    get parents() {
+      return z.array(userSchema).optional()
+    },
+  })
+
+  const users = new Collection({ schema: userSchema })
+
+  users.defineRelations(({ many }) => ({
+    children: many(users, { role: 'hierarchy' }),
+    parents: many(users, { role: 'hierarchy' }),
+  }))
+
+  const childOne = await users.create({ id: 1 })
+  const childTwo = await users.create({ id: 2 })
+  const parent = await users.create({ id: 3, children: [childOne] })
+
+  await users.update(parent, {
+    data(draft) {
+      draft.children = [childTwo]
+    },
+  })
+
+  expect.soft(parent.children).toEqual([expect.objectContaining({ id: 2 })])
+  expect.soft(parent.parents).toEqual([])
+  expect.soft(childOne.parents).toEqual([])
+  expect.soft(childTwo.parents).toEqual([expect.objectContaining({ id: 3 })])
+})
+
+it('resolves a cyclic self referencing many-to-many relation', async () => {
+  const userSchema = z.object({
+    id: z.number(),
+    get children() {
+      return z.array(userSchema).optional()
+    },
+    get parents() {
+      return z.array(userSchema).optional()
+    },
+  })
+
+  const users = new Collection({ schema: userSchema })
+
+  users.defineRelations(({ many }) => ({
+    children: many(users, { role: 'hierarchy' }),
+    parents: many(users, { role: 'hierarchy' }),
+  }))
+
+  const alice = await users.create({ id: 1 })
+  const bob = await users.create({ id: 2, parents: [alice] })
+
+  await users.update(alice, {
+    data(draft) {
+      draft.parents = [bob]
+    },
+  })
+
+  expect.soft(alice.parents).toEqual([expect.objectContaining({ id: 2 })])
+  expect.soft(alice.children).toEqual([expect.objectContaining({ id: 2 })])
+  expect.soft(bob.parents).toEqual([expect.objectContaining({ id: 1 })])
+  expect.soft(bob.children).toEqual([expect.objectContaining({ id: 1 })])
+})
