@@ -617,8 +617,27 @@ export abstract class Relation {
    */
   public getRelationsToOwner(foreignRecord: RecordType): Array<Relation> {
     const result: Array<Relation> = []
+    const isSelfReferencing = this.foreignCollections.some(
+      (foreignCollection) => {
+        return (
+          foreignCollection[kCollectionId] ===
+          this.ownerCollection[kCollectionId]
+        )
+      },
+    )
+    const ownPath = this.path.join('.')
 
-    for (const [, relation] of foreignRecord[kRelationMap]) {
+    for (const [serializedPath, relation] of foreignRecord[kRelationMap]) {
+      /**
+       * @note For self-referencing relations, the relation at the same path
+       * on the foreign record is not the inverse — it's the same logical
+       * relation pointing in the same direction. Skip it so we only return
+       * the actual inverse relation (a different path with the same role).
+       */
+      if (isSelfReferencing && serializedPath === ownPath) {
+        continue
+      }
+
       if (
         relation.foreignCollections.some((foreignCollection) => {
           return (

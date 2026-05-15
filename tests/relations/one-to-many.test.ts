@@ -540,7 +540,7 @@ it('scopes a nested one-to-many relation update to the targeted record', async (
   expect(posts.all().map((post) => post.title)).toEqual(['Updated', 'Second'])
 })
 
-it('updates a self referencing one to many relation', async () => {
+it('creates a self referencing one-to-many relation', async () => {
   const userSchema = z.object({
     id: z.number(),
     get children() {
@@ -554,8 +554,8 @@ it('updates a self referencing one to many relation', async () => {
   const users = new Collection({ schema: userSchema })
 
   users.defineRelations(({ one, many }) => ({
-    children: many(users, { role: 'children' }),
-    parent: one(users, { role: 'children' }),
+    children: many(users, { role: 'hierarchy' }),
+    parent: one(users, { role: 'hierarchy' }),
   }))
 
   const child = await users.create({
@@ -567,8 +567,8 @@ it('updates a self referencing one to many relation', async () => {
   })
 
   expect.soft(parent.children).toEqual([expect.objectContaining({ id: 1 })])
-  expect.soft(child.children).toEqual([])
-
-  expect.soft(child.parent).toEqual(expect.objectContaining({ id: 2 }))
   expect.soft(parent.parent).toBeUndefined()
+
+  expect.soft(child.children).toEqual([])
+  expect.soft(child.parent).toEqual(expect.objectContaining({ id: 2 }))
 })

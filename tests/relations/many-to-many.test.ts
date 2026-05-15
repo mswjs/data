@@ -123,7 +123,7 @@ it('scopes a nested many-to-many relation update to the targeted record', async 
   expect(posts.all().map((post) => post.title)).toEqual(['Updated', 'Second'])
 })
 
-it('updates a self referencing many to many relation', async () => {
+it('creates a self referencing many-to-many relation', async () => {
   const userSchema = z.object({
     id: z.number(),
     get children() {
@@ -137,37 +137,39 @@ it('updates a self referencing many to many relation', async () => {
   const users = new Collection({ schema: userSchema })
 
   users.defineRelations(({ many }) => ({
-    children: many(users, { role: 'children' }),
-    parents: many(users, { role: 'children' }),
+    children: many(users, { role: 'hierarchy' }),
+    parents: many(users, { role: 'hierarchy' }),
   }))
 
-  const child = await users.create({
-    id: 1,
-  })
+  {
+    const childOne = await users.create({
+      id: 1,
+    })
 
-  const parent = await users.create({
-    id: 2,
-    children: [child],
-  })
+    const parentOne = await users.create({
+      id: 2,
+      children: [childOne],
+    })
 
-  expect.soft(parent.children).toEqual([expect.objectContaining({ id: 1 })])
-  expect.soft(child.children).toEqual([])
+    expect
+      .soft(parentOne.children)
+      .toEqual([expect.objectContaining({ id: 1 })])
+    expect.soft(parentOne.parents).toEqual([])
 
-  expect.soft(child.parents).toEqual(expect.objectContaining({ id: 2 }))
-  expect.soft(parent.parents).toEqual([])
+    expect.soft(childOne.children).toEqual([])
+    expect.soft(childOne.parents).toEqual([expect.objectContaining({ id: 2 })])
+  }
 
-  const parent2 = await users.create({
-    id: 3,
-  })
+  {
+    const parentTwo = await users.create({ id: 3 })
+    const childTwo = await users.create({ id: 4, parents: [parentTwo] })
 
-  const child2 = await users.create({
-    id: 4,
-    parents: [child],
-  })
+    expect
+      .soft(parentTwo.children)
+      .toEqual([expect.objectContaining({ id: 4 })])
+    expect.soft(parentTwo.parents).toEqual([])
 
-  expect.soft(parent2.children).toEqual([expect.objectContaining({ id: 1 })])
-  expect.soft(child2.children).toEqual([])
-
-  expect.soft(child2.parents).toEqual(expect.objectContaining({ id: 2 }))
-  expect.soft(parent2.parents).toEqual([])
+    expect.soft(childTwo.children).toEqual([])
+    expect.soft(childTwo.parents).toEqual([expect.objectContaining({ id: 3 })])
+  }
 })
