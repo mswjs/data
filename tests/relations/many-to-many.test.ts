@@ -173,3 +173,37 @@ it('creates a self referencing many-to-many relation', async () => {
     expect.soft(childTwo.parents).toEqual([expect.objectContaining({ id: 3 })])
   }
 })
+
+it('updates a self referencing many-to-many relation', async () => {
+  const userSchema = z.object({
+    id: z.number(),
+    get children() {
+      return z.array(userSchema).optional()
+    },
+    get parents() {
+      return z.array(userSchema).optional()
+    },
+  })
+
+  const users = new Collection({ schema: userSchema })
+
+  users.defineRelations(({ many }) => ({
+    children: many(users, { role: 'hierarchy' }),
+    parents: many(users, { role: 'hierarchy' }),
+  }))
+
+  const childOne = await users.create({ id: 1 })
+  const childTwo = await users.create({ id: 2 })
+  const parent = await users.create({ id: 3, children: [childOne] })
+
+  await users.update(parent, {
+    data(draft) {
+      draft.children = [childTwo]
+    },
+  })
+
+  expect.soft(parent.children).toEqual([expect.objectContaining({ id: 2 })])
+  expect.soft(parent.parents).toEqual([])
+  expect.soft(childOne.parents).toEqual([])
+  expect.soft(childTwo.parents).toEqual([expect.objectContaining({ id: 3 })])
+})
