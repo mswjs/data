@@ -718,3 +718,35 @@ it('updates a self referencing one-to-one relation', async () => {
   expect.soft(parentOne.child).toBeUndefined()
   expect.soft(parentTwo.child).toEqual(expect.objectContaining({ id: 3 }))
 })
+
+it('resolves a cyclic self referencing one-to-one relation', async () => {
+  const userSchema = z.object({
+    id: z.number(),
+    get child() {
+      return userSchema.optional()
+    },
+    get parent() {
+      return userSchema.optional()
+    },
+  })
+
+  const users = new Collection({ schema: userSchema })
+
+  users.defineRelations(({ one }) => ({
+    child: one(users, { role: 'hierarchy' }),
+    parent: one(users, { role: 'hierarchy' }),
+  }))
+
+  const alice = await users.create({ id: 1 })
+  const bob = await users.create({ id: 2, parent: alice })
+
+  await users.update(alice, {
+    data(draft) {
+      draft.parent = bob
+    },
+  })
+
+  expect.soft(alice.parent).toEqual(expect.objectContaining({ id: 2 }))
+  expect.soft(bob.parent).toEqual(expect.objectContaining({ id: 1 }))
+  expect.soft(alice.parent?.parent).toEqual(expect.objectContaining({ id: 1 }))
+})
