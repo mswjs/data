@@ -554,7 +554,7 @@ const users = new Collection({
 await users.create({ id: 1, name: 'John' })
 await users.create({ id: 2, name: 'John' })
 
-users.findFirst((q) => q.where({ name: 'John' }))
+users.findMany((q) => q.where({ name: 'John' }))
 // [{ id: 1, name: 'John' }, { id: 2, name: 'John' }]
 ```
 
