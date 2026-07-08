@@ -1,5 +1,5 @@
-import { Collection, type RecordType } from '#/src/collection.js'
 import { z } from 'zod'
+import { Collection, type RecordType } from '#/src/collection.js'
 
 it('does not require a query argument', () => {
   const users = new Collection({
@@ -68,4 +68,18 @@ it('supports a strict mode', () => {
     .exclude<undefined>()
     .toHaveProperty('strict')
     .toEqualTypeOf<boolean | undefined>()
+})
+
+it('supports top-level record-based predicate via `q.where`', () => {
+  const users = new Collection({
+    schema: z.object({ id: z.number(), name: z.string() }),
+  })
+
+  users.findFirst((q) =>
+    q.where((user) => {
+      expectTypeOf(user).toEqualTypeOf<
+        RecordType<{ id: number; name: string }>
+      >()
+    }),
+  )
 })

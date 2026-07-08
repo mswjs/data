@@ -107,3 +107,17 @@ it('queries by nullable properties', async () => {
     users.findMany((q) => q.where({ organizationId: (id) => id !== null })),
   ).toEqual([{ id: 2, organizationId: 5 }])
 })
+
+it('supports top-level record-based predicate via `q.where`', async () => {
+  const users = new Collection({
+    schema: z.object({ id: z.number(), name: z.string() }),
+  })
+
+  const john = await users.create({ id: 1, name: 'John' })
+  const johnatan = await users.create({ id: 2, name: 'Johnatan' })
+
+  expect(
+    users.findMany((q) => q.where((user) => user.name.startsWith('John'))),
+  ).toEqual([john, johnatan])
+  expect(users.findMany((q) => q.where((user) => user.id > 3))).toEqual([])
+})
