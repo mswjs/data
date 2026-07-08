@@ -20,7 +20,7 @@ export type Condition<T> =
         }
       : never
 
-export type PredicateFunction<T> = (value: T) => boolean
+export type PredicateFunction<T> = (value: T) => unknown
 
 export class Query<T> {
   #predicate?: PredicateFunction<T>
@@ -33,19 +33,23 @@ export class Query<T> {
     return !!this.#predicate?.(value)
   }
 
-  public where(condition: Condition<T>) {
+  public where(condition: Condition<T> | PredicateFunction<T>) {
     return new Query<T>(
       Query.#and(this.#predicate, Query.#normalize(condition)),
     )
   }
 
-  public and(...conditions: Array<Query<T> | Condition<T>>) {
+  public and(
+    ...conditions: Array<Query<T> | Condition<T> | PredicateFunction<T>>
+  ) {
     return new Query<T>(
       Query.#and(this.#predicate, ...conditions.map(Query.#normalize)),
     )
   }
 
-  public or(...conditions: Array<Query<T> | Condition<T>>) {
+  public or(
+    ...conditions: Array<Query<T> | Condition<T> | PredicateFunction<T>>
+  ) {
     return new Query<T>(
       Query.#or(this.#predicate, ...conditions.map(Query.#normalize)),
     )

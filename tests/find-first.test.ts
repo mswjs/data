@@ -159,3 +159,17 @@ it('queries by nullable properties', async () => {
     users.findFirst((q) => q.where({ organizationId: (id) => id !== null })),
   ).toEqual({ id: 2, organizationId: 5 })
 })
+
+it('supports top-level record-based predicate via `q.where`', async () => {
+  const users = new Collection({
+    schema: z.object({ id: z.number(), name: z.string() }),
+  })
+
+  const john = await users.create({ id: 1, name: 'John' })
+  await users.create({ id: 2, name: 'Kate' })
+
+  expect(users.findFirst((q) => q.where((user) => user.id === 1))).toEqual(john)
+  expect(
+    users.findFirst((q) => q.where((user) => user.id === 123)),
+  ).toBeUndefined()
+})

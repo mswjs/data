@@ -209,8 +209,8 @@ export class Collection<Schema extends StandardSchemaV1> {
    */
   public findFirst<Strict extends boolean>(
     predicate?:
-      | ((query: Query<StandardSchemaV1.InferOutput<Schema>>) => Query<any>)
-      | Query<StandardSchemaV1.InferOutput<Schema>>,
+      | ((query: Query<RecordType<StandardSchemaV1.InferOutput<Schema>>>) => Query<any>)
+      | Query<RecordType<StandardSchemaV1.InferOutput<Schema>>>,
     options?: StrictOptions<Strict>,
   ): Strict extends true
     ? RecordType<StandardSchemaV1.InferOutput<Schema>>
@@ -248,8 +248,8 @@ export class Collection<Schema extends StandardSchemaV1> {
    */
   public findMany(
     predicate?:
-      | ((query: Query<StandardSchemaV1.InferOutput<Schema>>) => Query<any>)
-      | Query<StandardSchemaV1.InferOutput<Schema>>,
+      | ((query: Query<RecordType<StandardSchemaV1.InferOutput<Schema>>>) => Query<any>)
+      | Query<RecordType<StandardSchemaV1.InferOutput<Schema>>>,
     options?: PaginationOptions<Schema> & SortOptions<Schema> & StrictOptions,
   ): Array<RecordType<StandardSchemaV1.InferOutput<Schema>>> {
     const query =
@@ -291,8 +291,8 @@ export class Collection<Schema extends StandardSchemaV1> {
    */
   public async update<Strict extends boolean>(
     predicate:
-      | ((query: Query<StandardSchemaV1.InferOutput<Schema>>) => Query<any>)
-      | Query<StandardSchemaV1.InferOutput<Schema>>
+      | ((query: Query<RecordType<StandardSchemaV1.InferOutput<Schema>>>) => Query<any>)
+      | Query<RecordType<StandardSchemaV1.InferOutput<Schema>>>
       | RecordType<StandardSchemaV1.InferOutput<Schema>>,
     options: UpdateOptions<StandardSchemaV1.InferOutput<Schema>> &
       StrictOptions<Strict>,
@@ -340,8 +340,8 @@ export class Collection<Schema extends StandardSchemaV1> {
    */
   public async updateMany(
     predicate:
-      | ((query: Query<StandardSchemaV1.InferOutput<Schema>>) => Query<any>)
-      | Query<StandardSchemaV1.InferOutput<Schema>>,
+      | ((query: Query<RecordType<StandardSchemaV1.InferOutput<Schema>>>) => Query<any>)
+      | Query<RecordType<StandardSchemaV1.InferOutput<Schema>>>,
     options: UpdateOptions<StandardSchemaV1.InferOutput<Schema>> &
       SortOptions<Schema> &
       StrictOptions,
@@ -380,8 +380,8 @@ export class Collection<Schema extends StandardSchemaV1> {
    */
   public delete<Strict extends boolean>(
     predicate:
-      | ((query: Query<StandardSchemaV1.InferOutput<Schema>>) => Query<any>)
-      | Query<StandardSchemaV1.InferOutput<Schema>>
+      | ((query: Query<RecordType<StandardSchemaV1.InferOutput<Schema>>>) => Query<any>)
+      | Query<RecordType<StandardSchemaV1.InferOutput<Schema>>>
       | RecordType<StandardSchemaV1.InferOutput<Schema>>,
     options?: StrictOptions<Strict>,
   ): Strict extends true
@@ -415,8 +415,8 @@ export class Collection<Schema extends StandardSchemaV1> {
    */
   public deleteMany(
     predicate:
-      | ((query: Query<StandardSchemaV1.InferOutput<Schema>>) => Query<any>)
-      | Query<StandardSchemaV1.InferOutput<Schema>>,
+      | ((query: Query<RecordType<StandardSchemaV1.InferOutput<Schema>>>) => Query<any>)
+      | Query<RecordType<StandardSchemaV1.InferOutput<Schema>>>,
     options?: SortOptions<Schema> & StrictOptions,
   ): Array<RecordType<StandardSchemaV1.InferOutput<Schema>>> {
     /**
@@ -618,7 +618,7 @@ export class Collection<Schema extends StandardSchemaV1> {
   }
 
   *#query(
-    query: Query<StandardSchemaV1.InferOutput<Schema>>,
+    query: Query<RecordType<StandardSchemaV1.InferOutput<Schema>>>,
     options: PaginationOptions<Schema> = { take: Infinity },
   ): Generator<
     RecordType<StandardSchemaV1.InferOutput<Schema>> | undefined,
@@ -668,7 +668,7 @@ export class Collection<Schema extends StandardSchemaV1> {
     for (let i = start; i !== end; i += delta) {
       const record = this.#records[i]
 
-      if (query.test(record)) {
+      if (record != null && query.test(record)) {
         if (skip != null) {
           if (skipped < skip) {
             skipped++
