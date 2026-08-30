@@ -82,6 +82,14 @@ export class Query<T> {
               return false
             }
 
+            /**
+             * @note Predicate functions receive the actual value as-is,
+             * including arrays and objects, so check for them first.
+             */
+            if (typeof selector === 'function') {
+              return selector(actualValue)
+            }
+
             if (Array.isArray(actualValue)) {
               return actualValue.every((value) => {
                 return compileCondition(selector)(value)
@@ -90,10 +98,6 @@ export class Query<T> {
 
             if (isObject(actualValue)) {
               return compileCondition(selector)(actualValue)
-            }
-
-            if (typeof selector === 'function') {
-              return selector(actualValue)
             }
 
             return actualValue === selector
