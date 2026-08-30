@@ -60,3 +60,22 @@ it('combines predicates under an AND logic', () => {
       .test({ id: 456, name: 'Kate' }),
   ).toBe(false)
 })
+
+it('supports a predicate function against an array property', () => {
+  const query = new Query<{ petNames: Array<string> }>().where({
+    petNames: (petNames) => petNames.includes('wolfy'),
+  })
+
+  expect(query.test({ petNames: ['wolfy'] })).toBe(true)
+  expect(query.test({ petNames: ['rex'] })).toBe(false)
+  expect(query.test({ petNames: [] })).toBe(false)
+})
+
+it('supports a condition against an array of objects', () => {
+  const query = new Query<{ posts: Array<{ title: string }> }>().where({
+    posts: { title: 'First' },
+  })
+
+  expect(query.test({ posts: [{ title: 'First' }] })).toBe(true)
+  expect(query.test({ posts: [{ title: 'Second' }] })).toBe(false)
+})
