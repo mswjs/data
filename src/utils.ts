@@ -132,12 +132,12 @@ export function sanitizeInitialValues(initialValues: unknown) {
 
           if (typeof key === 'symbol') {
             /**
-             * @note Preserve primary keys on sanitized initial values.
-             * Otherwise, internal symbols are stripped off and record references are lost.
-             * This is curcial when handling relations for records that were created
-             * before the relation was defined.
+             * @note Preserve the primary key of the root record and all the internal
+             * symbols of the nested records. Otherwise, record references are lost
+             * after the validation. This is crucial when handling relations for
+             * records that were created before the relation was defined.
              */
-            if (key === kPrimaryKey) {
+            if (key === kPrimaryKey || path.length > 0) {
               propertiesToRestore.push({
                 path: childPath,
                 descriptor: Object.getOwnPropertyDescriptor(value, key)!,

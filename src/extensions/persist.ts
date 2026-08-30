@@ -4,6 +4,7 @@ import {
   kCollectionId,
   kPrimaryKey,
   kRelationMap,
+  kRestore,
   type Collection,
   type RecordType,
 } from '#/src/collection.js'
@@ -39,7 +40,7 @@ function isSerializedRecord(value: unknown): value is SerializedRecord {
 export function persist() {
   return defineExtension({
     name: 'persist',
-    async extend(collection) {
+    extend(collection) {
       if (
         typeof window === 'undefined' ||
         typeof localStorage === 'undefined'
@@ -94,18 +95,13 @@ export function persist() {
       logger.log(`found (${persistedData.records.length}) records to hydrate!`)
 
       /**
-       * @note Defer hydration until the collection is constructed so that
-       * relations defined right after the construction are initialized
-       * for the hydrated records.
+       * @note Hydrate synchronously so the records are available
+       * as soon as the collection is constructed.
        */
-      await Promise.resolve()
-
-      await Promise.all(
-        persistedData.records.map(async (serializedRecord) => {
-          logger.log('hydrating record...', { serializedRecord })
-          await createFromSerializedRecord(collection, serializedRecord)
-        }),
-      )
+      for (const serializedRecord of persistedData.records) {
+        logger.log('hydrating record...', { serializedRecord })
+        collection[kRestore](deserializeRecord(serializedRecord))
+      }
 
       logger.log('hydration done!', collection.all())
     },
@@ -156,8 +152,14 @@ function attachMetadata(value: unknown): unknown {
  */
 export function deserializeRecord(
   serializedRecord: SerializedRecord,
-): Record<string, unknown> {
+): RecordType {
   restoreInternals(serializedRecord)
+
+  invariant(
+    isRecord(serializedRecord),
+    'Failed to deserialize record: primary key is missing',
+  )
+
   return serializedRecord
 }
 

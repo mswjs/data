@@ -500,3 +500,70 @@ test('does not duplicate hydrated records in other tabs when combined with `sync
     'Does not broadcast the hydrated record to other tabs',
   ).resolves.toEqual([{ id: 1, name: 'John' }])
 })
+
+test('hydrates the collection synchronously', async ({ serve, page }) => {
+  const { url, evaluate } = await serve(async () => {
+    const z = await import('zod')
+    const { Collection } = await import('#/src/collection.js')
+    const { persist } = await import('#/src/extensions/persist.js')
+
+    const schema = z.object({
+      id: z.number(),
+    })
+
+    const users = new Collection({ schema, extensions: [persist()] })
+
+    // Query the collection immediately after its construction.
+    const recordsAfterConstruction = users.all().length
+
+    return { users, recordsAfterConstruction }
+  })
+
+  await page.goto(url.href, { waitUntil: 'networkidle' })
+
+  await evaluate(async ({ users }) => {
+    await users.create({ id: 1 })
+  })
+
+  await page.reload({ waitUntil: 'networkidle' })
+
+  await expect(
+    evaluate(({ recordsAfterConstruction }) => recordsAfterConstruction),
+    'Hydrated records are available synchronously after construction',
+  ).resolves.toBe(1)
+})
+
+test('throws when hydrating with an asynchronous schema', async ({
+  serve,
+  page,
+}) => {
+  const { url, evaluate } = await serve(async () => {
+    const z = await import('zod')
+    const { Collection } = await import('#/src/collection.js')
+    const { persist } = await import('#/src/extensions/persist.js')
+
+    const schema = z.object({
+      id: z.number().refine(async () => true),
+    })
+
+    try {
+      const users = new Collection({ schema, extensions: [persist()] })
+      return { users, error: undefined }
+    } catch (error) {
+      return { users: undefined, error: String(error) }
+    }
+  })
+
+  await page.goto(url.href, { waitUntil: 'networkidle' })
+
+  await evaluate(async ({ users }) => {
+    await users?.create({ id: 1 })
+  })
+
+  await page.reload({ waitUntil: 'networkidle' })
+
+  await expect(
+    evaluate(({ error }) => error),
+    'Fails the collection construction with a descriptive error',
+  ).resolves.toMatch(/asynchronous/)
+})
