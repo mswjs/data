@@ -1,5 +1,4 @@
 import { invariant } from 'outvariant'
-import { unset } from 'es-toolkit/compat'
 import { defineExtension } from '#/src/extensions/index.js'
 import {
   kCollectionId,
@@ -9,9 +8,10 @@ import {
   type RecordType,
 } from '#/src/collection.js'
 import { Logger } from '#/src/logger.js'
-import type { PropertyPath } from '#/src/utils.js'
+import { isObject, isRecord, sanitizeInitialValues } from '#/src/utils.js'
 
 const STORAGE_KEY = 'msw/data/storage'
+const STORAGE_VERSION = 2
 const METADATA_KEY = '__metadata__'
 
 interface SerializedCollection {
@@ -27,10 +27,10 @@ export interface SerializedRecord {
 
 interface RecordMetadata {
   primaryKey: string
-  relations: Array<{
-    path: PropertyPath
-    foreignKeys: Array<string>
-  }>
+}
+
+function isSerializedRecord(value: unknown): value is SerializedRecord {
+  return isObject(value) && METADATA_KEY in value
 }
 
 /**
@@ -62,13 +62,8 @@ export function persist() {
 
         localStorage.setItem(
           COLLECTION_KEY,
-          /**
-           * @fixme Stringifying relations errors because they produce
-           * circular structures. Relations have to be stripped out of the records.
-           * Maybe preserved in the metadata?
-           */
           JSON.stringify({
-            version: 1,
+            version: STORAGE_VERSION,
             collectionId: collection[kCollectionId],
             records: collection.all().map(serializeRecord),
           } satisfies SerializedCollection),
@@ -82,6 +77,13 @@ export function persist() {
       }
       const persistedData = JSON.parse(rawPersistedData) as SerializedCollection
 
+      if (persistedData.version !== STORAGE_VERSION) {
+        logger.warn(
+          `skipping hydration: persisted data version (${persistedData.version}) is incompatible with the current version (${STORAGE_VERSION})`,
+        )
+        return
+      }
+
       invariant(
         persistedData.collectionId === collection[kCollectionId],
         'Failed to hydrate data for collection "%s": parsed a state of an unknown collection "%s"',
@@ -90,6 +92,13 @@ export function persist() {
       )
 
       logger.log(`found (${persistedData.records.length}) records to hydrate!`)
+
+      /**
+       * @note Defer hydration until the collection is constructed so that
+       * relations defined right after the construction are initialized
+       * for the hydrated records.
+       */
+      await Promise.resolve()
 
       await Promise.all(
         persistedData.records.map(async (serializedRecord) => {
@@ -103,88 +112,96 @@ export function persist() {
   })
 }
 
+/**
+ * Serializes the given record into a plain structure that is a valid input
+ * to the schema of its collection. Relational properties are resolved into
+ * snapshots of the foreign records, breaking self-referencing cycles
+ * the same way the collection does when validating records.
+ * Primary keys of the record and all the nested records are preserved in the metadata.
+ */
 export function serializeRecord(record: RecordType): SerializedRecord {
-  const result = structuredClone(record) as any as SerializedRecord
+  const { sanitizedInitialValues } = sanitizeInitialValues(record)
+  const serializedRecord = attachMetadata(sanitizedInitialValues)
 
-  const metadata: RecordMetadata = {
-    primaryKey: record[kPrimaryKey],
-    relations: [],
-  }
+  invariant(
+    isSerializedRecord(serializedRecord),
+    'Failed to serialize record "%s": serialized value is not a record',
+    record[kPrimaryKey],
+  )
 
-  // Delete relational keys since they can produce non-serializable structures.
-  const relations = record[kRelationMap]
-  for (const [path, relation] of relations) {
-    metadata.relations.push({
-      path: relation.path,
-      foreignKeys: Array.from(relation.foreignKeys),
-    })
-
-    unset(result, path)
-  }
-
-  result[METADATA_KEY] = metadata
-
-  return result
+  return serializedRecord
 }
 
+function attachMetadata(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map(attachMetadata)
+  }
+
+  if (isObject(value)) {
+    for (const key of Object.keys(value)) {
+      value[key] = attachMetadata(value[key])
+    }
+
+    if (isRecord(value)) {
+      const metadata: RecordMetadata = { primaryKey: value[kPrimaryKey] }
+      value[METADATA_KEY] = metadata
+    }
+  }
+
+  return value
+}
+
+/**
+ * Restores the internal properties of the serialized record and all the nested records.
+ */
 export function deserializeRecord(
-  record: SerializedRecord,
-): Record<string, any> {
-  const metadata = record[METADATA_KEY]
+  serializedRecord: SerializedRecord,
+): Record<string, unknown> {
+  restoreInternals(serializedRecord)
+  return serializedRecord
+}
 
-  invariant(
-    metadata,
-    'Failed to deserialize record (%j): metadata is missing',
-    record,
-  )
+function restoreInternals(value: unknown): void {
+  if (Array.isArray(value)) {
+    value.forEach(restoreInternals)
+    return
+  }
 
-  // Restore the primary key for this record so it's preserved across reloads.
-  Object.defineProperties(record, {
-    [kPrimaryKey]: {
-      enumerable: false,
-      configurable: false,
-      value: metadata.primaryKey,
-    },
-  })
+  if (!isObject(value)) {
+    return
+  }
 
-  delete record[METADATA_KEY as keyof typeof record]
+  for (const key of Object.keys(value)) {
+    restoreInternals(value[key])
+  }
 
-  invariant(
-    !(METADATA_KEY in record),
-    'Failed to deserialize record (%j): metadata not cleared',
-    record,
-  )
+  if (isSerializedRecord(value)) {
+    const { primaryKey } = value[METADATA_KEY]
+    Reflect.deleteProperty(value, METADATA_KEY)
 
-  return record
+    Object.defineProperties(value, {
+      [kPrimaryKey]: {
+        enumerable: false,
+        configurable: false,
+        value: primaryKey,
+      },
+      /**
+       * @note Snapshots of foreign records have no relations of their own.
+       * Define an empty relation map so they are treated as records
+       * (e.g. when checking unique relations).
+       */
+      [kRelationMap]: {
+        enumerable: false,
+        configurable: true,
+        value: new Map(),
+      },
+    })
+  }
 }
 
 export async function createFromSerializedRecord(
   collection: Collection<any>,
   serializedRecord: SerializedRecord,
 ): Promise<RecordType> {
-  const metadata = serializedRecord[METADATA_KEY]
-  const initialValues = deserializeRecord(serializedRecord)
-
-  invariant(
-    !(METADATA_KEY in initialValues),
-    'Failed to create record from deserialized record (%j): metadata not cleared',
-    initialValues,
-  )
-
-  const record: RecordType = await collection.create(initialValues)
-  const relationMap = record[kRelationMap]
-
-  for (const serializedRelation of metadata.relations) {
-    const relation = relationMap.get(serializedRelation.path.join('.'))
-
-    if (relation == null) {
-      continue
-    }
-
-    for (const foreignKey of serializedRelation.foreignKeys) {
-      relation.foreignKeys.add(foreignKey)
-    }
-  }
-
-  return record
+  return collection.create(deserializeRecord(serializedRecord))
 }

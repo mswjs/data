@@ -12,6 +12,7 @@ import {
 } from '#/src/relation.js'
 import {
   cloneWithInternals,
+  sanitizeInitialValues,
   definePropertyAtPath,
   isObject,
   isRecord,
@@ -110,7 +111,7 @@ export class Collection<Schema extends StandardSchemaV1> {
     logger.log('initial values:', initialValues)
 
     const { sanitizedInitialValues, restoreProperties } =
-      this.#sanitizeInitialValues(initialValues)
+      sanitizeInitialValues(initialValues)
 
     const validationResult = await this.options.schema['~standard'].validate(
       sanitizedInitialValues,
@@ -524,99 +525,6 @@ export class Collection<Schema extends StandardSchemaV1> {
     })
   }
 
-  /**
-   * Sanitizes the given object so it can be accepted as the input to Standard Schema validation.
-   * This removes getters to prevent potentially infinite object references in self-referencing
-   * relations. This also drops the internal symbols but gives a function to restore them back.
-   */
-  #sanitizeInitialValues(initialValues: unknown) {
-    const propertiesToRestore: Array<{
-      path: Array<string | number | symbol>
-      descriptor: PropertyDescriptor
-    }> = []
-
-    // Track visited records by primary key to detect cycles
-    // in self-referencing relations. Only strip relation values
-    // when revisiting a record (i.e. an actual cycle), not for
-    // all nested records indiscriminately.
-    const visited = new Set<string>()
-
-    const sanitize = (
-      value: unknown,
-      path: Array<string | number | symbol> = [],
-    ): unknown => {
-      if (Array.isArray(value)) {
-        return value.map((value, index) => sanitize(value, path.concat(index)))
-      }
-
-      if (isObject(value)) {
-        const record = isRecord(value) ? value : undefined
-        const isRevisit = record != null && visited.has(record[kPrimaryKey])
-
-        if (record && !isRevisit) {
-          visited.add(record[kPrimaryKey])
-        }
-
-        const relations = record ? record[kRelationMap] : undefined
-
-        return Object.fromEntries(
-          Reflect.ownKeys(value).map((key) => {
-            const childValue = value[key as keyof typeof value]
-            const childPath = path.concat(key)
-
-            if (typeof key === 'symbol') {
-              /**
-               * @note Preserve primary keys on sanitized initial values.
-               * Otherwise, internal symbols are stripped off and record references are lost.
-               * This is curcial when handling relations for records that were created
-               * before the relation was defined.
-               */
-              if (key === kPrimaryKey) {
-                propertiesToRestore.push({
-                  path: childPath,
-                  descriptor: Object.getOwnPropertyDescriptor(value, key)!,
-                })
-              }
-              return [key, childValue]
-            }
-
-            const relation = relations?.get(key)
-
-            // Only strip relation values when revisiting a record
-            // to break self-referencing cycles. Non-circular nested
-            // relations are left intact for proper schema validation.
-            if (isRevisit && relation && childValue != null) {
-              propertiesToRestore.push({
-                path: childPath,
-                descriptor: Object.getOwnPropertyDescriptor(value, key)!,
-              })
-              return [key, relation.getDefaultValue()]
-            }
-
-            return [key, sanitize(childValue, childPath)]
-          }),
-        )
-      }
-
-      return value
-    }
-
-    const sanitizedInitialValues = sanitize(initialValues)
-
-    return {
-      sanitizedInitialValues,
-      /**
-       * Restores record properties that were stripped off during the sanitization
-       * (e.g. relational properties, internal symbols of records given as initial value, etc).
-       */
-      restoreProperties(record: RecordType): void {
-        for (const { path, descriptor } of propertiesToRestore) {
-          definePropertyAtPath(record, path, descriptor)
-        }
-      },
-    }
-  }
-
   *#query(
     query: Query<RecordType<StandardSchemaV1.InferOutput<Schema>>>,
     options: PaginationOptions<Schema> = { take: Infinity },
@@ -903,7 +811,7 @@ export class Collection<Schema extends StandardSchemaV1> {
         : maybeNextRecord
 
     logger.log('re-applying the schema...')
-    const { sanitizedInitialValues } = this.#sanitizeInitialValues(nextRecord)
+    const { sanitizedInitialValues } = sanitizeInitialValues(nextRecord)
     const validationResult = await this.options.schema['~standard'].validate(
       sanitizedInitialValues,
     )
