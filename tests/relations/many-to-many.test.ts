@@ -240,3 +240,107 @@ it('resolves a cyclic self referencing many-to-many relation', async () => {
   expect.soft(bob.parents).toEqual([expect.objectContaining({ id: 1 })])
   expect.soft(bob.children).toEqual([expect.objectContaining({ id: 1 })])
 })
+
+it('removes a foreign record that has a cyclic self referencing relation', async () => {
+  const userSchema = z.object({
+    id: z.number(),
+    get followedBy() {
+      return z.array(userSchema)
+    },
+  })
+  const articleSchema = z.object({
+    id: z.number(),
+    get favouritedBy() {
+      return z.array(userSchema)
+    },
+  })
+
+  const users = new Collection({ schema: userSchema })
+  const articles = new Collection({ schema: articleSchema })
+
+  users.defineRelations(({ many }) => ({
+    followedBy: many(users),
+  }))
+  articles.defineRelations(({ many }) => ({
+    favouritedBy: many(users),
+  }))
+
+  const john = await users.create({ id: 1, followedBy: [] })
+  const jane = await users.create({ id: 2, followedBy: [] })
+
+  await users.update(john, {
+    data(user) {
+      user.followedBy.push(jane)
+    },
+  })
+  await users.update(jane, {
+    data(user) {
+      user.followedBy.push(john)
+    },
+  })
+
+  const article = await articles.create({ id: 1, favouritedBy: [jane] })
+
+  await articles.update(article, {
+    data(article) {
+      article.favouritedBy.splice(0, 1)
+    },
+  })
+
+  expect.soft(article.favouritedBy).toEqual([])
+  expect.soft(john.followedBy).toEqual([expect.objectContaining({ id: 2 })])
+  expect.soft(jane.followedBy).toEqual([expect.objectContaining({ id: 1 })])
+})
+
+it('replaces foreign records that have a cyclic self referencing relation', async () => {
+  const userSchema = z.object({
+    id: z.number(),
+    get followedBy() {
+      return z.array(userSchema)
+    },
+  })
+  const articleSchema = z.object({
+    id: z.number(),
+    get favouritedBy() {
+      return z.array(userSchema)
+    },
+  })
+
+  const users = new Collection({ schema: userSchema })
+  const articles = new Collection({ schema: articleSchema })
+
+  users.defineRelations(({ many }) => ({
+    followedBy: many(users),
+  }))
+  articles.defineRelations(({ many }) => ({
+    favouritedBy: many(users),
+  }))
+
+  const john = await users.create({ id: 1, followedBy: [] })
+  const jane = await users.create({ id: 2, followedBy: [] })
+
+  await users.update(john, {
+    data(user) {
+      user.followedBy.push(jane)
+    },
+  })
+  await users.update(jane, {
+    data(user) {
+      user.followedBy.push(john)
+    },
+  })
+
+  const article = await articles.create({ id: 1, favouritedBy: [jane] })
+
+  await articles.update(article, {
+    data(article) {
+      article.favouritedBy = [john]
+    },
+  })
+
+  expect
+    .soft(article.favouritedBy)
+    .toEqual([expect.objectContaining({ id: 1 })])
+  expect.soft(john.followedBy).toEqual([expect.objectContaining({ id: 2 })])
+  expect.soft(jane.followedBy).toEqual([expect.objectContaining({ id: 1 })])
+})
