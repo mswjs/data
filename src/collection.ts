@@ -12,8 +12,8 @@ import {
 } from '#/src/relation.js'
 import {
   cloneWithInternals,
+  sanitizeInitialValues,
   definePropertyAtPath,
-  isObject,
   isRecord,
   toDeepEntries,
 } from '#/src/utils.js'
@@ -71,6 +71,7 @@ export type RecordType<V = Record<string, any>> = V & {
 export const kCollectionId = Symbol('kCollectionId')
 export const kPrimaryKey = Symbol('kPrimaryKey')
 export const kRelationMap = Symbol('kRelationMap')
+export const kRestore = Symbol('kRestore')
 
 /**
  * A collection of data.
@@ -106,42 +107,109 @@ export class Collection<Schema extends StandardSchemaV1> {
   public async create(
     initialValues: StandardSchemaV1.InferInput<Schema>,
   ): Promise<RecordType<StandardSchemaV1.InferOutput<Schema>>> {
-    let logger = this.#logger.extend('create')
+    const logger = this.#logger.extend('create')
     logger.log('initial values:', initialValues)
 
-    const { sanitizedInitialValues, restoreProperties } =
-      this.#sanitizeInitialValues(initialValues)
+    const record = await this.#validateInitialValues(initialValues)
 
-    const validationResult = await this.options.schema['~standard'].validate(
+    /**
+     * @note Initial values that are already a record mean that an existing record
+     * is being restored (e.g. synced from another tab).
+     * Restored records keep their primary key.
+     */
+    const restored = isRecord(initialValues)
+    const primaryKey = restored
+      ? initialValues[kPrimaryKey]
+      : crypto.randomUUID()
+
+    this.#defineInternals(record, primaryKey)
+
+    if (this.hooks.listenerCount('create') > 0) {
+      await this.hooks.emitAsPromise(
+        new TypedEvent('create', {
+          data: { record, initialValues, restored },
+        }),
+      )
+    }
+    logger.log('create hooks done!')
+
+    this.#records.push(record)
+    logger.log('create done!', record)
+
+    return record
+  }
+
+  /**
+   * Restores an existing record synchronously, without emitting any hooks.
+   * Meant for extensions hydrating the collection during its construction,
+   * before any hooks can be attached. Requires the schema to validate synchronously.
+   */
+  public [kRestore](
+    initialValues: RecordType<StandardSchemaV1.InferInput<Schema>>,
+  ): RecordType<StandardSchemaV1.InferOutput<Schema>> {
+    const record = this.#validateInitialValues(initialValues)
+
+    invariant.as(
+      OperationError.for(OperationErrorCodes.ASYNCHRONOUS_SCHEMA),
+      !(record instanceof Promise),
+      'Failed to restore a record in collection "%s": the schema validates asynchronously. Restoring records requires a synchronous schema.',
+      this[kCollectionId],
+    )
+
+    this.#defineInternals(record, initialValues[kPrimaryKey])
+    this.#records.push(record)
+
+    return record
+  }
+
+  /**
+   * Validates the given initial values against the schema of this collection.
+   * Returns the validated record synchronously if the schema allows it.
+   */
+  #validateInitialValues(
+    initialValues: StandardSchemaV1.InferInput<Schema>,
+  ): RecordType | Promise<RecordType> {
+    const { sanitizedInitialValues, restoreProperties } =
+      sanitizeInitialValues(initialValues)
+
+    const toRecord = (
+      validationResult: StandardSchemaV1.Result<
+        StandardSchemaV1.InferOutput<Schema>
+      >,
+    ): RecordType => {
+      if (validationResult.issues) {
+        console.error(validationResult.issues)
+
+        throw new OperationError(
+          'Failed to create a new record with initial values: does not match the schema. Please see the schema validation errors above.',
+          OperationErrorCodes.INVALID_INITIAL_VALUES,
+        )
+      }
+
+      const record = validationResult.value as RecordType
+
+      invariant.as(
+        OperationError.for(OperationErrorCodes.INVALID_INITIAL_VALUES),
+        typeof record === 'object',
+        'Failed to create a record with initial values (%j): expected the record to be an object or an array',
+        initialValues,
+      )
+
+      restoreProperties(record)
+
+      return record
+    }
+
+    const validationResult = this.options.schema['~standard'].validate(
       sanitizedInitialValues,
     )
 
-    if (validationResult.issues) {
-      console.error(validationResult.issues)
+    return validationResult instanceof Promise
+      ? validationResult.then(toRecord)
+      : toRecord(validationResult)
+  }
 
-      throw new OperationError(
-        'Failed to create a new record with initial values: does not match the schema. Please see the schema validation errors above.',
-        OperationErrorCodes.INVALID_INITIAL_VALUES,
-      )
-    }
-
-    let record = validationResult.value as RecordType
-
-    invariant.as(
-      OperationError.for(OperationErrorCodes.INVALID_INITIAL_VALUES),
-      typeof record === 'object',
-      'Failed to create a record with initial values (%j): expected the record to be an object or an array',
-      initialValues,
-    )
-
-    restoreProperties(record)
-
-    // Generate random primary key for every record.
-    const primaryKey =
-      (isObject(initialValues) &&
-        initialValues[kPrimaryKey as keyof typeof initialValues]) ||
-      crypto.randomUUID()
-
+  #defineInternals(record: RecordType, primaryKey: string): void {
     Object.defineProperties(record, {
       [kPrimaryKey]: {
         enumerable: false,
@@ -154,21 +222,6 @@ export class Collection<Schema extends StandardSchemaV1> {
         value: new Map<string, Set<[string, string]>>(),
       },
     })
-
-    logger = logger.extend(primaryKey)
-    logger.log('symbols defined!', record[kRelationMap])
-
-    if (this.hooks.listenerCount('create') > 0) {
-      await this.hooks.emitAsPromise(
-        new TypedEvent('create', { data: { record, initialValues } }),
-      )
-    }
-    logger.log('create hooks done!')
-
-    this.#records.push(record)
-    logger.log('create done!', record)
-
-    return record
   }
 
   /**
@@ -524,99 +577,6 @@ export class Collection<Schema extends StandardSchemaV1> {
     })
   }
 
-  /**
-   * Sanitizes the given object so it can be accepted as the input to Standard Schema validation.
-   * This removes getters to prevent potentially infinite object references in self-referencing
-   * relations. This also drops the internal symbols but gives a function to restore them back.
-   */
-  #sanitizeInitialValues(initialValues: unknown) {
-    const propertiesToRestore: Array<{
-      path: Array<string | number | symbol>
-      descriptor: PropertyDescriptor
-    }> = []
-
-    // Track visited records by primary key to detect cycles
-    // in self-referencing relations. Only strip relation values
-    // when revisiting a record (i.e. an actual cycle), not for
-    // all nested records indiscriminately.
-    const visited = new Set<string>()
-
-    const sanitize = (
-      value: unknown,
-      path: Array<string | number | symbol> = [],
-    ): unknown => {
-      if (Array.isArray(value)) {
-        return value.map((value, index) => sanitize(value, path.concat(index)))
-      }
-
-      if (isObject(value)) {
-        const record = isRecord(value) ? value : undefined
-        const isRevisit = record != null && visited.has(record[kPrimaryKey])
-
-        if (record && !isRevisit) {
-          visited.add(record[kPrimaryKey])
-        }
-
-        const relations = record ? record[kRelationMap] : undefined
-
-        return Object.fromEntries(
-          Reflect.ownKeys(value).map((key) => {
-            const childValue = value[key as keyof typeof value]
-            const childPath = path.concat(key)
-
-            if (typeof key === 'symbol') {
-              /**
-               * @note Preserve primary keys on sanitized initial values.
-               * Otherwise, internal symbols are stripped off and record references are lost.
-               * This is curcial when handling relations for records that were created
-               * before the relation was defined.
-               */
-              if (key === kPrimaryKey) {
-                propertiesToRestore.push({
-                  path: childPath,
-                  descriptor: Object.getOwnPropertyDescriptor(value, key)!,
-                })
-              }
-              return [key, childValue]
-            }
-
-            const relation = relations?.get(key)
-
-            // Only strip relation values when revisiting a record
-            // to break self-referencing cycles. Non-circular nested
-            // relations are left intact for proper schema validation.
-            if (isRevisit && relation && childValue != null) {
-              propertiesToRestore.push({
-                path: childPath,
-                descriptor: Object.getOwnPropertyDescriptor(value, key)!,
-              })
-              return [key, relation.getDefaultValue()]
-            }
-
-            return [key, sanitize(childValue, childPath)]
-          }),
-        )
-      }
-
-      return value
-    }
-
-    const sanitizedInitialValues = sanitize(initialValues)
-
-    return {
-      sanitizedInitialValues,
-      /**
-       * Restores record properties that were stripped off during the sanitization
-       * (e.g. relational properties, internal symbols of records given as initial value, etc).
-       */
-      restoreProperties(record: RecordType): void {
-        for (const { path, descriptor } of propertiesToRestore) {
-          definePropertyAtPath(record, path, descriptor)
-        }
-      },
-    }
-  }
-
   *#query(
     query: Query<RecordType<StandardSchemaV1.InferOutput<Schema>>>,
     options: PaginationOptions<Schema> = { take: Infinity },
@@ -903,7 +863,7 @@ export class Collection<Schema extends StandardSchemaV1> {
         : maybeNextRecord
 
     logger.log('re-applying the schema...')
-    const { sanitizedInitialValues } = this.#sanitizeInitialValues(nextRecord)
+    const { sanitizedInitialValues } = sanitizeInitialValues(nextRecord)
     const validationResult = await this.options.schema['~standard'].validate(
       sanitizedInitialValues,
     )

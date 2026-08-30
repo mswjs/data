@@ -226,3 +226,55 @@ test('syncs record deletion across tabs', async ({ serve, context, page }) => {
     }),
   ).resolves.toEqual([])
 })
+
+test('syncs a required relation across tabs', async ({
+  serve,
+  context,
+  page,
+}) => {
+  const { url, evaluate } = await serve(async () => {
+    const z = await import('zod')
+    const { Collection } = await import('#/src/collection.js')
+    const { sync } = await import('#/src/extensions/sync.js')
+
+    const userSchema = z.object({
+      id: z.number(),
+    })
+    const wishlistSchema = z.object({
+      id: z.number(),
+      get user() {
+        return userSchema
+      },
+    })
+
+    const users = new Collection({ schema: userSchema, extensions: [sync()] })
+    const wishlists = new Collection({
+      schema: wishlistSchema,
+      extensions: [sync()],
+    })
+
+    wishlists.defineRelations(({ one }) => ({
+      user: one(users),
+    }))
+
+    return { users, wishlists }
+  })
+
+  await page.goto(url.href, { waitUntil: 'networkidle' })
+  const secondPage = await context.newPage()
+  await secondPage.goto(url.href, { waitUntil: 'networkidle' })
+
+  await evaluate(async ({ users, wishlists }) => {
+    const user = await users.create({ id: 1 })
+    await wishlists.create({ id: 1, user })
+  })
+
+  await expect(
+    evaluate(
+      ({ wishlists }) => {
+        return wishlists.all()
+      },
+      { page: secondPage },
+    ),
+  ).resolves.toEqual([{ id: 1, user: { id: 1 } }])
+})

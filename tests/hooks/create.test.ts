@@ -22,6 +22,7 @@ it('invokes the create hook when a new record is created', async () => {
       data: {
         initialValues: { id: 1 },
         record: { id: 1 },
+        restored: false,
       },
     }),
   )
@@ -31,6 +32,7 @@ it('invokes the create hook when a new record is created', async () => {
       data: {
         initialValues: { id: 2 },
         record: { id: 2 },
+        restored: false,
       },
     }),
   )
@@ -59,6 +61,7 @@ it('differentiates between initial values and the created record', async () => {
       data: {
         initialValues: { id: 1 },
         record: { id: 1, subscribed: false },
+        restored: false,
       },
     }),
   )
@@ -68,6 +71,7 @@ it('differentiates between initial values and the created record', async () => {
       data: {
         initialValues: { id: 2, name: 'John' },
         record: { id: 2, name: 'John', subscribed: false },
+        restored: false,
       },
     }),
   )
@@ -77,6 +81,7 @@ it('differentiates between initial values and the created record', async () => {
       data: {
         initialValues: { id: 3, subscribed: true },
         record: { id: 3, subscribed: true },
+        restored: false,
       },
     }),
   )

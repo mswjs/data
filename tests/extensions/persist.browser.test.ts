@@ -301,3 +301,269 @@ test('works in combination with `sync`', async ({ context, serve, page }) => {
     ],
   })
 })
+
+test('passes hydrated records through the schema', async ({ serve, page }) => {
+  const { url, evaluate } = await serve(async () => {
+    const z = await import('zod')
+    const { Collection } = await import('#/src/collection.js')
+    const { persist } = await import('#/src/extensions/persist.js')
+
+    const schema = z.object({
+      id: z.number(),
+      createdAt: z.coerce.date(),
+    })
+
+    const users = new Collection({ schema, extensions: [persist()] })
+    return { users }
+  })
+
+  await page.goto(url.href, { waitUntil: 'networkidle' })
+
+  await evaluate(async ({ users }) => {
+    await users.create({ id: 1, createdAt: '2024-01-01T00:00:00.000Z' })
+  })
+
+  await page.reload({ waitUntil: 'networkidle' })
+
+  await expect(
+    evaluate(({ users }) => {
+      const user = users.findFirst((q) => q.where({ id: 1 }))
+      return {
+        isDate: user?.createdAt instanceof Date,
+        createdAt: user?.createdAt.toISOString(),
+      }
+    }),
+    'Coerces the persisted string into a Date instance',
+  ).resolves.toEqual({
+    isDate: true,
+    createdAt: '2024-01-01T00:00:00.000Z',
+  })
+})
+
+test('persists a required relation', async ({ serve, page }) => {
+  const { url, evaluate } = await serve(async () => {
+    const z = await import('zod')
+    const { Collection } = await import('#/src/collection.js')
+    const { persist } = await import('#/src/extensions/persist.js')
+
+    const userSchema = z.object({
+      id: z.number(),
+      createdAt: z.coerce.date(),
+    })
+    const wishlistSchema = z.object({
+      id: z.number(),
+      get user() {
+        return userSchema
+      },
+    })
+
+    const users = new Collection({
+      schema: userSchema,
+      extensions: [persist()],
+    })
+    const wishlists = new Collection({
+      schema: wishlistSchema,
+      extensions: [persist()],
+    })
+
+    wishlists.defineRelations(({ one }) => ({
+      user: one(users),
+    }))
+
+    return { users, wishlists }
+  })
+
+  await page.goto(url.href, { waitUntil: 'networkidle' })
+
+  await evaluate(async ({ users, wishlists }) => {
+    const user = await users.create({
+      id: 1,
+      createdAt: '2024-01-01T00:00:00.000Z',
+    })
+    await wishlists.create({ id: 1, user })
+  })
+
+  await page.reload({ waitUntil: 'networkidle' })
+
+  await expect(
+    evaluate(({ wishlists }) => {
+      const wishlist = wishlists.findFirst((q) => q.where({ id: 1 }))
+      return {
+        id: wishlist?.id,
+        userId: wishlist?.user.id,
+        isUserCreatedAtDate: wishlist?.user.createdAt instanceof Date,
+      }
+    }),
+    'Restores the required relation and passes the foreign record through its schema',
+  ).resolves.toEqual({
+    id: 1,
+    userId: 1,
+    isUserCreatedAtDate: true,
+  })
+})
+
+test('persists a unique relation', async ({ serve, page }) => {
+  const { url, evaluate } = await serve(async () => {
+    const z = await import('zod')
+    const { Collection } = await import('#/src/collection.js')
+    const { persist } = await import('#/src/extensions/persist.js')
+
+    const userSchema = z.object({
+      id: z.number(),
+    })
+    const wishlistSchema = z.object({
+      id: z.number(),
+      get user() {
+        return userSchema
+      },
+    })
+
+    const users = new Collection({
+      schema: userSchema,
+      extensions: [persist()],
+    })
+    const wishlists = new Collection({
+      schema: wishlistSchema,
+      extensions: [persist()],
+    })
+
+    wishlists.defineRelations(({ one }) => ({
+      user: one(users, { unique: true }),
+    }))
+
+    return { users, wishlists }
+  })
+
+  await page.goto(url.href, { waitUntil: 'networkidle' })
+
+  await evaluate(async ({ users, wishlists }) => {
+    const user = await users.create({ id: 1 })
+    await wishlists.create({ id: 1, user })
+  })
+
+  await page.reload({ waitUntil: 'networkidle' })
+
+  await expect(
+    evaluate(({ wishlists }) => {
+      return wishlists.all()
+    }),
+  ).resolves.toEqual([{ id: 1, user: { id: 1 } }])
+})
+
+test('does not duplicate hydrated records in other tabs when combined with `sync`', async ({
+  context,
+  serve,
+  page,
+}) => {
+  const { url, evaluate } = await serve(async () => {
+    const z = await import('zod')
+    const { Collection } = await import('#/src/collection.js')
+    const { persist } = await import('#/src/extensions/persist.js')
+    const { sync } = await import('#/src/extensions/sync.js')
+
+    const schema = z.object({
+      id: z.number(),
+      name: z.string(),
+    })
+
+    const users = new Collection({
+      schema,
+      extensions: [sync(), persist()],
+    })
+
+    return { users }
+  })
+
+  await page.goto(url.href, { waitUntil: 'networkidle' })
+  const secondPage = await context.newPage()
+  await secondPage.goto(url.href, { waitUntil: 'networkidle' })
+
+  await evaluate(async ({ users }) => {
+    await users.create({ id: 1, name: 'John' })
+  })
+
+  await expect(
+    evaluate(({ users }) => users.all(), { page: secondPage }),
+    'Synchronizes the record with another tab',
+  ).resolves.toEqual([{ id: 1, name: 'John' }])
+
+  // Reloading hydrates the record from the storage.
+  await page.reload({ waitUntil: 'networkidle' })
+
+  await expect(
+    evaluate(({ users }) => users.all()),
+    'Hydrates the record once',
+  ).resolves.toEqual([{ id: 1, name: 'John' }])
+
+  await expect(
+    evaluate(({ users }) => users.all(), { page: secondPage }),
+    'Does not broadcast the hydrated record to other tabs',
+  ).resolves.toEqual([{ id: 1, name: 'John' }])
+})
+
+test('hydrates the collection synchronously', async ({ serve, page }) => {
+  const { url, evaluate } = await serve(async () => {
+    const z = await import('zod')
+    const { Collection } = await import('#/src/collection.js')
+    const { persist } = await import('#/src/extensions/persist.js')
+
+    const schema = z.object({
+      id: z.number(),
+    })
+
+    const users = new Collection({ schema, extensions: [persist()] })
+
+    // Query the collection immediately after its construction.
+    const recordsAfterConstruction = users.all().length
+
+    return { users, recordsAfterConstruction }
+  })
+
+  await page.goto(url.href, { waitUntil: 'networkidle' })
+
+  await evaluate(async ({ users }) => {
+    await users.create({ id: 1 })
+  })
+
+  await page.reload({ waitUntil: 'networkidle' })
+
+  await expect(
+    evaluate(({ recordsAfterConstruction }) => recordsAfterConstruction),
+    'Hydrated records are available synchronously after construction',
+  ).resolves.toBe(1)
+})
+
+test('throws when hydrating with an asynchronous schema', async ({
+  serve,
+  page,
+}) => {
+  const { url, evaluate } = await serve(async () => {
+    const z = await import('zod')
+    const { Collection } = await import('#/src/collection.js')
+    const { persist } = await import('#/src/extensions/persist.js')
+
+    const schema = z.object({
+      id: z.number().refine(async () => true),
+    })
+
+    try {
+      const users = new Collection({ schema, extensions: [persist()] })
+      return { users, error: undefined }
+    } catch (error) {
+      return { users: undefined, error: String(error) }
+    }
+  })
+
+  await page.goto(url.href, { waitUntil: 'networkidle' })
+
+  await evaluate(async ({ users }) => {
+    await users?.create({ id: 1 })
+  })
+
+  await page.reload({ waitUntil: 'networkidle' })
+
+  await expect(
+    evaluate(({ error }) => error),
+    'Fails the collection construction with a descriptive error',
+  ).resolves.toMatch(/asynchronous/)
+})

@@ -6,6 +6,11 @@ export type HookEventMap<Schema extends StandardSchemaV1> = {
   create: TypedEvent<{
     record: RecordType<StandardSchemaV1.InferOutput<Schema>>
     initialValues?: StandardSchemaV1.InferInput<Schema>
+    /**
+     * Whether an existing record is being restored (e.g. hydrated
+     * from the storage or synced from another tab) instead of created anew.
+     */
+    restored: boolean
   }>
   update: TypedEvent<{
     prevRecord: RecordType<StandardSchemaV1.InferOutput<Schema>>
