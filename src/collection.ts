@@ -806,17 +806,14 @@ export class Collection<Schema extends StandardSchemaV1> {
      * @note Collapse per-index patches under a relation path into a single
      * relation-level event. `draft.posts.push(x)` emits `{path: ['posts', N]}`,
      * but relation handlers expect `{path: ['posts'], nextValue: <final array>}`.
+     * Whole-value patches (`draft.posts = [x]`) are grouped the same way.
      */
     const relationPaths: Array<Array<string>> = []
     for (const serializedPath of prevRecord[kRelationMap].keys()) {
       relationPaths.push(serializedPath.split('.'))
     }
 
-    type RelationPatchGroup = {
-      relationPath: Array<string>
-      patchIndices: Array<number>
-    }
-    const relationGroups = new Map<string, RelationPatchGroup>()
+    const updatedRelationPaths = new Map<string, Array<string>>()
     const passthroughIndices: Array<number> = []
 
     for (let i = 0; i < patches.length; i++) {
@@ -826,10 +823,13 @@ export class Collection<Schema extends StandardSchemaV1> {
       }
 
       const matchingRelationPath = relationPaths.find((relationPath) => {
-        if (patch.path.length !== relationPath.length + 1) {
+        if (!relationPath.every((key, index) => key === patch.path[index])) {
           return false
         }
-        if (!relationPath.every((key, index) => key === patch.path[index])) {
+        if (patch.path.length === relationPath.length) {
+          return true
+        }
+        if (patch.path.length !== relationPath.length + 1) {
           return false
         }
         const nextSegment = patch.path[relationPath.length]
@@ -837,13 +837,10 @@ export class Collection<Schema extends StandardSchemaV1> {
       })
 
       if (matchingRelationPath) {
-        const groupKey = matchingRelationPath.join('.')
-        const group = relationGroups.get(groupKey) ?? {
-          relationPath: matchingRelationPath,
-          patchIndices: [],
-        }
-        group.patchIndices.push(i)
-        relationGroups.set(groupKey, group)
+        updatedRelationPaths.set(
+          matchingRelationPath.join('.'),
+          matchingRelationPath,
+        )
       } else {
         passthroughIndices.push(i)
       }
@@ -878,33 +875,26 @@ export class Collection<Schema extends StandardSchemaV1> {
       }
     }
 
-    for (const group of relationGroups.values()) {
+    for (const relationPath of updatedRelationPaths.values()) {
       const updateEvent = new TypedEvent('update', {
         data: {
           prevRecord: frozenPrevRecord,
           nextRecord: maybeNextRecord,
-          path: group.relationPath,
-          prevValue: get(prevRecord, group.relationPath),
-          nextValue: get(maybeNextRecord, group.relationPath),
+          path: relationPath,
+          prevValue: get(prevRecord, relationPath),
+          nextValue: get(maybeNextRecord, relationPath),
         },
       })
 
+      /**
+       * @note Relation updates are always prevented by the relation handler
+       * and are never undone. Relational values are resolved via getters
+       * re-defined on the final record below, so the drafted value is discarded
+       * regardless. Undoing them would make `apply` deep-clone the live foreign
+       * records from the inverse patches, recursing infinitely through
+       * their relational getters if those records reference each other.
+       */
       this.hooks.emit(updateEvent)
-
-      if (updateEvent.defaultPrevented) {
-        for (const i of group.patchIndices) {
-          const inversePatch = inversePatches[i]
-
-          invariant(
-            inversePatch != null,
-            'Failed to update a record (%j): missing inverse patch at index %d',
-            prevRecord,
-            i,
-          )
-
-          patchesToUndo.push(inversePatch)
-        }
-      }
     }
 
     const nextRecord =
