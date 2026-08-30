@@ -449,3 +449,54 @@ test('persists a unique relation', async ({ serve, page }) => {
     }),
   ).resolves.toEqual([{ id: 1, user: { id: 1 } }])
 })
+
+test('does not duplicate hydrated records in other tabs when combined with `sync`', async ({
+  context,
+  serve,
+  page,
+}) => {
+  const { url, evaluate } = await serve(async () => {
+    const z = await import('zod')
+    const { Collection } = await import('#/src/collection.js')
+    const { persist } = await import('#/src/extensions/persist.js')
+    const { sync } = await import('#/src/extensions/sync.js')
+
+    const schema = z.object({
+      id: z.number(),
+      name: z.string(),
+    })
+
+    const users = new Collection({
+      schema,
+      extensions: [sync(), persist()],
+    })
+
+    return { users }
+  })
+
+  await page.goto(url.href, { waitUntil: 'networkidle' })
+  const secondPage = await context.newPage()
+  await secondPage.goto(url.href, { waitUntil: 'networkidle' })
+
+  await evaluate(async ({ users }) => {
+    await users.create({ id: 1, name: 'John' })
+  })
+
+  await expect(
+    evaluate(({ users }) => users.all(), { page: secondPage }),
+    'Synchronizes the record with another tab',
+  ).resolves.toEqual([{ id: 1, name: 'John' }])
+
+  // Reloading hydrates the record from the storage.
+  await page.reload({ waitUntil: 'networkidle' })
+
+  await expect(
+    evaluate(({ users }) => users.all()),
+    'Hydrates the record once',
+  ).resolves.toEqual([{ id: 1, name: 'John' }])
+
+  await expect(
+    evaluate(({ users }) => users.all(), { page: secondPage }),
+    'Does not broadcast the hydrated record to other tabs',
+  ).resolves.toEqual([{ id: 1, name: 'John' }])
+})

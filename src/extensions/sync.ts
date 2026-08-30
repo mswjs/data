@@ -101,34 +101,30 @@ export function sync() {
              * This way, non-serializable schemas can survive sync as long as
              * the initial values are serializable.
              */
-            await performWithoutBroadcasting(async () => {
-              const record = await createFromSerializedRecord(
-                collection,
-                data.record,
-              )
+            const record = await createFromSerializedRecord(
+              collection,
+              data.record,
+            )
 
-              /**
-               * @note Extraneous records might not have been associated with their owners
-               * at the time of sync. Manually ensure the owner is referenced in those relations.
-               */
-              record[kRelationMap].forEach((relation) => {
-                relation.foreignCollections.forEach((foreignCollection) => {
-                  const foreignRecords = foreignCollection.findMany((q) =>
-                    q.where((foreignRecord) => {
-                      return relation.foreignKeys.has(
-                        foreignRecord[kPrimaryKey],
-                      )
-                    }),
-                  )
+            /**
+             * @note Extraneous records might not have been associated with their owners
+             * at the time of sync. Manually ensure the owner is referenced in those relations.
+             */
+            record[kRelationMap].forEach((relation) => {
+              relation.foreignCollections.forEach((foreignCollection) => {
+                const foreignRecords = foreignCollection.findMany((q) =>
+                  q.where((foreignRecord) => {
+                    return relation.foreignKeys.has(foreignRecord[kPrimaryKey])
+                  }),
+                )
 
-                  const foreignRelations = foreignRecords.flatMap(
-                    (foreignRecord) => {
-                      return relation.getRelationsToOwner(foreignRecord)
-                    },
-                  )
-                  foreignRelations.forEach((foreignRelation) => {
-                    foreignRelation.foreignKeys.add(record[kPrimaryKey])
-                  })
+                const foreignRelations = foreignRecords.flatMap(
+                  (foreignRecord) => {
+                    return relation.getRelationsToOwner(foreignRecord)
+                  },
+                )
+                foreignRelations.forEach((foreignRelation) => {
+                  foreignRelation.foreignKeys.add(record[kPrimaryKey])
                 })
               })
             })
@@ -184,15 +180,14 @@ export function sync() {
       }
 
       collection.hooks.on('create', (event) => {
-        const { record, initialValues } = event.data
+        const { record, restored } = event.data
+        logger.log('record created, should broadcast?', !restored)
 
-        logger.warn(
-          'record created, should broadcast?',
-          { record, initialValues },
-          !hookContext.skip,
-        )
-
-        if (!hookContext.skip) {
+        /**
+         * @note Restored records (synced from another tab or hydrated
+         * from the storage) already exist elsewhere. Never broadcast them.
+         */
+        if (!restored) {
           broadcastOperation({
             type: 'create',
             senderId: collection[kCollectionId],

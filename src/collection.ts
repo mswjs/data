@@ -14,7 +14,6 @@ import {
   cloneWithInternals,
   sanitizeInitialValues,
   definePropertyAtPath,
-  isObject,
   isRecord,
   toDeepEntries,
 } from '#/src/utils.js'
@@ -137,11 +136,15 @@ export class Collection<Schema extends StandardSchemaV1> {
 
     restoreProperties(record)
 
-    // Generate random primary key for every record.
-    const primaryKey =
-      (isObject(initialValues) &&
-        initialValues[kPrimaryKey as keyof typeof initialValues]) ||
-      crypto.randomUUID()
+    /**
+     * @note Initial values that are already a record mean that an existing record
+     * is being restored (e.g. hydrated from the storage or synced from another tab).
+     * Restored records keep their primary key.
+     */
+    const restored = isRecord(initialValues)
+    const primaryKey = restored
+      ? initialValues[kPrimaryKey]
+      : crypto.randomUUID()
 
     Object.defineProperties(record, {
       [kPrimaryKey]: {
@@ -161,7 +164,9 @@ export class Collection<Schema extends StandardSchemaV1> {
 
     if (this.hooks.listenerCount('create') > 0) {
       await this.hooks.emitAsPromise(
-        new TypedEvent('create', { data: { record, initialValues } }),
+        new TypedEvent('create', {
+          data: { record, initialValues, restored },
+        }),
       )
     }
     logger.log('create hooks done!')
