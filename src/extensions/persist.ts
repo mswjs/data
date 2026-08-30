@@ -50,8 +50,16 @@ export function persist() {
       const logger = new Logger('extension').extend('persist')
       const COLLECTION_KEY = `${STORAGE_KEY}/${collection[kCollectionId]}`
 
-      // Flush the collection's on page unload.
-      window.addEventListener('unload', () => {
+      /**
+       * @note Flush the collection whenever the page becomes hidden.
+       * This covers reloads, navigations, and closing the page.
+       * The `unload` event is deprecated and blocked by Chrome.
+       */
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState !== 'hidden') {
+          return
+        }
+
         localStorage.setItem(
           COLLECTION_KEY,
           /**
