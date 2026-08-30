@@ -6,7 +6,16 @@ export default defineConfig({
   workers: 1,
   projects: [
     {
-      use: devices['Desktop Chrome'],
+      use: {
+        ...devices['Desktop Chrome'],
+        launchOptions: {
+          /**
+           * @note Emulate Chrome's `unload` deprecation so the tests
+           * fail if any code relies on the `unload` event.
+           */
+          args: ['--enable-features=DeprecateUnload'],
+        },
+      },
     },
   ],
 })
