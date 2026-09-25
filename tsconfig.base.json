@@ -6,9 +6,8 @@
     "moduleResolution": "nodenext",
     "verbatimModuleSyntax": true,
     "noUncheckedIndexedAccess": true,
-    "baseUrl": ".",
     "paths": {
-      "#/src/*": ["src/*"]
+      "#/src/*": ["./src/*"]
     }
   }
 }

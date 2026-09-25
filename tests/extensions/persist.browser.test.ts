@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright.extend.js'
+import { test, expect } from '../../playwright.extend.js'
 
 test('persists records across page reloads', async ({ serve, page }) => {
   const { url, evaluate } = await serve(async () => {

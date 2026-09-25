@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright.extend.js'
+import { test, expect } from '../../playwright.extend.js'
 
 test('syncs record creation across tabs', async ({ serve, context, page }) => {
   const { url, evaluate } = await serve(async () => {
