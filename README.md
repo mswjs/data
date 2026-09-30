@@ -20,4 +20,8 @@ This library exists to help developers model and query data when testing and dev
 
 ## Documentation
 
-Read the [documentation](https://mswjs.io/ecosystem/data).
+- [**Getting started**](https://mswjs.io/ecosystem/data/getting-started)
+- [Querying](https://mswjs.io/ecosystem/data/querying)
+- [Relations](https://mswjs.io/ecosystem/data/relations)
+- [Extensions](https://mswjs.io/ecosystem/data/extensions)
+- [API reference](https://mswjs.io/ecosystem/data/api/collection)
