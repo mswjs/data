@@ -396,10 +396,11 @@ export class Collection<Schema extends StandardSchemaV1> {
       | ((query: Query<RecordType<StandardSchemaV1.InferOutput<Schema>>>) => Query<any>)
       | Query<RecordType<StandardSchemaV1.InferOutput<Schema>>>,
     options: UpdateOptions<StandardSchemaV1.InferOutput<Schema>> &
+      PaginationOptions<Schema> &
       SortOptions<Schema> &
       StrictOptions,
   ): Promise<Array<RecordType<StandardSchemaV1.InferOutput<Schema>>>> {
-    const prevRecords = this.findMany(predicate)
+    const prevRecords = this.findMany(predicate, { ...options, strict: false })
 
     if (prevRecords.length === 0) {
       invariant.as(
@@ -470,14 +471,9 @@ export class Collection<Schema extends StandardSchemaV1> {
     predicate:
       | ((query: Query<RecordType<StandardSchemaV1.InferOutput<Schema>>>) => Query<any>)
       | Query<RecordType<StandardSchemaV1.InferOutput<Schema>>>,
-    options?: SortOptions<Schema> & StrictOptions,
+    options?: PaginationOptions<Schema> & SortOptions<Schema> & StrictOptions,
   ): Array<RecordType<StandardSchemaV1.InferOutput<Schema>>> {
-    /**
-     * @note Do NOT forward the sorting options to the querying phase
-     * so the results are returned in the order they are present in the store.
-     * That way, we can delete them right-to-left correctly.
-     */
-    const records = this.findMany(predicate)
+    const records = this.findMany(predicate, { ...options, strict: false })
 
     for (let i = records.length - 1; i >= 0; i--) {
       this.#deleteRecord(records[i]!)
@@ -491,10 +487,6 @@ export class Collection<Schema extends StandardSchemaV1> {
       )
 
       return []
-    }
-
-    if (options?.orderBy) {
-      sortResults(options, records)
     }
 
     return records
@@ -579,13 +571,20 @@ export class Collection<Schema extends StandardSchemaV1> {
 
   *#query(
     query: Query<RecordType<StandardSchemaV1.InferOutput<Schema>>>,
-    options: PaginationOptions<Schema> = { take: Infinity },
+    options: PaginationOptions<Schema> & SortOptions<Schema> = {},
   ): Generator<
     RecordType<StandardSchemaV1.InferOutput<Schema>> | undefined,
     undefined,
     RecordType<StandardSchemaV1.InferOutput<Schema>> | undefined
   > {
     const { take, cursor, skip } = options
+
+    /**
+     * @note Sort the records before paginating so the pagination
+     * is applied to the sorted results, not the insertion order.
+     */
+    const records = options.orderBy ? [...this.#records] : this.#records
+    sortResults(options, records)
 
     invariant(
       skip !== undefined ? Number.isInteger(skip) && skip >= 0 : true,
@@ -610,11 +609,11 @@ export class Collection<Schema extends StandardSchemaV1> {
 
     const shouldTake = Math.abs(take ?? Infinity)
     const delta = take && take < 0 ? -1 : 1
-    let start = delta === 1 ? 0 : this.#records.length - 1
-    const end = delta === 1 ? this.#records.length : -1
+    let start = delta === 1 ? 0 : records.length - 1
+    const end = delta === 1 ? records.length : -1
 
     if (cursor != null) {
-      const cursorIndex = this.#records.findIndex((record) => {
+      const cursorIndex = records.findIndex((record) => {
         return record[kPrimaryKey] === cursor[kPrimaryKey]
       })
 
@@ -625,8 +624,8 @@ export class Collection<Schema extends StandardSchemaV1> {
       start = cursorIndex
     }
 
-    for (let i = start; i !== end; i += delta) {
-      const record = this.#records[i]
+    for (let i = start; i !== end && taken < shouldTake; i += delta) {
+      const record = records[i]
 
       if (record != null && query.test(record)) {
         if (skip != null) {
@@ -638,10 +637,6 @@ export class Collection<Schema extends StandardSchemaV1> {
 
         yield record
         taken++
-      }
-
-      if (taken >= shouldTake) {
-        break
       }
     }
   }
