@@ -109,3 +109,19 @@ it('allows preventing the default for specific records', async () => {
 
   expect(users.all()).toEqual([{ id: 1 }, { id: 3 }, { id: 5 }])
 })
+
+it('invokes the delete hook for every record when clearing the collection', async () => {
+  const users = new Collection({
+    schema: z.object({ id: z.number() }),
+  })
+
+  const hook = vi.fn<HookEventListener<typeof users, 'delete'>>()
+  users.hooks.on('delete', hook)
+
+  await users.createMany(4, (index) => ({ id: index + 1 }))
+
+  users.clear()
+
+  expect(hook).toHaveBeenCalledTimes(4)
+  expect(users.all()).toEqual([])
+})
