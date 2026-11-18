@@ -115,3 +115,16 @@ it('supports negative values for `take`', async () => {
     }),
   ).toEqual([])
 })
+
+it('paginates over the sorted results', async () => {
+  const users = new Collection({ schema: userSchema })
+  await users.createMany(5, (index) => ({
+    id: index + 1,
+  }))
+
+  const cursor = users.findFirst((q) => q.where({ id: 3 }))!
+
+  expect(
+    users.findMany(undefined, { orderBy: { id: 'desc' }, cursor, take: 2 }),
+  ).toEqual([{ id: 3 }, { id: 2 }])
+})

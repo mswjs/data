@@ -199,3 +199,34 @@ it('re-applies the schema on updates', async () => {
     { id: 3, name: 'Joey', email: 'joey@mail.com' },
   ])
 })
+
+it('respects the pagination options', async () => {
+  const users = new Collection({ schema: userSchema })
+  await users.createMany(4, (index) => ({
+    id: index + 1,
+    name: 'John',
+  }))
+
+  const updatedUsers = await users.updateMany(
+    (q) => q.where({ name: 'John' }),
+    {
+      data(user) {
+        user.name = 'Kate'
+      },
+      orderBy: { id: 'desc' },
+      skip: 1,
+      take: 2,
+    },
+  )
+
+  expect.soft(updatedUsers, 'Returns the updated records').toEqual([
+    { id: 3, name: 'Kate' },
+    { id: 2, name: 'Kate' },
+  ])
+  expect.soft(users.all(), 'Updates records in the store').toEqual([
+    { id: 1, name: 'John' },
+    { id: 2, name: 'Kate' },
+    { id: 3, name: 'Kate' },
+    { id: 4, name: 'John' },
+  ])
+})

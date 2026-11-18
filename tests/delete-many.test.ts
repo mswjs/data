@@ -73,3 +73,28 @@ it('sorts the deleted records by given criteria', async () => {
     { id: 4, name: 'Bob' },
   ])
 })
+
+it('respects the pagination options', async () => {
+  const users = new Collection({ schema })
+  await users.createMany(5, (index) => ({
+    id: index + 1,
+  }))
+
+  expect
+    .soft(users.deleteMany((q) => q.where({ id: (id) => id > 0 }), { take: 1 }))
+    .toEqual([{ id: 1 }])
+  expect
+    .soft(users.all())
+    .toEqual([{ id: 2 }, { id: 3 }, { id: 4 }, { id: 5 }])
+
+  expect
+    .soft(
+      users.deleteMany((q) => q.where({ id: (id) => id > 0 }), {
+        orderBy: { id: 'desc' },
+        skip: 1,
+        take: 2,
+      }),
+    )
+    .toEqual([{ id: 4 }, { id: 3 }])
+  expect.soft(users.all()).toEqual([{ id: 2 }, { id: 5 }])
+})

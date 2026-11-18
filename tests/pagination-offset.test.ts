@@ -179,3 +179,33 @@ it('supports negative values for `take`', async () => {
     }),
   ).toEqual([{ id: 7 }, { id: 6 }, { id: 5 }])
 })
+
+it('returns an empty array if `take` is 0', async () => {
+  const users = new Collection({ schema: userSchema })
+  await users.createMany(5, (index) => ({
+    id: index + 1,
+  }))
+
+  expect(users.findMany(undefined, { take: 0 })).toEqual([])
+  expect(users.findMany(undefined, { skip: 2, take: 0 })).toEqual([])
+})
+
+it('paginates over the sorted results', async () => {
+  const users = new Collection({ schema: userSchema })
+  await users.createMany(5, (index) => ({
+    id: index + 1,
+  }))
+
+  expect(
+    users.findMany(undefined, { orderBy: { id: 'desc' }, take: 2 }),
+  ).toEqual([{ id: 5 }, { id: 4 }])
+
+  expect(
+    users.findMany(undefined, { orderBy: { id: 'desc' }, skip: 2, take: 2 }),
+  ).toEqual([{ id: 3 }, { id: 2 }])
+
+  expect(
+    users.findMany(undefined, { orderBy: { id: 'desc' }, take: -2 }),
+    'Takes the last n sorted results',
+  ).toEqual([{ id: 2 }, { id: 1 }])
+})
