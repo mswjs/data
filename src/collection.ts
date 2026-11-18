@@ -518,7 +518,11 @@ export class Collection<Schema extends StandardSchemaV1> {
    * Deletes all the records in this collection.
    */
   public clear(): void {
-    for (const record of this.#records) {
+    /**
+     * @note Iterate over a copy of the records because deleting a record
+     * removes it from the original list, which would skip every other record.
+     */
+    for (const record of [...this.#records]) {
       this.#deleteRecord(record)
     }
 
